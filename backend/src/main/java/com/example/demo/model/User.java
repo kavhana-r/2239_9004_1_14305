@@ -9,8 +9,8 @@ public class User {
     @Id
     @GeneratedValue (Strategy=GenerationType.IDENTITY)
     private Long id;
-    Private String username;
-    Private String role;
+    private String username;
+    private String role;
     private String preferredCurrency;
     List<Transaction> transaction;
     list<Budget> budgets;
