@@ -76,7 +76,7 @@ public class User {
     public User() {
     }
     public User(Long id, String username, String password, String role, String preferredCurrency,
-            List<Transaction> transactions, List<Budget> budgets, list<Goal> goals) {
+            List<Transaction> transactions, List<Budget> budgets, List<Goal> goals) {
         this.id = id;
         this.username = username;
         this.password = password;
