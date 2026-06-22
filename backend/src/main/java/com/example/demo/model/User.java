@@ -13,10 +13,11 @@ public class User {
     @Id
     @GeneratedValue (strategy=GenerationType.IDENTITY)
     private Long id;
+    @C
     private String username;
     private String role;
     private String preferredCurrency;
-    List<Transaction> transaction;
+    List<Transaction> transactions;
     list<Budget> budgets;
     list<Goal>goals;
     public Long getId() {
