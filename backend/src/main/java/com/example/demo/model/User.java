@@ -18,8 +18,9 @@ public class User {
     private String username;
     @Column(nullable = false)
     private String password;
-    @Column(nullable = )
+    @Column(nullable = false)
     private String role;
+    @Column(nullable = false)
     private String preferredCurrency;
     List<Transaction> transactions;
     list<Budget> budgets;
@@ -36,6 +37,12 @@ public class User {
     public void setUsername(String username) {
         this.username = username;
     }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
     public String getRole() {
         return role;
     }
@@ -48,11 +55,11 @@ public class User {
     public void setPreferredCurrency(String preferredCurrency) {
         this.preferredCurrency = preferredCurrency;
     }
-    public List<Transaction> getTransaction() {
-        return transaction;
+    public List<Transaction> getTransactions() {
+        return transactions;
     }
-    public void setTransaction(List<Transaction> transaction) {
-        this.transaction = transaction;
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
     }
     public list<Budget> getBudgets() {
         return budgets;
@@ -68,16 +75,4 @@ public class User {
     }
     public User() {
     }
-    public User(Long id, String username, String preferredCurrency, List<Transaction> transaction, list<Budget> budgets,
-            list<Goal> goals) {
-        this.id = id;
-        this.username = username;
-        this.preferredCurrency = preferredCurrency;
-        this.transaction = transaction;
-        this.budgets = budgets;
-        this.goals = goals;
-    }
-    
-}
-
-
+   
