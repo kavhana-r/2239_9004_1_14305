@@ -16,7 +16,9 @@ public class User {
     private Long id;
     @Column(nullable = false,unique = true)
     private String username;
-    
+    @Column(nullable = false)
+    private String password;
+    @Column(nullable = )
     private String role;
     private String preferredCurrency;
     List<Transaction> transactions;
