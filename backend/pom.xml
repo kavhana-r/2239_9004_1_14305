@@ -90,12 +90,12 @@
             <scope>runtime</scope>
         </dependency>
         <!-- Source: https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-<dependency>
+        <dependency>
     <groupId>org.projectlombok</groupId>
     <artifactId>lombok</artifactId>
     <version>1.18.42</version>
     <scope>compile</scope>
-</dependency>
+     </dependency>
 
         <!-- Mockito — needed by t12 -->
         <dependency>
