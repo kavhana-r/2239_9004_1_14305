@@ -23,8 +23,8 @@ public class User {
     @Column(nullable = false)
     private String preferredCurrency;
     List<Transaction> transactions;
-    list<Budget> budgets;
-    list<Goal>goals;
+    List<Budget> budgets;
+    List<Goal>goals;
     public Long getId() {
         return id;
     }
