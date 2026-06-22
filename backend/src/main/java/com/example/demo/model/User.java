@@ -4,6 +4,7 @@ import jakarta.annotation.Generated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.util.List;
 
 public class User {
     @Id
@@ -14,5 +15,5 @@ public class User {
     private String preferredCurrency;
     List<Transaction> transaction;
     list<Budget> budgets;
-    goals list<Goal>;
+    list<Goal>goals;
 }
