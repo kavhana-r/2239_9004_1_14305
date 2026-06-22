@@ -61,13 +61,13 @@ public class User {
     public void setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
     }
-    public list<Budget> getBudgets() {
+    public List<Budget> getBudgets() {
         return budgets;
     }
     public void setBudgets(list<Budget> budgets) {
         this.budgets = budgets;
     }
-    public list<Goal> getGoals() {
+    public List<Goal> getGoals() {
         return goals;
     }
     public void setGoals(list<Goal> goals) {
@@ -76,7 +76,7 @@ public class User {
     public User() {
     }
     public User(Long id, String username, String password, String role, String preferredCurrency,
-            List<Transaction> transactions, list<Budget> budgets, list<Goal> goals) {
+            List<Transaction> transactions, List<Budget> budgets, list<Goal> goals) {
         this.id = id;
         this.username = username;
         this.password = password;
