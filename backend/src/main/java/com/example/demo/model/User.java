@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,8 +14,9 @@ public class User {
     @Id
     @GeneratedValue (strategy=GenerationType.IDENTITY)
     private Long id;
-    @C
+    @Column(nullable = false,unique = true)
     private String username;
+    
     private String role;
     private String preferredCurrency;
     List<Transaction> transactions;
