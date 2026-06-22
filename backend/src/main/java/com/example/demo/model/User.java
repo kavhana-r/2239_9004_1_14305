@@ -75,4 +75,15 @@ public class User {
     }
     public User() {
     }
-   
+    public User(Long id, String username, String password, String role, String preferredCurrency,
+            List<Transaction> transactions, list<Budget> budgets, list<Goal> goals) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.preferredCurrency = preferredCurrency;
+        this.transactions = transactions;
+        this.budgets = budgets;
+        this.goals = goals;
+    }
+}
