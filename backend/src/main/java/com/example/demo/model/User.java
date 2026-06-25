@@ -3,11 +3,16 @@ package com.example.demo.model;
 import java.util.List;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
+
+@Entity
+@Table(name = )
 public class User {
 
     @Id
@@ -106,6 +111,18 @@ public class User {
     }
 
     public User() {
+    }
+
+    public User(Long id, String username, String password, String role, String preferredCurrency,
+            List<Transaction> transactions, List<Budget> budgets, List<Goal> goals) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.preferredCurrency = preferredCurrency;
+        this.transactions = transactions;
+        this.budgets = budgets;
+        this.goals = goals;
     }
     
 
