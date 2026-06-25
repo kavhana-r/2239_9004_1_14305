@@ -5,6 +5,7 @@ public class Transaction {
     private Long id;
     private String title;
     private Double amount;
+    private Double convertedAmount;
     private 
     
 }
