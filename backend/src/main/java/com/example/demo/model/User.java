@@ -2,13 +2,18 @@ package com.example.demo.model;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 public class User {
+
     @Id
-    @GeneratedValue(strategy =Ge )
+    @GeneratedValue(strategy =GenerationType.IDENTITY )
     private Long id;
+
+    @Column(nullable = false,unique = true)
     private String username;
     private String password;
     private String role;
