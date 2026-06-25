@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 
 public class User {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy =Ge )
     private Long id;
     private String username;
     private String password;
