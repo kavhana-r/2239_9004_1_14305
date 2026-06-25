@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 public class User {
 
@@ -24,7 +25,15 @@ public class User {
 
     @Column(nullable = false)
     private String preferredCurrency;
+
+    @OneToMany(
+        mappedBy = "user"
+    )
     private List<Transaction> transactions;
+
+    @OneToMany(
+        mappedBy = "user"
+    )
     private List<Budget> budgets;
     private List<Goal> goals;
 
