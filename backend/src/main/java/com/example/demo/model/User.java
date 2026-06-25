@@ -5,6 +5,8 @@ public class User {
     private String username;
     private String password;
     private String role;
-    private String pref
+    private String preferredCurrency;
+    private List<Transaction> transactions;
+    private L
     
 }
