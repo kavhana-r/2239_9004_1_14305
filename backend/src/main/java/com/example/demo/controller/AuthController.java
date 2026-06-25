@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     @Autowired
-    @PostMapping("/Login")
+    @PostMapping("Login")
     Public >
     
 }
