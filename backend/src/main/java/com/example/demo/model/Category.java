@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 @Entity
-@Table(name = "categories"); 
+@Table(name = "categories")
 public class Category {
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +16,7 @@ public class Category {
     @Column(nullable = false,unique = true)
     private String name;
 
-    
+
     @Column(nullable = false)
     private TransactionType type;
     public Long getId() {
