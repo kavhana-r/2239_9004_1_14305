@@ -1,9 +1,12 @@
 package com.mintmatrix.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.ManyToOne;
 
 public class Budget {
     private Long id;
+
+    @Column(nullable = )
     private Double limitAmount;
     private Double spentAmount;
     private Integer month;
@@ -13,7 +16,9 @@ public class Budget {
     @ManyToOne
     private User user;
 
-    @
+    @ManyToOne
+    private Category category;
+
 
     
 }
