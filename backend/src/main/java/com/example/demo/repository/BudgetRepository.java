@@ -1,5 +1,12 @@
 package com.example.demo.repository;
 
-public interface BudgetRepository extends  {
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.demo.model.Budget;
+
+public interface BudgetRepository extends JpaRepository<Budget,Long> {
+    List<Budget>Find
     
 }
