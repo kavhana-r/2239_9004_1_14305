@@ -21,6 +21,8 @@ public class Transaction {
     @Column(nullable = false)
     private Double convertedAmount;
 
+    private 
+
     @Column(nullable = false)
     private LocalDate transactionDate;
 
