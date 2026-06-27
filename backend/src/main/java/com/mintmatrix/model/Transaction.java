@@ -1,8 +1,12 @@
 package com.mintmatrix.model;
 
+import java.time.LocalDate;
+
 public class Transaction {
     private Long id;
     private String title;
-    private 
+    private Double amount;
+    private Double convertedAmount;
+    private LocalDate 
     
 }
