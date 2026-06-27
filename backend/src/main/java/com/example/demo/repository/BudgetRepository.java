@@ -1,5 +1,5 @@
 package com.example.demo.repository;
 
-public class BudgetRepository {
+public interface BudgetRepository extends  {
     
 }
