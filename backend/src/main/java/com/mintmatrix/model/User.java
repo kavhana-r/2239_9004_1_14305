@@ -110,6 +110,21 @@ private List<Transaction>transaction;
      public void setGoals(List<Goal> goals) {
          this.goals = goals;
      }
+
+     public User() {
+     }
+
+     public User(Long id, String username, String password, String role, String preferredCurrency,
+            List<Transaction> transaction, List<Budget> budgets, List<Goal> goals) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.preferredCurrency = preferredCurrency;
+        this.transaction = transaction;
+        this.budgets = budgets;
+        this.goals = goals;
+     }
     
    
    
