@@ -3,8 +3,11 @@ package com.example.demo.model;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-
+import jakarta.persistence.Table;
+@Entity
+@Table(name = "goals")
 public class Goal {
     private Long id;
 
@@ -68,6 +71,15 @@ public class Goal {
     }
 
     public Goal() {
+    }
+
+    public Goal(Long id, String title, Double targetAmount, Double currentAmount, LocalDate deadline, User user) {
+        this.id = id;
+        this.title = title;
+        this.targetAmount = targetAmount;
+        this.currentAmount = currentAmount;
+        this.deadline = deadline;
+        this.user = user;
     }
 
     
