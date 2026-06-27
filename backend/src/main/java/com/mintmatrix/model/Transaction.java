@@ -7,9 +7,11 @@ public class Transaction {
     private String title;
     private Double amount;
     private Double convertedAmount;
+     private TransactionType transactionType;
     private LocalDate transactionDate;
     private String note;
-    private TransactionType transactionType;
-    private
+    private Category category;
+    private Currency currency;
+    private 
     
 }
