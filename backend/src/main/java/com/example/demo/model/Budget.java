@@ -1,10 +1,13 @@
 package com.example.demo.model;
 
+import java.util.Locale.Category;
+
 import jakarta.persistence.ManyToOne;
 
 public class Budget {
     @Id
     private Long id;
+    @Col
     private Double limitAmount;
     private Double spentAmount;
     private Integer month;
@@ -13,6 +16,8 @@ public class Budget {
     @ManyToOne
     private User user;
 
-    private 
+    @ManyToOne
+    private Category category;
+
 
 }
