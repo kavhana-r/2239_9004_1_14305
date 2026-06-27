@@ -1,9 +1,17 @@
 package com.mintmatrix.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "budgets")
 
 public class Budget {
+    @Id
+    
     private Long id;
 
     @Column(nullable = false)
@@ -76,6 +84,20 @@ public class Budget {
     }
 
     public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public Budget() {
+    }
+
+    public Budget(Long id, Double limitAmount, Double spentAmount, Integer month, Integer year, User user,
+            Category category) {
+        this.id = id;
+        this.limitAmount = limitAmount;
+        this.spentAmount = spentAmount;
+        this.month = month;
+        this.year = year;
+        this.user = user;
         this.category = category;
     }
 
