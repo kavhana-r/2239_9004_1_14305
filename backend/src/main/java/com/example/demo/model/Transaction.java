@@ -3,10 +3,12 @@ package com.example.demo.model;
 import java.time.LocalDate;
 
 import jakarta.annotation.Generated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 
 public class Transaction {
     @Id
-    @G
+    @GeneratedValue(strategy=GenerationType)
     private Long id;
     private String title;
     private Double amount;
