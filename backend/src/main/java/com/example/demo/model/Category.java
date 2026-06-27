@@ -1,9 +1,13 @@
 package com.example.demo.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 public class Category {
    @Id
+   @GeneratedValue(strategy = GenerationType.)
     private Long id;
 
     @Column(nullable = false,unique = true)
