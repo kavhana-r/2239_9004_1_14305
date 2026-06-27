@@ -2,14 +2,17 @@ package com.example.demo.model;
 
 import java.time.LocalDate;
 
-import jakarta.annotation.Generated;
+import org.springframework.data.annotation.Id;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 @Entity
+@Table(name = "transactions")
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,5 +45,6 @@ private Currency currency;
 @ManyToOne
 @JoinColumn(name = "user_id")
 private User user;
+
     
 }
