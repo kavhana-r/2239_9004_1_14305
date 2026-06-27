@@ -21,7 +21,7 @@ public class Transaction {
     @Column(nullable = false)
     private Double convertedAmount;
 
-    @Column
+    @Column(nullable = false)
     private TransactionType transactionType;
 
     @Column(nullable = false)
