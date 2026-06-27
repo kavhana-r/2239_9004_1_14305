@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.example.demo.model.Category;
 import com.example.demo.model.Transaction;
 @Repository
-public interface CategoryRepository extends JpaRepository<CategoryRepository,Long> {
+public interface CategoryRepository extends JpaRepository<Category,Long> {
     List<Category>findByType(Transaction type);
     
 }
