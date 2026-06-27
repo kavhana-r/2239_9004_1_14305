@@ -7,6 +7,8 @@ public class Transaction {
     private String title;
     private Double amount;
     private Double convertedAmount;
-    private LocalDate 
+    private LocalDate transactionDate;
+    private String note;
+    
     
 }
