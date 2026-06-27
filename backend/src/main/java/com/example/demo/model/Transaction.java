@@ -8,7 +8,7 @@ import jakarta.persistence.GenerationType;
 
 public class Transaction {
     @Id
-    @GeneratedValue(strategy=GenerationType)
+    @GeneratedValue(strategy=GenerationType=IDENTITY)
     private Long id;
     private String title;
     private Double amount;
