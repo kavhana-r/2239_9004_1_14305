@@ -5,13 +5,13 @@ import jakarta.persistence.Id;
 
 public class Currency {
     @Id
-    @Column(nullable = false)
+    @(nullable = false)
     private String code;
 
     @Column(nullable = false)
     private String name;
     
-    @column(null)
+    @Column(nullable=false)
     private Double exchangeRate;
 
     
