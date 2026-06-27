@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 
 public class Transaction {
     @Id
@@ -26,7 +27,12 @@ public class Transaction {
 
      @Column(nullable = false)
     private LocalDate transactionDate;
+
     private String note;
+
+    @ManyToOne(
+        J
+    )
     private Category category;
     private Currency currency;
     private User user;
