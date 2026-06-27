@@ -69,6 +69,18 @@ public class Goal {
         this.user = user;
     }
 
+    public Goal() {
+    }
+
+    public Goal(Long id, String title, Double targetAmount, Double currentAmount, LocalDate deadline, User user) {
+        this.id = id;
+        this.title = title;
+        this.targetAmount = targetAmount;
+        this.currentAmount = currentAmount;
+        this.deadline = deadline;
+        this.user = user;
+    }
+
     
 
 
