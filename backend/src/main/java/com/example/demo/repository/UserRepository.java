@@ -1,7 +1,5 @@
 package com.example.demo.repository;
 
-
-
-public class UserR{
+public class UserRepository {
     
 }
