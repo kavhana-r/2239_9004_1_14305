@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 public class Transaction {
@@ -30,9 +31,9 @@ public class Transaction {
 
     private String note;
 
-    @ManyToOne(
-        JoinColumn:category_id
-    )
+    @ManyToOne
+    @JoinColumn
+    
     private Category category;
 
     @ManyToOne (
