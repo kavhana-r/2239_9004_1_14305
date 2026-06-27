@@ -6,8 +6,11 @@ import jakarta.persistence.Id;
 public class Currency {
     @Id
     @Column(nullable = false)
-    Private String code;
+    private String code;
 
-    @Column(nul)
+    private String name;
+    private DoubleexchangeRate
+
+    
     
 }
