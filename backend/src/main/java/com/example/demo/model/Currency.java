@@ -5,6 +5,9 @@ import jakarta.persistence.Id;
 
 public class Currency {
     @Id
-    @Column
+    @Column(nullable = false)
+    Private String code;
+
+    @Column(nul)
     
 }
