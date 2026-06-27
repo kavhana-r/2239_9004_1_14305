@@ -1,8 +1,13 @@
 package com.example.demo.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TransactionRepository extends JpaRepository<Traansaction,Long> {
+import com.example.demo.model.Transaction;
+
+public interface TransactionRepository extends JpaRepository<Transaction,Long> {
+    List<Transaction>findByUserordeTransactions
 
     
 } TransactionRepository {
