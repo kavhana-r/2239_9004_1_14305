@@ -3,8 +3,11 @@ package com.mintmatrix.model;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-
+import jakarta.persistence.Table;
+@Entity
+@Table(name="goals")
 public class Goal {
     private Long id;
 
