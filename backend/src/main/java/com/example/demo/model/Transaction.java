@@ -21,11 +21,11 @@ public class Transaction {
     @Column(nullable = false)
     private Double convertedAmount;
 
-    @Column(nullable = =false)
+    @Column(nullable = false)
     private LocalDate transactionDate;
 
     private String note;
-    
+
     private Category category;
 private Currency currency;
 private User user;
