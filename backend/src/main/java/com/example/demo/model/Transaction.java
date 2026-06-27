@@ -42,9 +42,107 @@ public class Transaction {
     @ManyToOne
     @JoinColumn(name = "currency_id")
 private Currency currency;
+
 @ManyToOne
 @JoinColumn(name = "user_id")
 private User user;
+
+public Long getId() {
+    return id;
+}
+
+public void setId(Long id) {
+    this.id = id;
+}
+
+public String getTitle() {
+    return title;
+}
+
+public void setTitle(String title) {
+    this.title = title;
+}
+
+public Double getAmount() {
+    return amount;
+}
+
+public void setAmount(Double amount) {
+    this.amount = amount;
+}
+
+public Double getConvertedAmount() {
+    return convertedAmount;
+}
+
+public void setConvertedAmount(Double convertedAmount) {
+    this.convertedAmount = convertedAmount;
+}
+
+public TransactionType getTransactionType() {
+    return transactionType;
+}
+
+public void setTransactionType(TransactionType transactionType) {
+    this.transactionType = transactionType;
+}
+
+public LocalDate getTransactionDate() {
+    return transactionDate;
+}
+
+public void setTransactionDate(LocalDate transactionDate) {
+    this.transactionDate = transactionDate;
+}
+
+public String getNote() {
+    return note;
+}
+
+public void setNote(String note) {
+    this.note = note;
+}
+
+public Category getCategory() {
+    return category;
+}
+
+public void setCategory(Category category) {
+    this.category = category;
+}
+
+public Currency getCurrency() {
+    return currency;
+}
+
+public void setCurrency(Currency currency) {
+    this.currency = currency;
+}
+
+public User getUser() {
+    return user;
+}
+
+public void setUser(User user) {
+    this.user = user;
+}
+
+public Transaction() {
+}
+
+public Transaction(Long id, String title, Double amount, Double convertedAmount, TransactionType transactionType,
+        LocalDate transactionDate, String note, Category category, Currency currency, User user) {
+    this.id = id;
+    this.title = title;
+    this.amount = amount;
+    this.convertedAmount = convertedAmount;
+    this.transactionType = transactionType;
+    this.transactionDate = transactionDate;
+    this.note = note;
+    this.category = category;
+    this.currency = currency;
+    this.user = user;
+}
 
     
 }
