@@ -1,11 +1,11 @@
 package com.example.demo.repository;
 
-import java.lang.StackWalker.Option;
 import java.util.Currency;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CurrencyRepository extends JpaRepository<Currency,Long>{
-    Option<Currency>findByCode
+    Optional<Currency>findByCode(String code);
     
 }
