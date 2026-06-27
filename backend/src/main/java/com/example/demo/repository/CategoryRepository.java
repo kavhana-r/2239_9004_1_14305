@@ -1,5 +1,10 @@
 package com.example.demo.repository;
 
-public interface CategoryRepository extends Jpa {
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CategoryRepository extends JpaRepository<CategoryRepository,Long> {
+    List<Category>findByType(TransactionType)
     
 }
