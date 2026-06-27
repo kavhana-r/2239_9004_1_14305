@@ -8,8 +8,11 @@ public class Currency {
     @Column(nullable = false)
     private String code;
 
+    @Column(nullable = false)
     private String name;
-    private DoubleexchangeRate
+    
+    @column(null)
+    private Double exchangeRate;
 
     
     
