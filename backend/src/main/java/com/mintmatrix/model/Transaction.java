@@ -31,9 +31,13 @@ public class Transaction {
     private String note;
 
     @ManyToOne(
-        J
+        JoinColumn:category_id
     )
     private Category category;
+
+    @ManyToOne(
+        JoinColumn:currency_id
+    )
     private Currency currency;
     private User user;
     
