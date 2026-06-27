@@ -10,7 +10,7 @@ import com.example.demo.model.Budget;
 import com.example.demo.model.User;
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget,Long> {
-    List<Budget>FindByUser(User user);
+    List<Budget>findByUser(User user);
     Optional<Budget>findByUserAndMonthAndYear(User user,Integer month,Integer year);
     
     
