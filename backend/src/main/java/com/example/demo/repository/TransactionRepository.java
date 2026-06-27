@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.example.demo.model.Transaction;
+import com.example.demo.model.User;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction,Long> {
-    List<Transaction>findByUserOrderByTransactionDateDesc(User user)
+    List<Transaction>findByUserOrderByTransactionDateDesc(User user);
 
     
 } 
