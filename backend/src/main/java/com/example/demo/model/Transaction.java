@@ -6,6 +6,7 @@ import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.ManyToOne;
 
 public class Transaction {
     @Id
@@ -29,6 +30,8 @@ public class Transaction {
 
     private String note;
 
+    @ManyToOne 
+    @
     private Category category;
 private Currency currency;
 private User user;
