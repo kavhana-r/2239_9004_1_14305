@@ -39,6 +39,10 @@ public class Transaction {
         JoinColumn:currency_id
     )
     private Currency currency;
+
+    @ManyToOne(
+        JoinColumn:user_id
+    )
     private User user;
     
 }
