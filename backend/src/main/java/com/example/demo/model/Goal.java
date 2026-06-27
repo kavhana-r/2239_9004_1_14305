@@ -17,4 +17,11 @@ public class Goal {
     private User user;
 
     
+
+    
 }
+
+
+
+
+
