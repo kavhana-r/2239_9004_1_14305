@@ -1,10 +1,12 @@
 package com.example.demo.model;
 
 public class Budget {
-    @I\
+    @Id
     private Long id;
     private Double limitAmount;
     private Double spentAmount;
-    private integer month;
-    private Integer
+    private Integer month;
+    private Integer year;
+    private User user;
+
 }
