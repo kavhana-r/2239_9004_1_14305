@@ -1,5 +1,7 @@
 package com.example.demo.model;
 
+import jakarta.persistence.ManyToOne;
+
 public class Budget {
     @Id
     private Long id;
@@ -7,6 +9,10 @@ public class Budget {
     private Double spentAmount;
     private Integer month;
     private Integer year;
+
+    @ManyToOne
     private User user;
+
+    private 
 
 }
