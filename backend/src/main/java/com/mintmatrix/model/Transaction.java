@@ -9,6 +9,7 @@ public class Transaction {
     private Double convertedAmount;
     private LocalDate transactionDate;
     private String note;
-    
+    private TransactionType transactionType;
+    private
     
 }
