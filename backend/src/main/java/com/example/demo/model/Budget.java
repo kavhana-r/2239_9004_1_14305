@@ -2,11 +2,16 @@ package com.example.demo.model;
 
 import java.util.Locale.Category;
 
+
 import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 
 public class Budget {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -16,7 +21,7 @@ public class Budget {
     @Column(nullable = false)
     private Integer month;
 
-    @Colu
+    @Column(nullable = false)
     private Integer year;
 
     @ManyToOne
