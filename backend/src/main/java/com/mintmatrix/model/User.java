@@ -41,6 +41,10 @@ public class User {
    @OneToMany(
     mappedBy="user"
    )
-   @ON
+   @OneToMany(
+    mappedBy="user"
+   )
+
+   
     
 }
