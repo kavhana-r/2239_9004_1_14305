@@ -1,12 +1,12 @@
-package com.mintmatrix.repository;
+package com.example.demo.repository;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.mintmatrix.model.Transaction;
-import com.mintmatrix.model.User;
+import com.example.demo.model.Transaction;
+import com.example.demo.model.User;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction,Long>{
     List<Transaction>findByUserOrderByTransactionDateDesc(User user);
