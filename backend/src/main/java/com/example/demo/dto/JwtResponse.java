@@ -1,4 +1,4 @@
-package com.mintmatrix.dto;
+package com.example.demo.dto;
 
 public class JwtResponse {
     private String token;
