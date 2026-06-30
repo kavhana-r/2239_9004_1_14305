@@ -1,4 +1,4 @@
-package com.mintmatrix.service;
+package com.example.demo.service;
 
 public class CurrencyService {
     

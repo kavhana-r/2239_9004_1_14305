@@ -1,4 +1,4 @@
-package com.mintmatrix.security;
+package com.example.demo.security;
 
 public class JwtAuthenticationFilter {
     
