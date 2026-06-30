@@ -2,6 +2,8 @@ package com.example.demo.model;
 
 import java.time.LocalDate;
 
+import com.example.demo.enums.TransactionType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
