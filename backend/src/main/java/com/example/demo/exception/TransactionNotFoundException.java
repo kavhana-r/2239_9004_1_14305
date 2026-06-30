@@ -1,4 +1,4 @@
-package com.mintmatrix.exception;
+package com.example.demo.exception;
 
 public class TransactionNotFoundException {
     
