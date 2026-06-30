@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.mintmatrix.model.Budget;
-import com.mintmatrix.model.User;
+import com.example.demo.model.Budget;
+import com.example.demo.model.User;
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget,Long>{
     List<com.example.demo.model.Budget>findByUser(User user);
