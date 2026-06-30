@@ -1,4 +1,4 @@
-package com.mintmatrix.model;
+package com.example.demo.model;
 
 public class TransactionType {
     
