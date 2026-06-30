@@ -45,5 +45,17 @@ public class TransactionRequest {
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
     }
+    public TransactionRequest() {
+    }
+    public TransactionRequest(String title, String currencyCode, String transactionType, LocalDate transactionDate,
+            String note, Long categoryId) {
+        this.title = title;
+        this.currencyCode = currencyCode;
+        this.transactionType = transactionType;
+        this.transactionDate = transactionDate;
+        this.note = note;
+        this.categoryId = categoryId;
+    }
+    
     
 }
