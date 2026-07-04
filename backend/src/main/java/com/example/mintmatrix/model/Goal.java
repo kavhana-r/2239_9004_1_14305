@@ -1,9 +1,12 @@
 package com.example.mintmatrix.model;
 
+import java.time.LocalDate;
+
 public class Goal {
     private Long id;
     private String title;
     private Double targetAmount;
     private Double currentAmount;
-    Private 
+    private LocalDate deadline;
+    private 
 }
