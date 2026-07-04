@@ -1,17 +1,12 @@
 package com.example.mintmatrix.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name ="currencies")
+@Table(name = "currencies")
 public class Currency {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private String code;
 
@@ -21,30 +16,6 @@ public class Currency {
     @Column(nullable = false)
     private Double exchangeRate;
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Double getExchangeRate() {
-        return exchangeRate;
-    }
-
-    public void setExchangeRate(Double exchangeRate) {
-        this.exchangeRate = exchangeRate;
-    }
-
     public Currency() {
     }
 
@@ -53,10 +24,6 @@ public class Currency {
         this.name = name;
         this.exchangeRate = exchangeRate;
     }
-
-    
-
-
 
     
 }
