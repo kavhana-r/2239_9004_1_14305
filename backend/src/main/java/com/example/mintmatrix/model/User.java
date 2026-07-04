@@ -7,9 +7,13 @@ import jakarta.persistence.Column;
 public class User {
     private Long id;
 
-    @Column
+    @Column(nullable = false,unique = true)
     private String username;
+
+    @Column(nullable = false)
     private String password;
+
+    @Column(nu)
     private String role;
     private String preferredCurrency;
     private List<Transaction> transaction;
