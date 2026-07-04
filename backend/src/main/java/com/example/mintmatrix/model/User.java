@@ -4,6 +4,8 @@ public class User {
     private Long id;
     private String username;
     private String password;
-    private 
+    private String role;
+    private String preferredCurrency;
+    private List<Transaction> transaction
     
 }
