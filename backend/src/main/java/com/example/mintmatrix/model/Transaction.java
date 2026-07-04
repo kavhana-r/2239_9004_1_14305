@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 
 public class Transaction {
     @Id
@@ -24,10 +25,16 @@ public class Transaction {
     private Double convertedAmount;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionType transactionType;
-    
+
+    @Column(nullable = false)
     private LocalDate transactionDate;
+
     private String note;
+
+    @ManyToOne
+    
     private Category category;
     private Currency currency;
     private User user;
