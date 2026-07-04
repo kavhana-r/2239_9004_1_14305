@@ -1,7 +1,11 @@
 package com.example.mintmatrix.model;
 
+import jakarta.persistence.Id;
+
 public class Category {
+    @Id
+    @Ge
     private Long id;
     private String name;
-    private 
+    private TransactionType enum type;
 }
