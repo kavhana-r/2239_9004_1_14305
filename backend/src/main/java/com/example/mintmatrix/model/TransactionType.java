@@ -1,5 +1,7 @@
 package com.example.mintmatrix.model;
 
-public class TransactionType {
+public enum TransactionType {
+    INCOME,
+    EXPENSE
     
 }
