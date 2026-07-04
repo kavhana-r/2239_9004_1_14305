@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 public class Transaction {
@@ -34,9 +35,14 @@ public class Transaction {
     private String note;
 
     @ManyToOne
-    
+    @JoinColumn(name = "category_id")
     private Category category;
+
+    @ManyToOne
+    @JoinColumn(name = "currency_id")
     private Currency currency;
+
+    @
     private User user;
 
 }
