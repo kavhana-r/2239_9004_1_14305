@@ -17,10 +17,15 @@ public class Transaction {
     @Column(nullable = false)
     private String title;
 
-    @Column(null)
+    @Column(nullable = false)
+    private Double amount;
+
+    @Column(nullable = false)
     private Double convertedAmount;
+
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
+    
     private LocalDate transactionDate;
     private String note;
     private Category category;
