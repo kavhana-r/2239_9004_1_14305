@@ -1,11 +1,18 @@
 package com.example.mintmatrix.model;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 public class Category {
     @Id
-    @Ge
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Colu
     private String name;
-    private TransactionType enum type;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 }
