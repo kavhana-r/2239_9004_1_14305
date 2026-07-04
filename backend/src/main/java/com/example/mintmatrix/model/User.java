@@ -13,9 +13,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nu)
+    @Column(nullable = false)
     private String role;
+
+    @Column(nullable = false)
     private String preferredCurrency;
+    
     private List<Transaction> transaction;
     private List<Budget> budgets;
     private List<Goal> goals;
