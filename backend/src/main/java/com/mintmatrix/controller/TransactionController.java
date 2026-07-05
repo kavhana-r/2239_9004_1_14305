@@ -24,13 +24,13 @@ public class TransactionController {
 
     @GetMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Transaction>> getAllTransactions() {
+    public ResponseEntity<Object> getAllTransactions() {
         return ResponseEntity.ok(transactionService.getAllTransactions());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
+    public ResponseEntity<Object> getTransactionById(@PathVariable Long id) {
         return ResponseEntity.ok(transactionService.getTransactionById(id));
     }
 

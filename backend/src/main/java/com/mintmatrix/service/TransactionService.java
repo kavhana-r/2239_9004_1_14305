@@ -20,5 +20,15 @@ public class TransactionService {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'createTransaction'");
     }
+
+    public Object getAllTransactions() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllTransactions'");
+    }
+
+    public Object getTransactionById(Long id) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getTransactionById'");
+    }
     
 }
