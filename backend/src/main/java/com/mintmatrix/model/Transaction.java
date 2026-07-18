@@ -150,8 +150,4 @@ public class Transaction {
  
  
     }
-    // enums 
-    public enum TransactionType{
-        INCOME, EXPENSE
-    }
 }
