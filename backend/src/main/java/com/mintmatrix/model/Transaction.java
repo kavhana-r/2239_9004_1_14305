@@ -44,7 +44,7 @@ public class Transaction {
     private Category category;
 
     @ManyToOne
-    @JoinColumn(name = "currency_code")
+    @JoinColumn(name = "currency_id")
     private Currency currency;
 
     @ManyToOne
