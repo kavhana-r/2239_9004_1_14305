@@ -4,9 +4,7 @@ import com.mintmatrix.model.Currency;
 import com.mintmatrix.repository.CurrencyRepository;
 
 import org.springframework.http.ResponseEntity;
-
-import org.springframework.security.access.preauthorize.PreAuthorize;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,13 +34,10 @@ public class CurrencyController {
 
 
 
-
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Currency> createCurrency(
             @RequestBody Currency currency) {
-
 
         return ResponseEntity.ok(
                 currencyRepository.save(currency)
@@ -51,26 +46,18 @@ public class CurrencyController {
 
 
 
-
-
-    @PutMapping("/{id}")
+    @PutMapping("/{code}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Currency> updateCurrency(
-            @PathVariable Long id,
+            @PathVariable String code,
             @RequestBody Currency currencyRequest) {
 
 
         Currency currency =
-                currencyRepository.findById(id)
+                currencyRepository.findByCode(code)
                 .orElseThrow(() ->
                         new RuntimeException("Currency not found")
                 );
-
-
-
-        currency.setCode(
-                currencyRequest.getCode()
-        );
 
 
         currency.setName(
@@ -83,7 +70,6 @@ public class CurrencyController {
         );
 
 
-
         return ResponseEntity.ok(
                 currencyRepository.save(currency)
         );
@@ -93,13 +79,13 @@ public class CurrencyController {
 
 
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{code}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteCurrency(
-            @PathVariable Long id) {
+            @PathVariable String code) {
 
 
-        currencyRepository.deleteById(id);
+        currencyRepository.deleteById(code);
 
 
         return ResponseEntity.ok(
