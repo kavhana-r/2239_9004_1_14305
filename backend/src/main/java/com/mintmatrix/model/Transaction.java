@@ -1,7 +1,5 @@
 package com.mintmatrix.model;
 
-import java.time.LocalDate;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "transactions")
@@ -44,7 +44,7 @@ public class Transaction {
     private Category category;
 
     @ManyToOne
-    @JoinColumn(name = "currency_id")
+    @JoinColumn(name = "currency_code")
     private Currency currency;
 
     @ManyToOne
@@ -55,8 +55,8 @@ public class Transaction {
     }
 
     public Transaction(Long id, String title, Double amount, Double convertedAmount,
-            TransactionType transactionType, LocalDate transactionDate,
-            String note, Category category, Currency currency, User user) {
+                       TransactionType transactionType, LocalDate transactionDate,
+                       String note, Category category, Currency currency, User user) {
         this.id = id;
         this.title = title;
         this.amount = amount;
@@ -147,7 +147,5 @@ public class Transaction {
 
     public void setUser(User user) {
         this.user = user;
- 
- 
     }
 }
