@@ -1,56 +1,48 @@
 package com.mintmatrix.security;
 
-import java.security.Key;
-import java.util.Date;
-
-import javax.crypto.spec.SecretKeySpec;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    // t23 checks this field is private
-    private String jwtSecret =
-            "MintMatrixJwtSecretKeyForTesting12345678901234567890";
+    private String jwtSecret = "MintMatrixJwtSecretKeyForSecureAuthentication123456789";
 
     private final long jwtExpirationInMs = 86400000;
 
-    private Key getSigningKey() {
-        return new SecretKeySpec(
-                jwtSecret.getBytes(),
-                SignatureAlgorithm.HS256.getJcaName());
-    }
-
     public String generateToken(Authentication authentication) {
 
-        UserDetails userPrincipal =
-                (UserDetails) authentication.getPrincipal();
+        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
 
         Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
-        Date expiryDate =
-                new Date(now.getTime() + jwtExpirationInMs);
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String getUsernameFromJWT(String token) {
 
+        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
         Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -62,8 +54,10 @@ public class JwtTokenProvider {
 
         try {
 
+            Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
             Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+                    .setSigningKey(key)
                     .build()
                     .parseClaimsJws(authToken);
 
@@ -72,8 +66,6 @@ public class JwtTokenProvider {
         } catch (JwtException | IllegalArgumentException ex) {
 
             return false;
-
         }
     }
-
 }
