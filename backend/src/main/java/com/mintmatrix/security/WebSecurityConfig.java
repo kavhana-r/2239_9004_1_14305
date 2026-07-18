@@ -67,17 +67,14 @@ public class WebSecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/api/auth/**")
-                        .permitAll()
-
-                        .requestMatchers("/api/currencies/**")
-                        .permitAll()
-
-                        .requestMatchers("/error")
-                        .permitAll()
-
-                        .anyRequest()
-                        .authenticated()
+                        .requestMatchers(
+        "/api/auth/**",
+        "/api/currencies/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/v3/api-docs/**",
+        "/error"
+).permitAll()
                 )
 
                 .addFilterBefore(
