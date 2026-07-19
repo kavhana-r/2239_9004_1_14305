@@ -27,7 +27,7 @@ public class TransactionService {
     private final CurrencyService currencyService;
     private final BudgetRepository budgetRepository;
 
-     public TransactionService() {
+    public TransactionService() {
         this.transactionRepository = null;
         this.userRepository = null;
         this.categoryRepository = null;
@@ -35,7 +35,7 @@ public class TransactionService {
         this.budgetRepository = null;
     }
 
-
+    @org.springframework.beans.factory.annotation.Autowired
     public TransactionService(
             TransactionRepository transactionRepository,
             UserRepository userRepository,
