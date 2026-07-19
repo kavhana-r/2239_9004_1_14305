@@ -14,6 +14,7 @@ import com.mintmatrix.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class TransactionService {
         this.budgetRepository = null;
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public TransactionService(
             TransactionRepository transactionRepository,
             UserRepository userRepository,
