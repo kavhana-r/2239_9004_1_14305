@@ -121,7 +121,7 @@ public class TransactionController {
 
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteTransaction(
             @PathVariable Long id,
             Authentication authentication) {
