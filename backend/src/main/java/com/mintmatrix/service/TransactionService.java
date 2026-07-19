@@ -27,6 +27,14 @@ public class TransactionService {
     private final CurrencyService currencyService;
     private final BudgetRepository budgetRepository;
 
+     public TransactionService() {
+        this.transactionRepository = null;
+        this.userRepository = null;
+        this.categoryRepository = null;
+        this.currencyService = null;
+        this.budgetRepository = null;
+    }
+
 
     public TransactionService(
             TransactionRepository transactionRepository,
