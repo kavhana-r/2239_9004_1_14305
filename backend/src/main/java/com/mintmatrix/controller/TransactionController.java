@@ -40,7 +40,7 @@ public class TransactionController {
 
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Transaction>> getAllTransactions(
             Authentication authentication) {
 
@@ -55,7 +55,7 @@ public class TransactionController {
 
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Transaction> getTransactionById(
             @PathVariable Long id) {
 
@@ -74,7 +74,7 @@ public class TransactionController {
 
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createTransaction(
             @Valid
             @RequestBody TransactionRequest request,
@@ -96,7 +96,7 @@ public class TransactionController {
 
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updateTransaction(
             @PathVariable Long id,
             @Valid
