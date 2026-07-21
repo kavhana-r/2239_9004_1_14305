@@ -26,16 +26,16 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
-    private final TransactionRepository transactionRepository;
+private final TransactionRepository transactionRepository;
 
 
-    public TransactionController(
-            TransactionService transactionService,
-            TransactionRepository transactionRepository) {
+public TransactionController(
+        TransactionService transactionService,
+        TransactionRepository transactionRepository) {
 
-        this.transactionService = transactionService;
-        this.transactionRepository = transactionRepository;
-    }
+    this.transactionService = transactionService;
+    this.transactionRepository = transactionRepository;
+}
 
 
 
