@@ -7,6 +7,7 @@ import com.mintmatrix.service.TransactionService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -25,17 +26,21 @@ public class TransactionController {
 
 
     private final TransactionService transactionService;
-
     private final TransactionRepository transactionRepository;
 
+    public TransactionController() {
+        this.transactionService = null;
+        this.transactionRepository = null;
+    }
 
+    @Autowired
     public TransactionController(
             TransactionService transactionService,
             TransactionRepository transactionRepository) {
 
         this.transactionService = transactionService;
         this.transactionRepository = transactionRepository;
-    }
+
 
 
 
