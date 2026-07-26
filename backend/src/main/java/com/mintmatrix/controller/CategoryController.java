@@ -37,10 +37,14 @@ public class CategoryController {
 
 
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Category> createCategory(
-            @RequestBody Category category) {
+    // @PostMapping
+    // @PreAuthorize("hasRole('ADMIN')")
+    // public ResponseEntity<Category> createCategory(
+    //         @RequestBody Category category)
+            @PostMapping
+public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+    return ResponseEntity.ok(categoryRepository.save(category));
+} {
 
 
         return ResponseEntity.ok(
