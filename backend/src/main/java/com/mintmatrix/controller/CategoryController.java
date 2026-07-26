@@ -44,13 +44,13 @@ public class CategoryController {
             @PostMapping
 public ResponseEntity<Category> createCategory(@RequestBody Category category) {
     return ResponseEntity.ok(categoryRepository.save(category));
-} {
+ } //{
 
 
-        return ResponseEntity.ok(
-                categoryRepository.save(category)
-        );
-    }
+//     //     return ResponseEntity.ok(
+//     //             categoryRepository.save(category)
+//     //     );
+//     // }
 
 
 
