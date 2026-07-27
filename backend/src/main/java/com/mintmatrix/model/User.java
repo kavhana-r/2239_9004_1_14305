@@ -27,6 +27,7 @@ public class User {
     
     
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @Column(nullable = false)
