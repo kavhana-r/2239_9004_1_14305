@@ -1,5 +1,3 @@
-// 
-
 package com.mintmatrix.exception;
 
 import org.springframework.http.HttpStatus;
