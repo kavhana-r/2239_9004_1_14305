@@ -1,6 +1,5 @@
 package com.mintmatrix.controller;
 
-import com.mintmatrix.dto.BudgetRequest;
 import com.mintmatrix.model.Budget;
 import com.mintmatrix.model.User;
 import com.mintmatrix.repository.BudgetRepository;
@@ -64,7 +63,7 @@ public class BudgetController {
 
     @PostMapping
     public ResponseEntity<Budget> createOrUpdateBudget(
-            @RequestBody BudgetRequest budgetRequest,
+            @RequestBody Budget budgetRequest,
             Authentication authentication) {
 
 
