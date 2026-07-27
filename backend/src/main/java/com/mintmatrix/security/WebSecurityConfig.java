@@ -140,7 +140,6 @@ public class WebSecurityConfig {
                                         """
                                         {
                                           "message":"Access Denied",
-                                          "error":"Forbidden"
                                         }
                                         """
                                 );
