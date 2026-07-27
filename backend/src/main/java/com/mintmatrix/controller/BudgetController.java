@@ -63,9 +63,9 @@ public class BudgetController {
 
 
     @PostMapping
-public ResponseEntity<Budget> createOrUpdateBudget(
-        @RequestBody BudgetRequest request,
-        Authentication authentication) {
+    public ResponseEntity<Budget> createOrUpdateBudget(
+            @RequestBody BudgetRequest budgetRequest,
+            Authentication authentication) {
 
 
         User user =
