@@ -29,7 +29,7 @@ public class Budget {
     private Integer year;
     
 
-    @Json
+    
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
