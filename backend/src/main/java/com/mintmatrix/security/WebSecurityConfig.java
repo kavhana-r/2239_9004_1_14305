@@ -75,7 +75,7 @@ public class WebSecurityConfig {
         "/v3/api-docs/**",
         "/error"
 ).permitAll()
- .anyRequest().permitAll()
+ .anyRequest().authenticated()
                 )
 
                 .addFilterBefore(

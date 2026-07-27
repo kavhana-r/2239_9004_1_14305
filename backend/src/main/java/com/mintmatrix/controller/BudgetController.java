@@ -7,7 +7,7 @@ import com.mintmatrix.repository.UserRepository;
 
 import org.springframework.http.ResponseEntity;
 
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/budgets")
-// @PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasRole('USER')")
 public class BudgetController {
 
 

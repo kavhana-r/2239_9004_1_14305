@@ -5,7 +5,7 @@ import com.mintmatrix.repository.CategoryRepository;
 
 import org.springframework.http.ResponseEntity;
 
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +38,7 @@ public class CategoryController {
 
 
     @PostMapping
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(
             @RequestBody Category category) {
 
@@ -53,7 +53,7 @@ public class CategoryController {
 
 
     @DeleteMapping("/{id}")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteCategory(
             @PathVariable Long id) {
 

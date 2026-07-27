@@ -4,7 +4,7 @@ import com.mintmatrix.model.Currency;
 import com.mintmatrix.repository.CurrencyRepository;
 
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class CurrencyController {
 
 
     @PostMapping
-//     @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Currency> createCurrency(
             @RequestBody Currency currency) {
 

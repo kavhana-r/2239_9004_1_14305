@@ -10,7 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
-// @PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasRole('USER')")
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -40,7 +40,7 @@ public class TransactionController {
     }
 
     @GetMapping
-//     @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Transaction>> getAllTransactions(
             Authentication authentication) {
 
@@ -50,7 +50,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{id}")
-//     @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Transaction> getTransactionById(
             @PathVariable Long id) {
 
@@ -62,7 +62,7 @@ public class TransactionController {
     }
 
     @PostMapping
-//     @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createTransaction(
             @Valid
             @RequestBody TransactionRequest request,
@@ -78,7 +78,7 @@ public class TransactionController {
     }
 
     @PutMapping("/{id}")
-//     @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> updateTransaction(
             @PathVariable Long id,
             @Valid
@@ -95,7 +95,7 @@ public class TransactionController {
     }
 
     @DeleteMapping("/{id}")
-//     @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> deleteTransaction(
             @PathVariable Long id,
             Authentication authentication) {
