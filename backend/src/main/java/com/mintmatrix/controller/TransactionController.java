@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
-@PreAuthorize("hasRole('USER')")
+// @PreAuthorize("hasRole('USER')")
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -40,7 +40,7 @@ public class TransactionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('USER')")
+//     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Transaction>> getAllTransactions(
             Authentication authentication) {
 
@@ -50,7 +50,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER')")
+//     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Transaction> getTransactionById(
             @PathVariable Long id) {
 
@@ -62,7 +62,7 @@ public class TransactionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
+//     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> createTransaction(
             @Valid
             @RequestBody TransactionRequest request,
