@@ -18,17 +18,13 @@ public class SwaggerConfig {
         final String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
-
                 .info(new Info()
                         .title("MintMatrix API")
                         .version("1.0")
                         .description("Multi-Currency Budget Analytics Platform"))
-
                 .addSecurityItem(
-                        new SecurityRequirement()
-                                .addList(securitySchemeName)
+                        new SecurityRequirement().addList(securitySchemeName)
                 )
-
                 .components(
                         new Components()
                                 .addSecuritySchemes(
