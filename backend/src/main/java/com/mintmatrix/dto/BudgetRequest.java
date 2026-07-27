@@ -3,6 +3,7 @@ package com.mintmatrix.dto;
 public class BudgetRequest {
 
     private Double limitAmount;
+    private Double spentAmount;
     private Integer month;
     private Integer year;
     private Long categoryId;
@@ -16,6 +17,14 @@ public class BudgetRequest {
 
     public void setLimitAmount(Double limitAmount) {
         this.limitAmount = limitAmount;
+    }
+
+    public Double getSpentAmount() {
+        return spentAmount;
+    }
+
+    public void setSpentAmount(Double spentAmount) {
+        this.spentAmount = spentAmount;
     }
 
     public Integer getMonth() {
