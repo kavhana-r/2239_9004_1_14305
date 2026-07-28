@@ -107,4 +107,5 @@ public class Budget {
     public void setCategory(Category category) {
         this.category = category;
     }
+    
 }
