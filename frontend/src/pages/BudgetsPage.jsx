@@ -3,15 +3,16 @@ import {
   Button,
   Card,
   Col,
-  Form,
   InputNumber,
   Modal,
   Progress,
   Row,
   Select,
   Typography,
+  Empty,
   message,
 } from "antd";
+
 import { PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -34,125 +35,230 @@ const months = [
 
 function BudgetsPage() {
   const [budgets, setBudgets] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [form] = Form.useForm();
-
-  const getConfig = () => ({
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
+  const [formData, setFormData] = useState({
+    month: "January",
+    year: new Date().getFullYear(),
+    limitAmount: null,
   });
-
-  const fetchBudgets = async () => {
-    try {
-      const response = await axios.get(
-        "/api/budgets",
-        getConfig()
-      );
-
-      setBudgets(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      setBudgets([]);
-      message.error("Unable to load budgets.");
-    }
-  };
 
   useEffect(() => {
     fetchBudgets();
   }, []);
 
-  const handleSubmit = async (values) => {
+  const fetchBudgets = async () => {
     try {
-      await axios.post(
-        "/api/budgets",
-        values,
-        getConfig()
+      setLoading(true);
+
+      const response = await axios.get(
+        "/api/budgets"
       );
 
-      message.success("Budget set successfully");
+      const data = response?.data;
 
-      setModalOpen(false);
-      form.resetFields();
-
-      await fetchBudgets();
+      setBudgets(
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.content)
+          ? data.content
+          : []
+      );
     } catch (error) {
-      message.error("Unable to save budget.");
+      setBudgets([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getMonthName = (month) => {
-    return months[Number(month) - 1] || month;
+  const openModal = () => {
+    setFormData({
+      month: "January",
+      year: new Date().getFullYear(),
+      limitAmount: null,
+    });
+
+    setModalOpen(true);
   };
 
-  const getProgressStatus = (percentage) => {
-    if (percentage >= 100) return "exception";
-    if (percentage >= 80) return "active";
+  const handleSubmit = async () => {
+    if (!formData.month) {
+      message.error("Month is required");
+      return;
+    }
+
+    if (!formData.year) {
+      message.error("Year is required");
+      return;
+    }
+
+    if (
+      formData.limitAmount === null ||
+      Number(formData.limitAmount) < 1
+    ) {
+      message.error(
+        "Limit amount must be at least 1"
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await axios.post("/api/budgets", {
+        month: formData.month,
+        year: Number(formData.year),
+        limitAmount: Number(
+          formData.limitAmount
+        ),
+      });
+
+      message.success(
+        "Budget set successfully"
+      );
+
+      setModalOpen(false);
+
+      await fetchBudgets();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to set budget."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getSpent = (budget) =>
+    Number(
+      budget?.spentAmount ??
+        budget?.spent ??
+        budget?.totalSpent ??
+        0
+    );
+
+  const getLimit = (budget) =>
+    Number(
+      budget?.limitAmount ??
+        budget?.amount ??
+        budget?.limit ??
+        0
+    );
+
+  const getPercent = (budget) => {
+    const limit = getLimit(budget);
+
+    if (limit <= 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (getSpent(budget) / limit) * 100
+    );
+  };
+
+  const getProgressStatus = (percent) => {
+    if (percent >= 100) {
+      return "exception";
+    }
+
+    if (percent >= 80) {
+      return "active";
+    }
+
     return "success";
   };
 
   return (
     <div>
-      <Row justify="space-between" align="middle">
-        <Col>
+      <div className="page-header">
+        <div>
           <Title level={2}>Budget Planning</Title>
-        </Col>
-
-        <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              form.resetFields();
-              setModalOpen(true);
-            }}
-          >
-            Set Monthly Budget
-          </Button>
-        </Col>
-      </Row>
-
-      {budgets.length === 0 ? (
-        <Card style={{ marginTop: 25 }}>
-          <Text>
-            No budgets set yet. Start by setting a monthly limit.
+          <Text type="secondary">
+            Set monthly spending limits and monitor your progress.
           </Text>
+        </div>
+
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openModal}
+        >
+          Set Monthly Budget
+        </Button>
+      </div>
+
+      {budgets.length === 0 && !loading ? (
+        <Card>
+          <Empty description="No budgets set yet. Start by setting a monthly limit." />
         </Card>
       ) : (
-        <Row gutter={[20, 20]} style={{ marginTop: 25 }}>
-          {budgets.map((budget) => {
-            const spent = Number(budget.spentAmount || 0);
-            const limit = Number(budget.limitAmount || 0);
-
-            const percentage =
-              limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-
-            const overBudget = limit > 0 && spent >= limit;
+        <Row gutter={[20, 20]}>
+          {budgets.map((budget, index) => {
+            const spent = getSpent(budget);
+            const limit = getLimit(budget);
+            const percent = getPercent(budget);
 
             return (
-              <Col xs={24} md={12} lg={8} key={budget.id}>
+              <Col
+                xs={24}
+                sm={12}
+                lg={8}
+                key={budget?.id || index}
+              >
                 <Card
-                  title={`${getMonthName(budget.month)} ${budget.year}`}
+                  title={`${budget?.month || ""} ${
+                    budget?.year || ""
+                  }`}
+                  loading={loading}
                 >
-                  <div style={{ marginBottom: 10 }}>
-                    <Text>
-                      Spent: <strong>{spent.toFixed(2)}</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text>Spent</Text>
+                    <Text strong>
+                      ${spent.toFixed(2)}
                     </Text>
                   </div>
 
-                  <div style={{ marginBottom: 10 }}>
-                    <Text>
-                      Limit: <strong>{limit.toFixed(2)}</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text>Limit</Text>
+                    <Text strong>
+                      ${limit.toFixed(2)}
                     </Text>
                   </div>
 
                   <Progress
-                    percent={Number(percentage.toFixed(1))}
-                    status={getProgressStatus(percentage)}
+                    percent={Math.min(
+                      percent,
+                      100
+                    )}
+                    status={getProgressStatus(
+                      percent
+                    )}
                   />
 
-                  {overBudget && (
-                    <Text type="danger" strong>
+                  {percent >= 100 && (
+                    <Text
+                      type="danger"
+                      strong
+                    >
                       Over budget!
                     </Text>
                   )}
@@ -164,72 +270,71 @@ function BudgetsPage() {
       )}
 
       <Modal
-        title="Set Monthly Budget"
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
+        title="Set Monthly Budget"
+        onCancel={() =>
+          setModalOpen(false)
+        }
+        onOk={handleSubmit}
+        confirmLoading={saving}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
-          <Form.Item
-            label="Month"
-            name="month"
-            rules={[
-              {
-                required: true,
-                message: "Month is required",
-              },
-            ]}
-          >
-            <Select placeholder="Select month">
-              {months.map((month, index) => (
-                <Select.Option
-                  key={month}
-                  value={index + 1}
-                >
-                  {month}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+        <div style={{ marginTop: 10 }}>
+          <label>Month</label>
 
-          <Form.Item
-            label="Year"
-            name="year"
-            rules={[
-              {
-                required: true,
-                message: "Year is required",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={2020}
-              max={2100}
-            />
-          </Form.Item>
+          <Select
+            value={formData.month}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                month: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+            options={months.map((month) => ({
+              value: month,
+              label: month,
+            }))}
+          />
 
-          <Form.Item
-            label="Limit Amount"
-            name="limitAmount"
-            rules={[
-              {
-                required: true,
-                message: "Limit amount is required",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={1}
-              precision={2}
-            />
-          </Form.Item>
-        </Form>
+          <label>Year</label>
+
+          <InputNumber
+            value={formData.year}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                year: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
+
+          <label>Limit Amount</label>
+
+          <InputNumber
+            min={1}
+            precision={2}
+            value={formData.limitAmount}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                limitAmount: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+            }}
+          />
+        </div>
       </Modal>
     </div>
   );

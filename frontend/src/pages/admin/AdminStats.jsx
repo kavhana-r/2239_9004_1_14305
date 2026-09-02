@@ -6,16 +6,19 @@ import {
   Row,
   Statistic,
   Typography,
-  message,
+  Alert,
+  Spin,
 } from "antd";
+
 import {
-  TeamOutlined,
+  UserOutlined,
   TransactionOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
+
 import axios from "axios";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 function AdminStats() {
   const [stats, setStats] = useState({
@@ -23,26 +26,61 @@ function AdminStats() {
     totalTransactions: 0,
   });
 
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await axios.get(
-          "/api/admin/stats",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-
-        setStats(response.data || {});
-      } catch (error) {
-        message.error("Unable to load system statistics.");
-      }
-    };
-
     fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axios.get(
+        "/api/admin/stats"
+      );
+
+      const data = response?.data || {};
+
+      setStats({
+        totalUsers: Number(
+          data.totalUsers ??
+            data.totalRegisteredUsers ??
+            0
+        ),
+        totalTransactions: Number(
+          data.totalTransactions ??
+            data.totalTransactionsProcessed ??
+            0
+        ),
+      });
+    } catch (error) {
+      setError(
+        error?.response?.data?.message ||
+          "Unable to load system statistics."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: 350,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -50,13 +88,22 @@ function AdminStats() {
         System Statistics & Analytics
       </Title>
 
+      {error && (
+        <Alert
+          type="warning"
+          message={error}
+          showIcon
+          style={{ marginBottom: 20 }}
+        />
+      )}
+
       <Row gutter={[20, 20]}>
         <Col xs={24} md={12}>
           <Card>
             <Statistic
               title="Total Registered Users"
-              value={stats.totalUsers || 0}
-              prefix={<TeamOutlined />}
+              value={stats.totalUsers}
+              prefix={<UserOutlined />}
             />
           </Card>
         </Col>
@@ -65,7 +112,7 @@ function AdminStats() {
           <Card>
             <Statistic
               title="Total Transactions Processed"
-              value={stats.totalTransactions || 0}
+              value={stats.totalTransactions}
               prefix={<TransactionOutlined />}
             />
           </Card>
@@ -73,8 +120,12 @@ function AdminStats() {
       </Row>
 
       <Card
-        title="System Reports"
-        style={{ marginTop: 25 }}
+        title={
+          <span>
+            <BarChartOutlined /> System Reports
+          </span>
+        }
+        style={{ marginTop: 24 }}
       >
         <List
           dataSource={[
@@ -84,8 +135,7 @@ function AdminStats() {
           ]}
           renderItem={(item) => (
             <List.Item>
-              <BarChartOutlined style={{ marginRight: 10 }} />
-              {item}
+              <Text>{item}</Text>
             </List.Item>
           )}
         />

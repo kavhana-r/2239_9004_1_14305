@@ -4,17 +4,18 @@ import {
   Card,
   Col,
   DatePicker,
-  Form,
   Input,
   InputNumber,
   Modal,
   Popconfirm,
   Progress,
   Row,
-  Typography,
-  message,
   Tag,
+  Typography,
+  Empty,
+  message,
 } from "antd";
+
 import { PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -23,203 +24,327 @@ const { Title, Text } = Typography;
 
 function GoalsPage() {
   const [goals, setGoals] = useState([]);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [fundOpen, setFundOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const [createForm] = Form.useForm();
-  const [fundForm] = Form.useForm();
+  const [createModalOpen, setCreateModalOpen] =
+    useState(false);
 
-  const config = () => ({
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
+  const [fundModalOpen, setFundModalOpen] =
+    useState(false);
+
+  const [selectedGoal, setSelectedGoal] =
+    useState(null);
+
+  const [saving, setSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    title: "",
+    targetAmount: null,
+    deadline: null,
   });
 
-  const fetchGoals = async () => {
-    try {
-      const response = await axios.get(
-        "/api/goals",
-        config()
-      );
-
-      setGoals(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      setGoals([]);
-      message.error("Unable to load savings goals.");
-    }
-  };
+  const [fundAmount, setFundAmount] =
+    useState(null);
 
   useEffect(() => {
     fetchGoals();
   }, []);
 
-  const createGoal = async (values) => {
+  const fetchGoals = async () => {
     try {
-      const payload = {
-        title: values.title,
-        targetAmount: values.targetAmount,
-        currentAmount: 0,
-        deadline: values.deadline
-          ? values.deadline.format("YYYY-MM-DD")
-          : null,
-      };
+      setLoading(true);
 
-      await axios.post(
-        "/api/goals",
-        payload,
-        config()
+      const response = await axios.get(
+        "/api/goals"
       );
 
-      message.success("Goal created successfully");
+      const data = response?.data;
 
-      setCreateOpen(false);
-      createForm.resetFields();
+      setGoals(
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.content)
+          ? data.content
+          : []
+      );
+    } catch (error) {
+      setGoals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSavedAmount = (goal) =>
+    Number(
+      goal?.savedAmount ??
+        goal?.currentAmount ??
+        0
+    );
+
+  const getTargetAmount = (goal) =>
+    Number(
+      goal?.targetAmount ?? 0
+    );
+
+  const getProgress = (goal) => {
+    const target = getTargetAmount(goal);
+
+    if (target <= 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (getSavedAmount(goal) / target) * 100
+    );
+  };
+
+  const openCreateModal = () => {
+    setFormData({
+      title: "",
+      targetAmount: null,
+      deadline: null,
+    });
+
+    setCreateModalOpen(true);
+  };
+
+  const handleCreate = async () => {
+    if (!formData.title.trim()) {
+      message.error("Title is required");
+      return;
+    }
+
+    if (
+      formData.targetAmount === null ||
+      Number(formData.targetAmount) <= 0
+    ) {
+      message.error(
+        "Target amount must be greater than 0"
+      );
+      return;
+    }
+
+    if (!formData.deadline) {
+      message.error("Deadline is required");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await axios.post("/api/goals", {
+        title: formData.title.trim(),
+        targetAmount: Number(
+          formData.targetAmount
+        ),
+        deadline: dayjs(
+          formData.deadline
+        ).format("YYYY-MM-DD"),
+        savedAmount: 0,
+      });
+
+      message.success(
+        "Goal created successfully"
+      );
+
+      setCreateModalOpen(false);
 
       await fetchGoals();
     } catch (error) {
-      message.error("Unable to create goal.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to create goal."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
   const openFundModal = (goal) => {
     setSelectedGoal(goal);
-    fundForm.resetFields();
-    setFundOpen(true);
+    setFundAmount(null);
+    setFundModalOpen(true);
   };
 
-  const addFunds = async (values) => {
-    if (!selectedGoal) return;
+  const handleAddFunds = async () => {
+    if (
+      fundAmount === null ||
+      Number(fundAmount) <= 0
+    ) {
+      message.error(
+        "Fund amount must be greater than 0"
+      );
+      return;
+    }
 
     try {
+      setSaving(true);
+
       await axios.put(
-        `/api/goals/${selectedGoal.id}/add-funds?amount=${values.amount}`,
-        {},
-        config()
+        `/api/goals/${selectedGoal.id}/add-funds?amount=${Number(
+          fundAmount
+        )}`
       );
 
-      message.success("Funds added to goal");
+      message.success(
+        "Funds added to goal"
+      );
 
-      setFundOpen(false);
-      setSelectedGoal(null);
+      setFundModalOpen(false);
 
       await fetchGoals();
     } catch (error) {
-      message.error("Unable to add funds.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to add funds."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  const deleteGoal = async (id) => {
+  const handleDelete = async (goal) => {
     try {
       await axios.delete(
-        `/api/goals/${id}`,
-        config()
+        `/api/goals/${goal.id}`
       );
 
       message.success("Goal deleted");
 
       await fetchGoals();
     } catch (error) {
-      message.error("Unable to delete goal.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to delete goal."
+      );
     }
   };
 
   return (
     <div>
-      <Row justify="space-between" align="middle">
-        <Col>
+      <div className="page-header">
+        <div>
           <Title level={2}>Savings Goals</Title>
-        </Col>
-
-        <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              createForm.resetFields();
-              setCreateOpen(true);
-            }}
-          >
-            Create New Goal
-          </Button>
-        </Col>
-      </Row>
-
-      {goals.length === 0 ? (
-        <Card style={{ marginTop: 25 }}>
-          <Text>
-            No savings goals yet. Set a target and start saving!
+          <Text type="secondary">
+            Set targets and build your savings.
           </Text>
+        </div>
+
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openCreateModal}
+        >
+          Create New Goal
+        </Button>
+      </div>
+
+      {goals.length === 0 && !loading ? (
+        <Card>
+          <Empty description="No savings goals yet. Set a target and start saving!" />
         </Card>
       ) : (
-        <Row gutter={[20, 20]} style={{ marginTop: 25 }}>
-          {goals.map((goal) => {
-            const target = Number(goal.targetAmount || 0);
-            const saved = Number(
-              goal.currentAmount ?? goal.savedAmount ?? 0
-            );
+        <Row gutter={[20, 20]}>
+          {goals.map((goal, index) => {
+            const saved =
+              getSavedAmount(goal);
 
-            const percentage =
-              target > 0 ? Math.min((saved / target) * 100, 100) : 0;
+            const target =
+              getTargetAmount(goal);
 
-            const achieved =
-              target > 0 && saved > target;
+            const progress =
+              getProgress(goal);
 
             return (
-              <Col xs={24} md={12} lg={8} key={goal.id}>
-                <Card title={goal.title}>
-                  <p>
-                    Target: <strong>{target.toFixed(2)}</strong>
-                  </p>
+              <Col
+                xs={24}
+                sm={12}
+                lg={8}
+                key={goal?.id || index}
+              >
+                <Card loading={loading}>
+                  <Title level={4}>
+                    {goal?.title}
+                  </Title>
 
-                  <p>
-                    Saved: <strong>{saved.toFixed(2)}</strong>
-                  </p>
+                  <div className="goal-row">
+                    <Text>
+                      Target Amount
+                    </Text>
 
-                  <p>
-                    Deadline:{" "}
-                    {goal.deadline
-                      ? dayjs(goal.deadline).format("DD MMM YYYY")
-                      : "-"}
-                  </p>
+                    <Text strong>
+                      ${target.toFixed(2)}
+                    </Text>
+                  </div>
+
+                  <div className="goal-row">
+                    <Text>
+                      Saved Amount
+                    </Text>
+
+                    <Text strong>
+                      ${saved.toFixed(2)}
+                    </Text>
+                  </div>
+
+                  <div className="goal-row">
+                    <Text>Deadline</Text>
+
+                    <Text>
+                      {goal?.deadline
+                        ? dayjs(
+                            goal.deadline
+                          ).format(
+                            "DD MMM YYYY"
+                          )
+                        : "-"}
+                    </Text>
+                  </div>
 
                   <Progress
-                    percent={Number(percentage.toFixed(1))}
-                    status={
-                      achieved ? "success" : "active"
-                    }
+                    percent={Math.min(
+                      progress,
+                      100
+                    )}
                   />
 
-                  {achieved && (
-                    <div style={{ marginBottom: 15 }}>
-                      <Tag color="green">
-                        Goal Achieved!
-                      </Tag>
-                    </div>
+                  {progress > 100 && (
+                    <Tag
+                      color="green"
+                      style={{
+                        marginBottom: 12,
+                      }}
+                    >
+                      Goal Achieved!
+                    </Tag>
                   )}
 
-                  <Row gutter={10}>
-                    <Col flex="auto">
-                      <Button
-                        type="primary"
-                        block
-                        onClick={() => openFundModal(goal)}
-                      >
-                        Add Funds
-                      </Button>
-                    </Col>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                    }}
+                  >
+                    <Button
+                      type="primary"
+                      onClick={() =>
+                        openFundModal(goal)
+                      }
+                    >
+                      Add Funds
+                    </Button>
 
-                    <Col>
-                      <Popconfirm
-                        title="Delete this goal?"
-                        onConfirm={() => deleteGoal(goal.id)}
-                      >
-                        <Button danger>
-                          Delete
-                        </Button>
-                      </Popconfirm>
-                    </Col>
-                  </Row>
+                    <Popconfirm
+                      title="Delete this goal?"
+                      onConfirm={() =>
+                        handleDelete(goal)
+                      }
+                    >
+                      <Button danger>
+                        Delete
+                      </Button>
+                    </Popconfirm>
+                  </div>
                 </Card>
               </Col>
             );
@@ -227,94 +352,97 @@ function GoalsPage() {
         </Row>
       )}
 
+      {/* Create Goal Modal */}
       <Modal
+        open={createModalOpen}
         title="Create New Goal"
-        open={createOpen}
-        onCancel={() => setCreateOpen(false)}
-        onOk={() => createForm.submit()}
+        onCancel={() =>
+          setCreateModalOpen(false)
+        }
+        onOk={handleCreate}
+        confirmLoading={saving}
       >
-        <Form
-          form={createForm}
-          layout="vertical"
-          onFinish={createGoal}
-        >
-          <Form.Item
-            label="Title"
-            name="title"
-            rules={[
-              {
-                required: true,
-                message: "Goal title is required",
-              },
-            ]}
-          >
-            <Input placeholder="e.g., New Car, Vacation" />
-          </Form.Item>
+        <div style={{ marginTop: 10 }}>
+          <label>Title</label>
 
-          <Form.Item
-            label="Target Amount"
-            name="targetAmount"
-            rules={[
-              {
-                required: true,
-                message: "Target amount is required",
-              },
-            ]}
-          >
-            <InputNumber
-              min={0.01}
-              precision={2}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
+          <Input
+            placeholder="e.g., New Car, Vacation"
+            value={formData.title}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                title: e.target.value,
+              })
+            }
+            style={{
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
 
-          <Form.Item
-            label="Deadline"
-            name="deadline"
-            rules={[
-              {
-                required: true,
-                message: "Deadline is required",
-              },
-            ]}
-          >
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
-        </Form>
+          <label>Target Amount</label>
+
+          <InputNumber
+            min={0.01}
+            precision={2}
+            value={formData.targetAmount}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                targetAmount: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
+
+          <label>Deadline</label>
+
+          <DatePicker
+            value={formData.deadline}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                deadline: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+            }}
+          />
+        </div>
       </Modal>
 
+      {/* Add Funds Modal */}
       <Modal
-        title={
-          selectedGoal
-            ? `Add Funds to ${selectedGoal.title}`
-            : "Add Funds"
+        open={fundModalOpen}
+        title={`Add Funds to ${
+          selectedGoal?.title || ""
+        }`}
+        onCancel={() =>
+          setFundModalOpen(false)
         }
-        open={fundOpen}
-        onCancel={() => setFundOpen(false)}
-        onOk={() => fundForm.submit()}
+        onOk={handleAddFunds}
+        confirmLoading={saving}
       >
-        <Form
-          form={fundForm}
-          layout="vertical"
-          onFinish={addFunds}
-        >
-          <Form.Item
-            label="Amount"
-            name="amount"
-            rules={[
-              {
-                required: true,
-                message: "Amount is required",
-              },
-            ]}
-          >
-            <InputNumber
-              min={0.01}
-              precision={2}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-        </Form>
+        <div style={{ marginTop: 10 }}>
+          <label>Amount</label>
+
+          <InputNumber
+            min={0.01}
+            precision={2}
+            value={fundAmount}
+            onChange={setFundAmount}
+            style={{
+              width: "100%",
+              marginTop: 6,
+            }}
+          />
+        </div>
       </Modal>
     </div>
   );
