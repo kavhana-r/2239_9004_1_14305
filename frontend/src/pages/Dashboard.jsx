@@ -65,10 +65,14 @@ function Dashboard() {
     switch (currency) {
       case "INR":
         return "₹";
+
       case "EUR":
         return "€";
+
       case "GBP":
         return "£";
+
+      case "USD":
       default:
         return "$";
     }
@@ -93,13 +97,16 @@ function Dashboard() {
 
   return (
     <div>
+      {/* Page Heading */}
       <div style={{ marginBottom: 24 }}>
         <Title level={2}>Financial Overview</Title>
+
         <Text type="secondary">
           Track your financial performance at a glance.
         </Text>
       </div>
 
+      {/* Error Message */}
       {error && (
         <Alert
           message={error}
@@ -110,7 +117,9 @@ function Dashboard() {
         />
       )}
 
+      {/* Statistics */}
       <Row gutter={[20, 20]}>
+        {/* Total Balance */}
         <Col xs={24} md={8}>
           <Card>
             <Statistic
@@ -121,11 +130,18 @@ function Dashboard() {
               valueStyle={{
                 fontWeight: 700,
               }}
-              prefix={<WalletOutlined />}
+            />
+
+            <WalletOutlined
+              style={{
+                fontSize: 22,
+                marginTop: 10,
+              }}
             />
           </Card>
         </Col>
 
+        {/* Monthly Income */}
         <Col xs={24} md={8}>
           <Card>
             <Statistic
@@ -136,11 +152,18 @@ function Dashboard() {
               valueStyle={{
                 fontWeight: 700,
               }}
-              suffix={<ArrowUpOutlined />}
+            />
+
+            <ArrowUpOutlined
+              style={{
+                fontSize: 22,
+                marginTop: 10,
+              }}
             />
           </Card>
         </Col>
 
+        {/* Monthly Expenses */}
         <Col xs={24} md={8}>
           <Card>
             <Statistic
@@ -151,7 +174,13 @@ function Dashboard() {
               valueStyle={{
                 fontWeight: 700,
               }}
-              suffix={<ArrowDownOutlined />}
+            />
+
+            <ArrowDownOutlined
+              style={{
+                fontSize: 22,
+                marginTop: 10,
+              }}
             />
           </Card>
         </Col>
