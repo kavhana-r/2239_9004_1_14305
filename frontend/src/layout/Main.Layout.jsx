@@ -1,287 +1,452 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
-  Layout,
-  Menu,
   Button,
-  Tag,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  DatePicker,
+  Table,
+  message,
   Space,
 } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 
-import {
-  DashboardOutlined,
-  TransactionOutlined,
-  WalletOutlined,
-  TrophyOutlined,
-  TeamOutlined,
-  DollarOutlined,
-  TagsOutlined,
-  BarChartOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+const { TextArea } = Input;
 
-import {
-  Link,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+function TransactionsPage() {
+  const [form] = Form.useForm();
 
-import {
-  useDispatch,
-  useSelector,
-} from "react-redux";
+  const [transactions, setTransactions] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [categories, setCategories] = useState([]);
 
-import {
-  logout,
-} from "../store/slices/authSlice";
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [transactionType, setTransactionType] = useState(null);
+  const [search, setSearch] = useState("");
 
-const { Header, Sider, Content } = Layout;
+  const getConfig = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+    },
+  });
 
-export default function MainLayout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
 
-  const user = useSelector(
-    (state) => state.auth.user
-  );
+      const response = await axios.get(
+        "/api/transactions",
+        getConfig()
+      );
 
-  const role = String(
-    user?.role || "ROLE_USER"
-  ).toUpperCase();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
 
-  const isAdmin = role.includes("ADMIN");
+      setTransactions(data);
+    } catch (error) {
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const fetchCurrencies = async () => {
+    try {
+      const response = await axios.get(
+        "/api/currencies",
+        getConfig()
+      );
 
-    navigate("/login", {
-      replace: true,
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      setCurrencies(data);
+    } catch (error) {
+      setCurrencies([]);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(
+        "/api/categories",
+        getConfig()
+      );
+
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      setCategories(data);
+    } catch (error) {
+      setCategories([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    fetchCurrencies();
+    fetchCategories();
+  }, []);
+
+  const openAddModal = () => {
+    setEditingTransaction(null);
+    setTransactionType(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const openEditModal = (record) => {
+    setEditingTransaction(record);
+    setTransactionType(record.transactionType);
+
+    form.setFieldsValue({
+      title: record.title,
+      transactionType: record.transactionType,
+      amount: record.amount,
+      currencyCode: record.currencyCode,
+      categoryId: record.categoryId,
+      transactionDate: record.transactionDate
+        ? dayjs(record.transactionDate)
+        : null,
+      note: record.note,
+    });
+
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async (values) => {
+    const payload = {
+      ...values,
+      transactionDate: values.transactionDate
+        ? values.transactionDate.format("YYYY-MM-DD")
+        : null,
+    };
+
+    try {
+      if (editingTransaction) {
+        await axios.put(
+          `/api/transactions/${editingTransaction.id}`,
+          payload,
+          getConfig()
+        );
+
+        message.success("Transaction updated successfully");
+      } else {
+        await axios.post(
+          "/api/transactions",
+          payload,
+          getConfig()
+        );
+
+        message.success("Transaction created successfully. ");
+      }
+
+      setModalOpen(false);
+      form.resetFields();
+      setEditingTransaction(null);
+      setTransactionType(null);
+
+      await fetchTransactions();
+    } catch (error) {
+      // Prevent API errors such as HTTP 500 from crashing the page.
+    }
+  };
+
+  const handleDelete = (id) => {
+    Modal.confirm({
+      title: "Delete Transaction",
+      content: "Are you sure you want to delete this transaction?",
+      onOk: async () => {
+        try {
+          await axios.delete(
+            `/api/transactions/${id}`,
+            getConfig()
+          );
+
+          message.success("Transaction deleted successfully");
+          await fetchTransactions();
+        } catch (error) {
+          // Gracefully handle errors.
+        }
+      },
     });
   };
 
-  const userMenuItems = [
+  const filteredCategories = categories.filter((category) => {
+    if (!transactionType) return true;
+    return category.type === transactionType;
+  });
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    if (!search.trim()) return true;
+
+    const value = search.toLowerCase();
+
+    return (
+      transaction.title?.toLowerCase().includes(value) ||
+      transaction.note?.toLowerCase().includes(value) ||
+      transaction.currencyCode?.toLowerCase().includes(value)
+    );
+  });
+
+  const columns = [
     {
-      key: "/dashboard",
-      icon: <DashboardOutlined />,
-      label: (
-        <Link to="/dashboard">
-          Dashboard
-        </Link>
-      ),
+      title: "Title",
+      dataIndex: "title",
+      key: "title",
     },
-
     {
-      key: "/transactions",
-      icon: <TransactionOutlined />,
-      label: (
-        <Link to="/transactions">
-          Transactions
-        </Link>
-      ),
+      title: "Type",
+      dataIndex: "transactionType",
+      key: "transactionType",
     },
-
     {
-      key: "/budgets",
-      icon: <WalletOutlined />,
-      label: (
-        <Link to="/budgets">
-          Budgets
-        </Link>
-      ),
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
     },
-
     {
-      key: "/goals",
-      icon: <TrophyOutlined />,
-      label: (
-        <Link to="/goals">
-          Goals
-        </Link>
-      ),
+      title: "Currency",
+      dataIndex: "currencyCode",
+      key: "currencyCode",
     },
-  ];
-
-  const adminMenuItems = [
     {
-      key: "/admin/stats",
-      icon: <BarChartOutlined />,
-      label: (
-        <Link to="/admin/stats">
-          Admin Stats
-        </Link>
-      ),
+      title: "Date",
+      dataIndex: "transactionDate",
+      key: "transactionDate",
     },
-
     {
-      key: "/admin/users",
-      icon: <TeamOutlined />,
-      label: (
-        <Link to="/admin/users">
-          Users
-        </Link>
-      ),
-    },
-
-    {
-      key: "/admin/currencies",
-      icon: <DollarOutlined />,
-      label: (
-        <Link to="/admin/currencies">
-          Currencies
-        </Link>
-      ),
-    },
-
-    {
-      key: "/admin/categories",
-      icon: <TagsOutlined />,
-      label: (
-        <Link to="/admin/categories">
-          Categories
-        </Link>
-      ),
-    },
-  ];
-
-  const menuItems = isAdmin
-    ? [
-        ...userMenuItems,
-        {
-          type: "divider",
-        },
-        ...adminMenuItems,
-      ]
-    : userMenuItems;
-
-  return (
-    <Layout
-      style={{
-        minHeight: "100vh",
-      }}
-    >
-      {/* TOP NAVBAR */}
-
-      <Header
-        style={{
-          height: 64,
-          padding: "0 24px",
-          background: "#ffffff",
-          borderBottom:
-            "1px solid #eeeeee",
-
-          display: "flex",
-          alignItems: "center",
-          justifyContent:
-            "space-between",
-        }}
-      >
-        {/* LOGO */}
-
-        <div
-          style={{
-            fontSize: 23,
-            fontWeight: 700,
-          }}
-        >
-          Mint
-          <span
-            style={{
-              color: "#1677ff",
-            }}
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Space>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => openEditModal(record)}
           >
-            Matrix
-          </span>
-        </div>
-
-        {/* USER AREA */}
-
-        <Space size="middle">
-          <span
-            style={{
-              fontWeight: 500,
-            }}
-          >
-            {user?.username || "User"}
-          </span>
-
-          <Tag
-            color={
-              isAdmin
-                ? "purple"
-                : "blue"
-            }
-          >
-            {isAdmin
-              ? "ADMIN"
-              : "USER"}
-          </Tag>
+            Edit
+          </Button>
 
           <Button
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
           >
-            Logout
+            Delete
           </Button>
         </Space>
-      </Header>
+      ),
+    },
+  ];
 
-      {/* BODY */}
-
-      <Layout>
-
-        {/* SIDEBAR */}
-
-        <Sider
-          width={230}
-          breakpoint="lg"
-          collapsedWidth="0"
-          theme="light"
+  return (
+    <div>
+      <Card>
+        <div
           style={{
-            borderRight:
-              "1px solid #eeeeee",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+            gap: 16,
           }}
         >
-          <div
-            style={{
-              padding: "20px 16px 10px",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#888",
-            }}
-          >
-            MENU
-          </div>
+          <h1>Transactions</h1>
 
-          <Menu
-            mode="inline"
-            theme="light"
-            selectedKeys={[
-              location.pathname,
+          <Space>
+            <Input
+              placeholder="Search transactions"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={openAddModal}
+            >
+              Add Transaction
+            </Button>
+          </Space>
+        </div>
+
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={filteredTransactions}
+          loading={loading}
+        />
+      </Card>
+
+      <Modal
+        title={
+          editingTransaction
+            ? "Edit Transaction"
+            : "Add New Transaction"
+        }
+        open={modalOpen}
+        onCancel={() => {
+          setModalOpen(false);
+          form.resetFields();
+        }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
+          <Form.Item
+            label="Title"
+            name="title"
+            rules={[
+              {
+                required: true,
+                message: "Title is required",
+              },
             ]}
-            items={menuItems}
-            style={{
-              borderRight: 0,
-            }}
-          />
-        </Sider>
-
-        {/* PAGE CONTENT */}
-
-        <Layout>
-          <Content
-            style={{
-              padding: 24,
-              background: "#f5f7fb",
-              minHeight:
-                "calc(100vh - 64px)",
-            }}
           >
-            <Outlet />
-          </Content>
-        </Layout>
+            <Input placeholder="e.g., Grocery Shopping" />
+          </Form.Item>
 
-      </Layout>
-    </Layout>
+          <Form.Item
+            label="Type"
+            name="transactionType"
+            rules={[
+              {
+                required: true,
+                message: "Transaction type is required",
+              },
+            ]}
+          >
+            <Select
+              aria-label="Type"
+              placeholder="Select transaction type"
+              onChange={(value) => {
+                setTransactionType(value);
+                form.setFieldValue("categoryId", undefined);
+              }}
+              options={[
+                {
+                  value: "INCOME",
+                  label: "INCOME",
+                },
+                {
+                  value: "EXPENSE",
+                  label: "EXPENSE",
+                },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Amount"
+            name="amount"
+            rules={[
+              {
+                required: true,
+                message: "Amount is required",
+              },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              min={0}
+              precision={2}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Currency"
+            name="currencyCode"
+            rules={[
+              {
+                required: true,
+                message: "Currency is required",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Select currency"
+              options={currencies.map((currency) => ({
+                value: currency.code,
+                label: `${currency.code} - ${
+                  currency.name || ""
+                }`,
+              }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Category"
+            name="categoryId"
+            rules={[
+              {
+                required: true,
+                message: "Category not selected",
+              },
+            ]}
+          >
+            <Select
+              placeholder="Select category"
+              options={filteredCategories.map((category) => ({
+                value: category.id,
+                label: category.name,
+              }))}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Transaction Date"
+            name="transactionDate"
+            rules={[
+              {
+                required: true,
+                message: "Transaction date is required",
+              },
+            ]}
+          >
+            <DatePicker style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item label="Note" name="note">
+            <TextArea placeholder="Optional notes..." rows={4} />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+              >
+                {editingTransaction ? "Update" : "Create"}
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setModalOpen(false);
+                  form.resetFields();
+                }}
+              >
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
 }
+
+export default TransactionsPage;
