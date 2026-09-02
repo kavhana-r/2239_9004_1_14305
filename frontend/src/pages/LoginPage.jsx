@@ -1,8 +1,23 @@
-import React, { useState } from "react";
-import { Button, Card, Form, Input, Typography, message } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  Typography,
+  message,
+} from "antd";
+
+import {
+  LockOutlined,
+  UserOutlined,
+  LoginOutlined,
+} from "@ant-design/icons";
+
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../store/slices/authSlice";
+import { useNavigate, Link } from "react-router-dom";
+
+import { login, clearError } from "../store/slices/authSlice";
 
 const { Title, Text } = Typography;
 
@@ -10,108 +25,121 @@ function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading } = useSelector((state) => state.auth);
+  const { loading, error, token, user } = useSelector(
+    (state) => state.auth
+  );
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (token && user) {
+      const role = user?.role;
 
-    if (!username || !password) {
-      message.error("Please enter username and password");
+      if (role === "ROLE_ADMIN" || role === "ADMIN") {
+        navigate("/admin/stats", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [token, user, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      const errorMessage =
+        typeof error === "string"
+          ? error
+          : error?.message || "Login failed";
+
+      message.error(errorMessage);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
+
+  const handleSubmit = async () => {
+    if (!username.trim() || !password) {
+      message.error("Please enter username and password.");
       return;
     }
 
     try {
-      const result = await dispatch(
+      await dispatch(
         login({
-          username,
+          username: username.trim(),
           password,
         })
       ).unwrap();
 
       message.success("Login successful");
+    } catch (err) {
+      const errorMessage =
+        typeof err === "string"
+          ? err
+          : err?.message || "Invalid username or password";
 
-      if (result.role === "ROLE_ADMIN") {
-        navigate("/admin/stats");
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (error) {
-      const errorMsg =
-        typeof error === "string"
-          ? error
-          : error?.message || "Invalid username or password";
-
-      message.error(errorMsg);
+      message.error(errorMessage);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "#f0f2f5",
-        padding: 20,
-      }}
-    >
+    <div className="auth-page">
       <Card
-        style={{
-          width: 420,
-          maxWidth: "100%",
-          borderRadius: 12,
-        }}
+        className="auth-card"
+        bordered={false}
+        style={{ maxWidth: 430, width: "100%" }}
       >
-        <Title level={2} style={{ textAlign: "center" }}>
-          MintMatrix
-        </Title>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div className="brand-icon">
+            <LoginOutlined />
+          </div>
 
-        <Text
-          type="secondary"
-          style={{
-            display: "block",
-            textAlign: "center",
-            marginBottom: 25,
-          }}
-        >
-          Multi-Currency Budget Analytics
-        </Text>
+          <Title level={2} style={{ marginBottom: 4 }}>
+            MintMatrix
+          </Title>
 
-        <Form onSubmitCapture={handleSubmit} layout="vertical">
+          <Text type="secondary">
+            Multi-Currency Budget Analytics
+          </Text>
+        </div>
+
+        <Form layout="vertical" onFinish={handleSubmit}>
           <Form.Item label="Username" required>
             <Input
+              prefix={<UserOutlined />}
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
             />
           </Form.Item>
 
           <Form.Item label="Password" required>
             <Input
-              type="password"
+              prefix={<LockOutlined />}
               placeholder="Password"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
             />
           </Form.Item>
 
           <Button
             type="primary"
             htmlType="submit"
-            loading={loading}
             block
             size="large"
+            loading={loading}
           >
             Log in
           </Button>
         </Form>
 
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <Text>Don't have an account? </Text>
+          <Text type="secondary">
+            Don't have an account?{" "}
+          </Text>
+
           <Link to="/register">register now!</Link>
         </div>
       </Card>
