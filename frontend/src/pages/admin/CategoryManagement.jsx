@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
 import {
   Button,
   Card,
@@ -10,155 +8,105 @@ import {
   Popconfirm,
   Select,
   Table,
+  Tag,
+  Typography,
   message,
-  Space,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import axios from "axios";
 
-const getAuthConfig = () => ({
-  headers: {
-    Authorization: `Bearer ${
-      localStorage.getItem("token") || ""
-    }`,
-  },
-});
+const { Title } = Typography;
 
-export default function CategoryManagement() {
+function CategoryManagement() {
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const [form] = Form.useForm();
 
-  // Load categories
-  const loadCategories = async () => {
-    setLoading(true);
+  const config = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 
+  const fetchCategories = async () => {
     try {
       const response = await axios.get(
         "/api/categories",
-        getAuthConfig()
+        config()
       );
 
-      const data = response.data;
-
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else if (Array.isArray(data?.content)) {
-        setCategories(data.content);
-      } else {
-        setCategories([]);
-      }
+      setCategories(
+        Array.isArray(response.data)
+          ? response.data
+          : []
+      );
     } catch (error) {
-      setCategories([]);
-
-      message.error(
-        "Unable to load categories."
-      );
-    } finally {
-      setLoading(false);
+      message.error("Unable to load categories.");
     }
   };
 
   useEffect(() => {
-    loadCategories();
+    fetchCategories();
   }, []);
 
-  // Add category
-  const handleSubmit = async (values) => {
-    setSaving(true);
-
+  const createCategory = async (values) => {
     try {
       await axios.post(
         "/api/categories",
         values,
-        getAuthConfig()
+        config()
       );
 
-      message.success(
-        "Category added successfully."
-      );
+      message.success("Category added");
 
+      setModalOpen(false);
       form.resetFields();
-      setOpen(false);
 
-      await loadCategories();
+      await fetchCategories();
     } catch (error) {
-      message.error(
-        "Unable to add category."
-      );
-    } finally {
-      setSaving(false);
+      message.error("Unable to add category.");
     }
   };
 
-  // Delete category
-  const handleDelete = async (id) => {
+  const deleteCategory = async (id) => {
     try {
       await axios.delete(
         `/api/categories/${id}`,
-        getAuthConfig()
+        config()
       );
 
-      message.success(
-        "Category deleted successfully."
-      );
+      message.success("Category deleted");
 
-      await loadCategories();
+      await fetchCategories();
     } catch (error) {
-      message.error(
-        "Unable to delete category."
-      );
+      message.error("Unable to delete category.");
     }
   };
 
   const columns = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 80,
-    },
-
-    {
-      title: "Category Name",
+      title: "Name",
       dataIndex: "name",
       key: "name",
-      render: (name) =>
-        name || "-",
     },
-
     {
       title: "Type",
       dataIndex: "type",
       key: "type",
       render: (type) => (
-        <span
-          style={{
-            color:
-              type === "INCOME"
-                ? "#16a34a"
-                : "#dc2626",
-            fontWeight: 600,
-          }}
-        >
-          {type || "-"}
-        </span>
+        <Tag color={type === "INCOME" ? "green" : "red"}>
+          {type}
+        </Tag>
       ),
     },
-
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <Popconfirm
-          title="Delete this category?"
-          description="This action cannot be undone."
-          okText="Delete"
-          cancelText="Cancel"
-          onConfirm={() =>
-            handleDelete(record.id)
-          }
+          title="Are you sure to delete this category?"
+          onConfirm={() => deleteCategory(record.id)}
         >
           <Button danger>
             Delete
@@ -170,88 +118,47 @@ export default function CategoryManagement() {
 
   return (
     <div>
-      {/* Header */}
-
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          flexWrap: "wrap",
-          gap: 12,
+          justifyContent: "space-between",
+          marginBottom: 20,
         }}
       >
-        <div>
-          <h1
-            className="page-title"
-            style={{
-              marginBottom: 4,
-            }}
-          >
-            Category Management
-          </h1>
-
-          <p
-            className="page-subtitle"
-            style={{
-              margin: 0,
-              color: "#667085",
-            }}
-          >
-            Manage income and expense
-            categories
-          </p>
-        </div>
+        <Title level={2}>
+          Category Management
+        </Title>
 
         <Button
           type="primary"
+          icon={<PlusOutlined />}
           onClick={() => {
             form.resetFields();
-            setOpen(true);
+            setModalOpen(true);
           }}
         >
           Add Category
         </Button>
       </div>
 
-      {/* Category Table */}
-
       <Card>
         <Table
-          rowKey={(record) =>
-            record.id
-          }
-          loading={loading}
+          rowKey="id"
           columns={columns}
           dataSource={categories}
-          pagination={{
-            pageSize: 10,
-          }}
-          locale={{
-            emptyText:
-              "No categories found",
-          }}
         />
       </Card>
 
-      {/* Add Category Modal */}
-
       <Modal
         title="Add Category"
-        open={open}
-        onCancel={() => {
-          form.resetFields();
-          setOpen(false);
-        }}
-        footer={null}
-        destroyOnClose
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={() => form.submit()}
       >
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSubmit}
+          onFinish={createCategory}
         >
           <Form.Item
             label="Category Name"
@@ -259,20 +166,11 @@ export default function CategoryManagement() {
             rules={[
               {
                 required: true,
-                message:
-                  "Please enter category name",
-              },
-              {
-                min: 2,
-                message:
-                  "Category name must contain at least 2 characters",
+                message: "Category name is required",
               },
             ]}
           >
-            <Input
-              placeholder="Enter category name"
-              size="large"
-            />
+            <Input placeholder="e.g. Salary, Groceries" />
           </Form.Item>
 
           <Form.Item
@@ -281,53 +179,24 @@ export default function CategoryManagement() {
             rules={[
               {
                 required: true,
-                message:
-                  "Please select category type",
+                message: "Type is required",
               },
             ]}
           >
-            <Select
-              size="large"
-              placeholder="Select type"
-              options={[
-                {
-                  value: "INCOME",
-                  label: "INCOME",
-                },
-                {
-                  value: "EXPENSE",
-                  label: "EXPENSE",
-                },
-              ]}
-            />
+            <Select placeholder="Select type">
+              <Select.Option value="INCOME">
+                INCOME
+              </Select.Option>
+
+              <Select.Option value="EXPENSE">
+                EXPENSE
+              </Select.Option>
+            </Select>
           </Form.Item>
-
-          <Space
-            style={{
-              width: "100%",
-              justifyContent:
-                "flex-end",
-            }}
-          >
-            <Button
-              onClick={() => {
-                form.resetFields();
-                setOpen(false);
-              }}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={saving}
-            >
-              Save Category
-            </Button>
-          </Space>
         </Form>
       </Modal>
     </div>
   );
 }
+
+export default CategoryManagement;
