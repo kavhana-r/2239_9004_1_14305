@@ -1,332 +1,200 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
-import axios from "axios";
-
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
+  Col,
   Form,
   InputNumber,
   Modal,
   Progress,
-  Table,
+  Row,
+  Select,
+  Typography,
   message,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import axios from "axios";
 
+const { Title, Text } = Typography;
 
-const auth = () => ({
-  headers: {
-    Authorization:
-      `Bearer ${localStorage.getItem("token") || ""}`,
-  },
-});
+const months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
+function BudgetsPage() {
+  const [budgets, setBudgets] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
-export default function BudgetsPage() {
+  const [form] = Form.useForm();
 
-  const [rows, setRows] =
-    useState([]);
+  const getConfig = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 
-  const [open, setOpen] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-
-  const [form] =
-    Form.useForm();
-
-
-  const load = () => {
-
-    axios
-      .get(
+  const fetchBudgets = async () => {
+    try {
+      const response = await axios.get(
         "/api/budgets",
-        auth()
-      )
+        getConfig()
+      );
 
-      .then((response) => {
-
-        setRows(
-          Array.isArray(
-            response.data
-          )
-            ? response.data
-            : []
-        );
-
-      })
-
-      .catch(() => {
-
-        setError(
-          "Unable to load budgets."
-        );
-
-      });
-
+      setBudgets(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setBudgets([]);
+      message.error("Unable to load budgets.");
+    }
   };
-
 
   useEffect(() => {
-
-    load();
-
+    fetchBudgets();
   }, []);
 
-
-  const submit = async (values) => {
-
-    setLoading(true);
-
-
+  const handleSubmit = async (values) => {
     try {
-
       await axios.post(
         "/api/budgets",
-        {
-          limitAmount:
-            values.limitAmount,
-
-          spentAmount: 0,
-
-          month:
-            values.month,
-
-          year:
-            values.year,
-        },
-        auth()
+        values,
+        getConfig()
       );
 
+      message.success("Budget set successfully");
 
-      message.success(
-        "Budget saved successfully."
-      );
-
-
-      setOpen(false);
-
+      setModalOpen(false);
       form.resetFields();
 
-      load();
-
-
+      await fetchBudgets();
     } catch (error) {
-
-      message.error(
-        error?.response?.data?.message ||
-        "Unable to save budget."
-      );
-
-
-    } finally {
-
-      setLoading(false);
-
+      message.error("Unable to save budget.");
     }
-
   };
 
+  const getMonthName = (month) => {
+    return months[Number(month) - 1] || month;
+  };
 
-  const columns = [
-
-    {
-      title: "Month",
-      dataIndex: "month",
-    },
-
-    {
-      title: "Year",
-      dataIndex: "year",
-    },
-
-    {
-      title: "Limit",
-      dataIndex: "limitAmount",
-
-      render: (value) =>
-        Number(value || 0).toFixed(2),
-    },
-
-    {
-      title: "Spent",
-      dataIndex: "spentAmount",
-
-      render: (value) =>
-        Number(value || 0).toFixed(2),
-    },
-
-    {
-      title: "Usage",
-
-      render: (_, record) => {
-
-        const limit =
-          Number(
-            record.limitAmount || 0
-          );
-
-        const spent =
-          Number(
-            record.spentAmount || 0
-          );
-
-        const percent =
-          limit > 0
-            ? Math.min(
-                100,
-                Math.round(
-                  (spent / limit) * 100
-                )
-              )
-            : 0;
-
-
-        return (
-          <Progress
-            percent={percent}
-          />
-        );
-
-      },
-    },
-
-  ];
-
+  const getProgressStatus = (percentage) => {
+    if (percentage >= 100) return "exception";
+    if (percentage >= 80) return "active";
+    return "success";
+  };
 
   return (
-    <>
+    <div>
+      <Row justify="space-between" align="middle">
+        <Col>
+          <Title level={2}>Budget Planning</Title>
+        </Col>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 18,
-        }}
-      >
+        <Col>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              form.resetFields();
+              setModalOpen(true);
+            }}
+          >
+            Set Monthly Budget
+          </Button>
+        </Col>
+      </Row>
 
-        <div>
+      {budgets.length === 0 ? (
+        <Card style={{ marginTop: 25 }}>
+          <Text>
+            No budgets set yet. Start by setting a monthly limit.
+          </Text>
+        </Card>
+      ) : (
+        <Row gutter={[20, 20]} style={{ marginTop: 25 }}>
+          {budgets.map((budget) => {
+            const spent = Number(budget.spentAmount || 0);
+            const limit = Number(budget.limitAmount || 0);
 
-          <h1 className="page-title">
-            Budgets
-          </h1>
+            const percentage =
+              limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
 
-          <p className="page-subtitle">
-            Set and monitor monthly spending limits
-          </p>
+            const overBudget = limit > 0 && spent >= limit;
 
-        </div>
+            return (
+              <Col xs={24} md={12} lg={8} key={budget.id}>
+                <Card
+                  title={`${getMonthName(budget.month)} ${budget.year}`}
+                >
+                  <div style={{ marginBottom: 10 }}>
+                    <Text>
+                      Spent: <strong>{spent.toFixed(2)}</strong>
+                    </Text>
+                  </div>
 
+                  <div style={{ marginBottom: 10 }}>
+                    <Text>
+                      Limit: <strong>{limit.toFixed(2)}</strong>
+                    </Text>
+                  </div>
 
-        <Button
-          type="primary"
-          onClick={() => {
-            form.resetFields();
-            setOpen(true);
-          }}
-        >
-          Add Budget
-        </Button>
+                  <Progress
+                    percent={Number(percentage.toFixed(1))}
+                    status={getProgressStatus(percentage)}
+                  />
 
-      </div>
-
-
-      {error && (
-        <Alert
-          message={error}
-          type="warning"
-          showIcon
-          style={{
-            marginBottom: 16,
-          }}
-        />
+                  {overBudget && (
+                    <Text type="danger" strong>
+                      Over budget!
+                    </Text>
+                  )}
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
       )}
 
-
-      <Card>
-
-        <Table
-          rowKey={(record) =>
-            `${record.id || record.month}-${record.year}`
-          }
-          dataSource={rows}
-          columns={columns}
-          locale={{
-            emptyText:
-              "No budgets found",
-          }}
-        />
-
-      </Card>
-
-
       <Modal
-        title="Add Budget"
-        open={open}
-        onCancel={() =>
-          setOpen(false)
-        }
-        footer={null}
+        title="Set Monthly Budget"
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={() => form.submit()}
       >
-
         <Form
           form={form}
           layout="vertical"
-          onFinish={submit}
+          onFinish={handleSubmit}
         >
-
-          <Form.Item
-            label="Budget Limit"
-            name="limitAmount"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
-
-            <InputNumber
-              min={0}
-              style={{
-                width: "100%",
-              }}
-              placeholder="Limit amount"
-            />
-
-          </Form.Item>
-
-
           <Form.Item
             label="Month"
             name="month"
             rules={[
               {
                 required: true,
+                message: "Month is required",
               },
             ]}
           >
-
-            <InputNumber
-              min={1}
-              max={12}
-              style={{
-                width: "100%",
-              }}
-              placeholder="1-12"
-            />
-
+            <Select placeholder="Select month">
+              {months.map((month, index) => (
+                <Select.Option
+                  key={month}
+                  value={index + 1}
+                >
+                  {month}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-
 
           <Form.Item
             label="Year"
@@ -334,34 +202,37 @@ export default function BudgetsPage() {
             rules={[
               {
                 required: true,
+                message: "Year is required",
               },
             ]}
           >
-
             <InputNumber
+              style={{ width: "100%" }}
               min={2020}
-              style={{
-                width: "100%",
-              }}
-              placeholder="Year"
+              max={2100}
             />
-
           </Form.Item>
 
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
+          <Form.Item
+            label="Limit Amount"
+            name="limitAmount"
+            rules={[
+              {
+                required: true,
+                message: "Limit amount is required",
+              },
+            ]}
           >
-            Save Budget
-          </Button>
-
+            <InputNumber
+              style={{ width: "100%" }}
+              min={1}
+              precision={2}
+            />
+          </Form.Item>
         </Form>
-
       </Modal>
-
-    </>
+    </div>
   );
 }
+
+export default BudgetsPage;
