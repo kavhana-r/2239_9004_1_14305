@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
-import axios from "axios";
-
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -15,282 +9,190 @@ import {
   Popconfirm,
   Space,
   Table,
+  Typography,
   message,
 } from "antd";
+import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+import axios from "axios";
 
+const { Title } = Typography;
 
-const auth = () => ({
-  headers: {
-    Authorization:
-      `Bearer ${localStorage.getItem("token") || ""}`,
-  },
-});
+function CurrencyManagement() {
+  const [currencies, setCurrencies] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
 
+  const [form] = Form.useForm();
 
-export default function CurrencyManagement() {
+  const config = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 
-  const [rows, setRows] =
-    useState([]);
+  const fetchCurrencies = async () => {
+    try {
+      const response = await axios.get(
+        "/api/currencies",
+        config()
+      );
 
-  const [open, setOpen] =
-    useState(false);
-
-  const [editing, setEditing] =
-    useState(null);
-
-
-  const [form] =
-    Form.useForm();
-
-
-  const load = () => {
-
-    axios
-      .get("/api/currencies")
-
-      .then((response) => {
-
-        setRows(
-          Array.isArray(
-            response.data
-          )
-            ? response.data
-            : []
-        );
-
-      })
-
-      .catch(() => {
-
-        message.error(
-          "Unable to load currencies."
-        );
-
-      });
-
+      setCurrencies(
+        Array.isArray(response.data) ? response.data : []
+      );
+    } catch (error) {
+      message.error("Unable to load currencies.");
+    }
   };
 
-
   useEffect(() => {
-
-    load();
-
+    fetchCurrencies();
   }, []);
 
+  const openCreate = () => {
+    setEditing(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
 
-  const submit = async (values) => {
+  const openEdit = (currency) => {
+    setEditing(currency);
 
+    form.setFieldsValue({
+      code: currency.code,
+      name: currency.name,
+      symbol: currency.symbol,
+      exchangeRate: currency.exchangeRate,
+    });
+
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async (values) => {
     try {
-
       if (editing) {
+        const identifier =
+          editing.id || editing.code;
 
         await axios.put(
-          `/api/currencies/${editing.id}`,
+          `/api/currencies/${identifier}`,
           values,
-          auth()
+          config()
         );
 
-
-        message.success(
-          "Currency updated successfully."
-        );
-
+        message.success("Currency updated");
       } else {
-
         await axios.post(
           "/api/currencies",
           values,
-          auth()
+          config()
         );
 
-
-        message.success(
-          "Currency added successfully."
-        );
-
+        message.success("Currency added");
       }
 
-
-      setOpen(false);
-
+      setModalOpen(false);
       setEditing(null);
-
       form.resetFields();
 
-      load();
-
-
-    } catch {
-
-      message.error(
-        "Currency operation failed."
-      );
-
+      await fetchCurrencies();
+    } catch (error) {
+      message.error("Unable to save currency.");
     }
-
   };
 
-
-  const remove = async (id) => {
-
+  const deleteCurrency = async (currency) => {
     try {
+      const identifier =
+        currency.id || currency.code;
 
       await axios.delete(
-        `/api/currencies/${id}`,
-        auth()
+        `/api/currencies/${identifier}`,
+        config()
       );
 
+      message.success("Currency deleted");
 
-      message.success(
-        "Currency deleted successfully"
-      );
-
-
-      load();
-
-    } catch {
-
-      message.error(
-        "Unable to delete currency."
-      );
-
+      await fetchCurrencies();
+    } catch (error) {
+      message.error("Unable to delete currency.");
     }
-
   };
-
-
-  const edit = (record) => {
-
-    setEditing(record);
-
-    form.setFieldsValue(record);
-
-    setOpen(true);
-
-  };
-
 
   const columns = [
-
     {
       title: "Code",
       dataIndex: "code",
+      key: "code",
     },
-
     {
       title: "Name",
       dataIndex: "name",
+      key: "name",
     },
-
     {
-      title: "Exchange Rate",
-      dataIndex: "exchangeRate",
+      title: "Symbol",
+      dataIndex: "symbol",
+      key: "symbol",
+      render: (symbol) => symbol || "-",
     },
-
+    {
+      title: "Exchange Rate (vs USD)",
+      dataIndex: "exchangeRate",
+      key: "exchangeRate",
+    },
     {
       title: "Actions",
-
+      key: "actions",
       render: (_, record) => (
-
         <Space>
-
           <Button
-            size="small"
-            onClick={() =>
-              edit(record)
-            }
+            icon={<EditOutlined />}
+            onClick={() => openEdit(record)}
           >
             Edit
           </Button>
 
-
           <Popconfirm
-            title="Delete this currency?"
-            onConfirm={() =>
-              remove(
-                record.id ||
-                record.code
-              )
-            }
+            title="Are you sure to delete this currency?"
+            onConfirm={() => deleteCurrency(record)}
           >
-
-            <Button
-              danger
-              size="small"
-            >
+            <Button danger>
               Delete
             </Button>
-
           </Popconfirm>
-
         </Space>
-
       ),
     },
-
   ];
 
-
   return (
-    <>
-
+    <div>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 18,
+          marginBottom: 20,
         }}
       >
-
-        <div>
-
-          <h1 className="page-title">
-            Currency Management
-          </h1>
-
-          <p className="page-subtitle">
-            Manage supported currencies and exchange rates
-          </p>
-
-        </div>
-
+        <Title level={2}>Currency Management</Title>
 
         <Button
           type="primary"
-          onClick={() => {
-
-            setEditing(null);
-
-            form.resetFields();
-
-            setOpen(true);
-
-          }}
+          icon={<PlusOutlined />}
+          onClick={openCreate}
         >
           Add Currency
         </Button>
-
       </div>
 
-
       <Card>
-
         <Table
-          rowKey={(record) =>
-            record.id ||
-            record.code
-          }
-          dataSource={rows}
+          rowKey={(record) => record.id || record.code}
           columns={columns}
-          locale={{
-            emptyText:
-              "No currencies found",
-          }}
+          dataSource={currencies}
         />
-
       </Card>
-
 
       <Modal
         title={
@@ -298,35 +200,27 @@ export default function CurrencyManagement() {
             ? "Edit Currency"
             : "Add Currency"
         }
-        open={open}
-        onCancel={() =>
-          setOpen(false)
-        }
-        footer={null}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={() => form.submit()}
       >
-
         <Form
           form={form}
           layout="vertical"
-          onFinish={submit}
+          onFinish={handleSubmit}
         >
-
           <Form.Item
             label="Code"
             name="code"
             rules={[
               {
                 required: true,
+                message: "Code is required",
               },
             ]}
           >
-
-            <Input
-              placeholder="USD"
-            />
-
+            <Input placeholder="e.g. USD" />
           </Form.Item>
-
 
           <Form.Item
             label="Name"
@@ -334,16 +228,19 @@ export default function CurrencyManagement() {
             rules={[
               {
                 required: true,
+                message: "Name is required",
               },
             ]}
           >
-
-            <Input
-              placeholder="US Dollar"
-            />
-
+            <Input placeholder="e.g. US Dollar" />
           </Form.Item>
 
+          <Form.Item
+            label="Symbol"
+            name="symbol"
+          >
+            <Input placeholder="e.g. $" />
+          </Form.Item>
 
           <Form.Item
             label="Exchange Rate"
@@ -351,33 +248,20 @@ export default function CurrencyManagement() {
             rules={[
               {
                 required: true,
+                message: "Exchange rate is required",
               },
             ]}
           >
-
             <InputNumber
-              min={0}
-              style={{
-                width: "100%",
-              }}
-              placeholder="Exchange rate"
+              step={0.01}
+              precision={2}
+              style={{ width: "100%" }}
             />
-
           </Form.Item>
-
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-          >
-            Save Currency
-          </Button>
-
         </Form>
-
       </Modal>
-
-    </>
+    </div>
   );
 }
+
+export default CurrencyManagement;

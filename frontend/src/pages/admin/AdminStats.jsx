@@ -1,137 +1,97 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
-import axios from "axios";
-
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
   Card,
   Col,
+  List,
   Row,
   Statistic,
+  Typography,
+  message,
 } from "antd";
-
 import {
   TeamOutlined,
   TransactionOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
+import axios from "axios";
 
+const { Title } = Typography;
 
-const auth = () => ({
-  headers: {
-    Authorization:
-      `Bearer ${localStorage.getItem("token") || ""}`,
-  },
-});
-
-
-export default function AdminStats() {
-
-  const [stats, setStats] =
-    useState({
-      totalUsers: 0,
-      totalTransactions: 0,
-    });
-
-
-  const [error, setError] =
-    useState("");
-
+function AdminStats() {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalTransactions: 0,
+  });
 
   useEffect(() => {
-
-    axios
-      .get(
-        "/api/admin/stats",
-        auth()
-      )
-
-      .then((response) => {
-
-        setStats(
-          response.data || {}
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get(
+          "/api/admin/stats",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
         );
 
-      })
+        setStats(response.data || {});
+      } catch (error) {
+        message.error("Unable to load system statistics.");
+      }
+    };
 
-      .catch(() => {
-
-        setError(
-          "Unable to load admin statistics."
-        );
-
-      });
-
+    fetchStats();
   }, []);
 
-
   return (
-    <>
+    <div>
+      <Title level={2}>
+        System Statistics & Analytics
+      </Title>
 
-      <h1 className="page-title">
-        Admin Stats
-      </h1>
-
-      <p className="page-subtitle">
-        System overview
-      </p>
-
-
-      {error && (
-        <Alert
-          message={error}
-          type="warning"
-          showIcon
-          style={{
-            marginBottom: 18,
-          }}
-        />
-      )}
-
-
-      <Row gutter={[18, 18]}>
-
+      <Row gutter={[20, 20]}>
         <Col xs={24} md={12}>
-
           <Card>
-
             <Statistic
-              title="Total Users"
-              value={
-                stats.totalUsers || 0
-              }
-              prefix={
-                <TeamOutlined />
-              }
+              title="Total Registered Users"
+              value={stats.totalUsers || 0}
+              prefix={<TeamOutlined />}
             />
-
           </Card>
-
         </Col>
 
-
         <Col xs={24} md={12}>
-
           <Card>
-
             <Statistic
-              title="Total Transactions"
-              value={
-                stats.totalTransactions || 0
-              }
-              prefix={
-                <TransactionOutlined />
-              }
+              title="Total Transactions Processed"
+              value={stats.totalTransactions || 0}
+              prefix={<TransactionOutlined />}
             />
-
           </Card>
-
         </Col>
-
       </Row>
 
-    </>
+      <Card
+        title="System Reports"
+        style={{ marginTop: 25 }}
+      >
+        <List
+          dataSource={[
+            "User Growth Report",
+            "Transaction Volume Report",
+            "Currency Usage Analytics",
+          ]}
+          renderItem={(item) => (
+            <List.Item>
+              <BarChartOutlined style={{ marginRight: 10 }} />
+              {item}
+            </List.Item>
+          )}
+        />
+      </Card>
+    </div>
   );
 }
+
+export default AdminStats;

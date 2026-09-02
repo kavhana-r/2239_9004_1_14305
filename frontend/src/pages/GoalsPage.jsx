@@ -1,15 +1,8 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
-import axios from "axios";
-
-import dayjs from "dayjs";
-
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Card,
+  Col,
   DatePicker,
   Form,
   Input,
@@ -17,413 +10,246 @@ import {
   Modal,
   Popconfirm,
   Progress,
-  Space,
-  Table,
+  Row,
+  Typography,
   message,
+  Tag,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import axios from "axios";
+import dayjs from "dayjs";
 
+const { Title, Text } = Typography;
 
-const auth = () => ({
-  headers: {
-    Authorization:
-      `Bearer ${localStorage.getItem("token") || ""}`,
-  },
-});
+function GoalsPage() {
+  const [goals, setGoals] = useState([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [fundOpen, setFundOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
 
+  const [createForm] = Form.useForm();
+  const [fundForm] = Form.useForm();
 
-export default function GoalsPage() {
+  const config = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 
-  const [rows, setRows] =
-    useState([]);
-
-  const [open, setOpen] =
-    useState(false);
-
-  const [fundOpen, setFundOpen] =
-    useState(false);
-
-  const [selected, setSelected] =
-    useState(null);
-
-  const [loading, setLoading] =
-    useState(false);
-
-
-  const [form] =
-    Form.useForm();
-
-  const [fundForm] =
-    Form.useForm();
-
-
-  const load = () => {
-
-    axios
-      .get(
+  const fetchGoals = async () => {
+    try {
+      const response = await axios.get(
         "/api/goals",
-        auth()
-      )
+        config()
+      );
 
-      .then((response) => {
-
-        setRows(
-          Array.isArray(
-            response.data
-          )
-            ? response.data
-            : []
-        );
-
-      })
-
-      .catch(() => {
-
-        message.error(
-          "Unable to load goals."
-        );
-
-      });
-
+      setGoals(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setGoals([]);
+      message.error("Unable to load savings goals.");
+    }
   };
 
-
   useEffect(() => {
-
-    load();
-
+    fetchGoals();
   }, []);
 
-
-  const submit = async (values) => {
-
-    setLoading(true);
-
-
+  const createGoal = async (values) => {
     try {
+      const payload = {
+        title: values.title,
+        targetAmount: values.targetAmount,
+        currentAmount: 0,
+        deadline: values.deadline
+          ? values.deadline.format("YYYY-MM-DD")
+          : null,
+      };
 
       await axios.post(
         "/api/goals",
-        {
-          title: values.title,
-
-          targetAmount:
-            values.targetAmount,
-
-          currentAmount: 0,
-
-          savedAmount: 0,
-
-          deadline:
-            values.deadline.format(
-              "YYYY-MM-DD"
-            ),
-        },
-        auth()
+        payload,
+        config()
       );
 
+      message.success("Goal created successfully");
 
-      message.success(
-        "Goal created successfully."
-      );
+      setCreateOpen(false);
+      createForm.resetFields();
 
-
-      setOpen(false);
-
-      form.resetFields();
-
-      load();
-
-
-    } catch {
-
-      message.error(
-        "Unable to create goal."
-      );
-
-    } finally {
-
-      setLoading(false);
-
+      await fetchGoals();
+    } catch (error) {
+      message.error("Unable to create goal.");
     }
-
   };
 
+  const openFundModal = (goal) => {
+    setSelectedGoal(goal);
+    fundForm.resetFields();
+    setFundOpen(true);
+  };
 
   const addFunds = async (values) => {
-
-    setLoading(true);
-
+    if (!selectedGoal) return;
 
     try {
-
       await axios.put(
-        `/api/goals/${selected.id}/add-funds`,
-        null,
-        {
-          ...auth(),
-
-          params: {
-            amount:
-              values.amount,
-          },
-        }
+        `/api/goals/${selectedGoal.id}/add-funds?amount=${values.amount}`,
+        {},
+        config()
       );
 
-
-      message.success(
-        "Funds added successfully."
-      );
-
+      message.success("Funds added to goal");
 
       setFundOpen(false);
+      setSelectedGoal(null);
 
-      fundForm.resetFields();
-
-      load();
-
-
-    } catch {
-
-      message.error(
-        "Unable to add funds."
-      );
-
-    } finally {
-
-      setLoading(false);
-
+      await fetchGoals();
+    } catch (error) {
+      message.error("Unable to add funds.");
     }
-
   };
 
-
-  const remove = async (id) => {
-
+  const deleteGoal = async (id) => {
     try {
-
       await axios.delete(
         `/api/goals/${id}`,
-        auth()
+        config()
       );
 
+      message.success("Goal deleted");
 
-      message.success(
-        "Goal deleted successfully."
-      );
-
-
-      load();
-
-    } catch {
-
-      message.error(
-        "Unable to delete goal."
-      );
-
+      await fetchGoals();
+    } catch (error) {
+      message.error("Unable to delete goal.");
     }
-
   };
 
+  return (
+    <div>
+      <Row justify="space-between" align="middle">
+        <Col>
+          <Title level={2}>Savings Goals</Title>
+        </Col>
 
-  const columns = [
-
-    {
-      title: "Goal",
-      dataIndex: "title",
-    },
-
-    {
-      title: "Target",
-      dataIndex: "targetAmount",
-
-      render: (value) =>
-        Number(value || 0).toFixed(2),
-    },
-
-    {
-      title: "Saved",
-
-      render: (_, record) =>
-        Number(
-          record.currentAmount ??
-          record.savedAmount ??
-          0
-        ).toFixed(2),
-    },
-
-    {
-      title: "Deadline",
-      dataIndex: "deadline",
-    },
-
-    {
-      title: "Progress",
-
-      render: (_, record) => {
-
-        const current =
-          Number(
-            record.currentAmount ??
-            record.savedAmount ??
-            0
-          );
-
-        const target =
-          Number(
-            record.targetAmount || 0
-          );
-
-
-        const percent =
-          target > 0
-            ? Math.min(
-                100,
-                Math.round(
-                  (current / target) * 100
-                )
-              )
-            : 0;
-
-
-        return (
-          <Progress
-            percent={percent}
-          />
-        );
-
-      },
-    },
-
-    {
-      title: "Actions",
-
-      render: (_, record) => (
-
-        <Space>
-
+        <Col>
           <Button
-            size="small"
+            type="primary"
+            icon={<PlusOutlined />}
             onClick={() => {
-
-              setSelected(record);
-
-              fundForm.resetFields();
-
-              setFundOpen(true);
-
+              createForm.resetFields();
+              setCreateOpen(true);
             }}
           >
-            Add Funds
+            Create New Goal
           </Button>
+        </Col>
+      </Row>
 
+      {goals.length === 0 ? (
+        <Card style={{ marginTop: 25 }}>
+          <Text>
+            No savings goals yet. Set a target and start saving!
+          </Text>
+        </Card>
+      ) : (
+        <Row gutter={[20, 20]} style={{ marginTop: 25 }}>
+          {goals.map((goal) => {
+            const target = Number(goal.targetAmount || 0);
+            const saved = Number(
+              goal.currentAmount ?? goal.savedAmount ?? 0
+            );
 
-          <Popconfirm
-            title="Delete this goal?"
-            onConfirm={() =>
-              remove(record.id)
-            }
-          >
+            const percentage =
+              target > 0 ? Math.min((saved / target) * 100, 100) : 0;
 
-            <Button
-              danger
-              size="small"
-            >
-              Delete
-            </Button>
+            const achieved =
+              target > 0 && saved > target;
 
-          </Popconfirm>
+            return (
+              <Col xs={24} md={12} lg={8} key={goal.id}>
+                <Card title={goal.title}>
+                  <p>
+                    Target: <strong>{target.toFixed(2)}</strong>
+                  </p>
 
-        </Space>
+                  <p>
+                    Saved: <strong>{saved.toFixed(2)}</strong>
+                  </p>
 
-      ),
-    },
+                  <p>
+                    Deadline:{" "}
+                    {goal.deadline
+                      ? dayjs(goal.deadline).format("DD MMM YYYY")
+                      : "-"}
+                  </p>
 
-  ];
+                  <Progress
+                    percent={Number(percentage.toFixed(1))}
+                    status={
+                      achieved ? "success" : "active"
+                    }
+                  />
 
+                  {achieved && (
+                    <div style={{ marginBottom: 15 }}>
+                      <Tag color="green">
+                        Goal Achieved!
+                      </Tag>
+                    </div>
+                  )}
 
-  return (
-    <>
+                  <Row gutter={10}>
+                    <Col flex="auto">
+                      <Button
+                        type="primary"
+                        block
+                        onClick={() => openFundModal(goal)}
+                      >
+                        Add Funds
+                      </Button>
+                    </Col>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 18,
-        }}
-      >
-
-        <div>
-
-          <h1 className="page-title">
-            Savings Goals
-          </h1>
-
-          <p className="page-subtitle">
-            Create goals and track your progress
-          </p>
-
-        </div>
-
-
-        <Button
-          type="primary"
-          onClick={() =>
-            setOpen(true)
-          }
-        >
-          Create Goal
-        </Button>
-
-      </div>
-
-
-      <Card>
-
-        <Table
-          rowKey="id"
-          dataSource={rows}
-          columns={columns}
-          locale={{
-            emptyText:
-              "No goals found",
-          }}
-        />
-
-      </Card>
-
+                    <Col>
+                      <Popconfirm
+                        title="Delete this goal?"
+                        onConfirm={() => deleteGoal(goal.id)}
+                      >
+                        <Button danger>
+                          Delete
+                        </Button>
+                      </Popconfirm>
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
+      )}
 
       <Modal
-        title="Create Goal"
-        open={open}
-        onCancel={() =>
-          setOpen(false)
-        }
-        footer={null}
+        title="Create New Goal"
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        onOk={() => createForm.submit()}
       >
-
         <Form
-          form={form}
+          form={createForm}
           layout="vertical"
-          onFinish={submit}
+          onFinish={createGoal}
         >
-
           <Form.Item
-            label="Goal Title"
+            label="Title"
             name="title"
             rules={[
               {
                 required: true,
+                message: "Goal title is required",
               },
             ]}
           >
-
-            <Input
-              placeholder="Goal title"
-            />
-
+            <Input placeholder="e.g., New Car, Vacation" />
           </Form.Item>
-
 
           <Form.Item
             label="Target Amount"
@@ -431,20 +257,16 @@ export default function GoalsPage() {
             rules={[
               {
                 required: true,
+                message: "Target amount is required",
               },
             ]}
           >
-
             <InputNumber
-              min={0}
-              style={{
-                width: "100%",
-              }}
-              placeholder="Target amount"
+              min={0.01}
+              precision={2}
+              style={{ width: "100%" }}
             />
-
           </Form.Item>
-
 
           <Form.Item
             label="Deadline"
@@ -452,89 +274,50 @@ export default function GoalsPage() {
             rules={[
               {
                 required: true,
+                message: "Deadline is required",
               },
             ]}
           >
-
-            <DatePicker
-              style={{
-                width: "100%",
-              }}
-              disabledDate={(date) =>
-                date &&
-                date.isBefore(
-                  dayjs(),
-                  "day"
-                )
-              }
-            />
-
+            <DatePicker style={{ width: "100%" }} />
           </Form.Item>
-
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
-          >
-            Save Goal
-          </Button>
-
         </Form>
-
       </Modal>
 
-
       <Modal
-        title="Add Funds"
-        open={fundOpen}
-        onCancel={() =>
-          setFundOpen(false)
+        title={
+          selectedGoal
+            ? `Add Funds to ${selectedGoal.title}`
+            : "Add Funds"
         }
-        footer={null}
+        open={fundOpen}
+        onCancel={() => setFundOpen(false)}
+        onOk={() => fundForm.submit()}
       >
-
         <Form
           form={fundForm}
           layout="vertical"
           onFinish={addFunds}
         >
-
           <Form.Item
             label="Amount"
             name="amount"
             rules={[
               {
                 required: true,
+                message: "Amount is required",
               },
             ]}
           >
-
             <InputNumber
-              min={0}
-              style={{
-                width: "100%",
-              }}
-              placeholder="Amount"
+              min={0.01}
+              precision={2}
+              style={{ width: "100%" }}
             />
-
           </Form.Item>
-
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
-          >
-            Add Funds
-          </Button>
-
         </Form>
-
       </Modal>
-
-    </>
+    </div>
   );
 }
+
+export default GoalsPage;

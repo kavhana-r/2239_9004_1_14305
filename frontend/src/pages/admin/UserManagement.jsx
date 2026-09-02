@@ -1,171 +1,124 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
-import axios from "axios";
-
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Card,
   Popconfirm,
   Table,
+  Tag,
+  Typography,
   message,
 } from "antd";
+import { UserOutlined, DeleteOutlined } from "@ant-design/icons";
+import axios from "axios";
 
+const { Title } = Typography;
 
-const auth = () => ({
-  headers: {
-    Authorization:
-      `Bearer ${localStorage.getItem("token") || ""}`,
-  },
-});
+function UserManagement() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+  const config = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 
-export default function UserManagement() {
-
-  const [rows, setRows] =
-    useState([]);
-
-
-  const load = () => {
-
-    axios
-      .get(
-        "/api/admin/users",
-        auth()
-      )
-
-      .then((response) => {
-
-        setRows(
-          Array.isArray(
-            response.data
-          )
-            ? response.data
-            : []
-        );
-
-      })
-
-      .catch(() => {
-
-        message.error(
-          "Unable to load users."
-        );
-
-      });
-
-  };
-
-
-  useEffect(() => {
-
-    load();
-
-  }, []);
-
-
-  const remove = async (id) => {
+  const fetchUsers = async () => {
+    setLoading(true);
 
     try {
-
-      await axios.delete(
-        `/api/admin/users/${id}`,
-        auth()
+      const response = await axios.get(
+        "/api/admin/users",
+        config()
       );
 
-
-      message.success(
-        "User deleted successfully"
-      );
-
-
-      load();
-
-    } catch {
-
-      message.error(
-        "Unable to delete user."
-      );
-
+      setUsers(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      message.error("Unable to load users.");
+    } finally {
+      setLoading(false);
     }
-
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const deleteUser = async (id) => {
+    try {
+      await axios.delete(
+        `/api/admin/users/${id}`,
+        config()
+      );
+
+      message.success("User deleted successfully");
+
+      await fetchUsers();
+    } catch (error) {
+      message.error("Unable to delete user.");
+    }
+  };
 
   const columns = [
-
-    {
-      title: "ID",
-      dataIndex: "id",
-    },
-
     {
       title: "Username",
       dataIndex: "username",
+      key: "username",
+      render: (username) => (
+        <>
+          <UserOutlined style={{ marginRight: 8 }} />
+          {username}
+        </>
+      ),
     },
-
     {
       title: "Role",
       dataIndex: "role",
+      key: "role",
+      render: (role) => (
+        <Tag color={role === "ROLE_ADMIN" ? "gold" : "blue"}>
+          {role}
+        </Tag>
+      ),
     },
-
     {
       title: "Preferred Currency",
       dataIndex: "preferredCurrency",
+      key: "preferredCurrency",
     },
-
     {
       title: "Actions",
-
+      key: "actions",
       render: (_, record) => (
-
         <Popconfirm
-          title="Delete this user?"
-          onConfirm={() =>
-            remove(record.id)
-          }
+          title="Are you sure to delete this user?"
+          onConfirm={() => deleteUser(record.id)}
         >
-
-          <Button danger>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+          >
             Delete
           </Button>
-
         </Popconfirm>
-
       ),
     },
-
   ];
 
-
   return (
-    <>
-
-      <h1 className="page-title">
-        User Management
-      </h1>
-
-      <p className="page-subtitle">
-        Manage registered users
-      </p>
-
+    <div>
+      <Title level={2}>User Management</Title>
 
       <Card>
-
         <Table
           rowKey="id"
-          dataSource={rows}
           columns={columns}
-          locale={{
-            emptyText:
-              "No users found",
-          }}
+          dataSource={users}
+          loading={loading}
         />
-
       </Card>
-
-    </>
+    </div>
   );
 }
+
+export default UserManagement;
