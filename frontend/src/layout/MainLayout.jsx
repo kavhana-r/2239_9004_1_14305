@@ -145,7 +145,7 @@ function MainLayout({ children }) {
         </div>
       </Sider>
 
-      <Layout>
+      <Layout>~
         <Content
           style={{
             padding: 24,
