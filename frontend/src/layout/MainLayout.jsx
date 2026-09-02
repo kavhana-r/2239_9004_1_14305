@@ -1,30 +1,41 @@
-import React from "react";
-import { Layout, Menu, Button } from "antd";
+import React, { useState } from "react";
+import {
+  Layout,
+  Menu,
+  Button,
+  Typography,
+  Avatar,
+  Space,
+  Tooltip,
+} from "antd";
 import {
   DashboardOutlined,
   TransactionOutlined,
   WalletOutlined,
   TrophyOutlined,
   BarChartOutlined,
-  UserOutlined,
+  TeamOutlined,
   DollarOutlined,
-  AppstoreOutlined,
+  TagsOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../store/slices/authSlice";
 
-const { Sider, Content } = Layout;
+const { Sider, Header, Content } = Layout;
+const { Text } = Typography;
 
-function MainLayout({ children }) {
-  const [collapsed, setCollapsed] = React.useState(false);
-
-  const dispatch = useDispatch();
+function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.auth?.user);
+  const user = useSelector((state) => state.auth.user);
+
+  const [collapsed, setCollapsed] = useState(false);
 
   const isAdmin = user?.role === "ROLE_ADMIN";
 
@@ -59,7 +70,7 @@ function MainLayout({ children }) {
     },
     {
       key: "/admin/users",
-      icon: <UserOutlined />,
+      icon: <TeamOutlined />,
       label: "Manage Users",
     },
     {
@@ -69,12 +80,12 @@ function MainLayout({ children }) {
     },
     {
       key: "/admin/categories",
-      icon: <AppstoreOutlined />,
+      icon: <TagsOutlined />,
       label: "Categories",
     },
   ];
 
-  const menuItems = isAdmin ? adminItems : userItems;
+  const items = isAdmin ? adminItems : userItems;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -86,7 +97,15 @@ function MainLayout({ children }) {
       <Sider
         collapsible
         collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
+        trigger={null}
+        width={240}
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          zIndex: 100,
+        }}
       >
         <div
           style={{
@@ -94,7 +113,7 @@ function MainLayout({ children }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#fff",
+            color: "white",
             fontSize: collapsed ? 20 : 24,
             fontWeight: "bold",
           }}
@@ -102,15 +121,21 @@ function MainLayout({ children }) {
           {collapsed ? "MM" : "MintMatrix"}
         </div>
 
-        {!collapsed && (
+        {!collapsed && user?.username && (
           <div
             style={{
-              color: "#fff",
               padding: "10px 20px",
-              textAlign: "center",
+              color: "rgba(255,255,255,.75)",
+              borderBottom: "1px solid rgba(255,255,255,.1)",
             }}
           >
-            <UserOutlined /> {user?.username || "User"}
+            <Space>
+              <Avatar size="small">
+                {user.username.charAt(0).toUpperCase()}
+              </Avatar>
+
+              <Text style={{ color: "white" }}>{user.username}</Text>
+            </Space>
           </div>
         )}
 
@@ -118,7 +143,7 @@ function MainLayout({ children }) {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          items={menuItems}
+          items={items}
           onClick={({ key }) => navigate(key)}
         />
 
@@ -127,33 +152,52 @@ function MainLayout({ children }) {
             position: "absolute",
             bottom: 20,
             width: "100%",
-            padding: "0 16px",
+            padding: "0 15px",
+          }}
+        >
+          <Tooltip title={collapsed ? "Logout" : ""}>
+            <Button
+              danger
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+              block
+            >
+              {!collapsed && "Logout"}
+            </Button>
+          </Tooltip>
+        </div>
+      </Sider>
+
+      <Layout
+        style={{
+          marginLeft: collapsed ? 80 : 240,
+          transition: "all .2s",
+        }}
+      >
+        <Header
+          style={{
+            padding: "0 20px",
+            background: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
           <Button
             type="text"
-            danger
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
-            style={{
-              width: "100%",
-              color: "#fff",
-            }}
-          >
-            {!collapsed && "Logout"}
-          </Button>
-        </div>
-      </Sider>
+            icon={
+              collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+            }
+            onClick={() => setCollapsed(!collapsed)}
+          />
 
-      <Layout>~
-        <Content
-          style={{
-            padding: 24,
-            minHeight: "100vh",
-            background: "#f5f5f5",
-          }}
-        >
-          {children}
+          <Text strong>
+            {isAdmin ? "Administrator" : "Personal Finance"}
+          </Text>
+        </Header>
+
+        <Content style={{ margin: 24 }}>
+          <Outlet />
         </Content>
       </Layout>
     </Layout>

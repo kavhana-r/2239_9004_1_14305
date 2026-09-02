@@ -1,214 +1,122 @@
 import React, { useState } from "react";
+import { Button, Card, Form, Input, Typography, message } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../store/slices/authSlice";
 
-import axios from "axios";
+const { Title, Text } = Typography;
 
-import {
-  Alert,
-  Button,
-  Form,
-  Input,
-  Typography,
-} from "antd";
-
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
-
-import {
-  useDispatch,
-} from "react-redux";
-
-import {
-  login,
-} from "../store/slices/authSlice";
-
-
-export default function LoginPage() {
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-
-  const navigate = useNavigate();
+function LoginPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
+  const { loading } = useSelector((state) => state.auth);
 
-  const submit = async (values) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-    setLoading(true);
-    setError("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    if (!username || !password) {
+      message.error("Please enter username and password");
+      return;
+    }
 
     try {
-
-      const response =
-        await axios.post(
-          "/api/auth/login",
-          {
-            username: values.username,
-            password: values.password,
-          }
-        );
-
-
-      const data = response.data;
-
-
-      dispatch(
+      const result = await dispatch(
         login({
-          token: data.token,
-
-          user: {
-            username:
-              data.username ||
-              values.username,
-
-            role:
-              data.role ||
-              "ROLE_USER",
-          },
+          username,
+          password,
         })
-      );
+      ).unwrap();
 
+      message.success("Login successful");
 
-      const role = String(
-        data.role || ""
-      ).toUpperCase();
-
-
-      if (role.includes("ADMIN")) {
-
-        navigate(
-          "/admin/stats",
-          { replace: true }
-        );
-
+      if (result.role === "ROLE_ADMIN") {
+        navigate("/admin/stats");
       } else {
-
-        navigate(
-          "/dashboard",
-          { replace: true }
-        );
-
+        navigate("/dashboard");
       }
-
     } catch (error) {
+      const errorMsg =
+        typeof error === "string"
+          ? error
+          : error?.message || "Invalid username or password";
 
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data ||
-        "Invalid username or password";
-
-      setError(
-        typeof message === "string"
-          ? message
-          : "Invalid username or password"
-      );
-
-    } finally {
-
-      setLoading(false);
-
+      message.error(errorMsg);
     }
   };
 
-
   return (
-    <div className="auth-page">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f0f2f5",
+        padding: 20,
+      }}
+    >
+      <Card
+        style={{
+          width: 420,
+          maxWidth: "100%",
+          borderRadius: 12,
+        }}
+      >
+        <Title level={2} style={{ textAlign: "center" }}>
+          MintMatrix
+        </Title>
 
-      <div className="auth-card">
-
-        <div className="brand">
-          Mint
-          <span>Matrix</span>
-        </div>
-
-        <Typography.Paragraph>
-          Multi-Currency Budget Analytics Platform
-        </Typography.Paragraph>
-
-
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            style={{
-              marginBottom: 16,
-            }}
-          />
-        )}
-
-
-        <Form
-          layout="vertical"
-          onFinish={submit}
+        <Text
+          type="secondary"
+          style={{
+            display: "block",
+            textAlign: "center",
+            marginBottom: 25,
+          }}
         >
+          Multi-Currency Budget Analytics
+        </Text>
 
-          <Form.Item
-            label="Username"
-            name="username"
-            rules={[
-              {
-                required: true,
-                message:
-                  "Please enter your username",
-              },
-            ]}
-          >
+        <Form onSubmitCapture={handleSubmit} layout="vertical">
+          <Form.Item label="Username" required>
             <Input
               placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
           </Form.Item>
 
-
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[
-              {
-                required: true,
-                message:
-                  "Please enter your password",
-              },
-            ]}
-          >
-            <Input.Password
+          <Form.Item label="Password" required>
+            <Input
+              type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </Form.Item>
-
 
           <Button
             type="primary"
             htmlType="submit"
             loading={loading}
             block
+            size="large"
           >
-            Login
+            Log in
           </Button>
-
         </Form>
 
-
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: 18,
-          }}
-        >
-          Don't have an account?{" "}
-          <Link to="/register">
-            Register
-          </Link>
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          <Text>Don't have an account? </Text>
+          <Link to="/register">register now!</Link>
         </div>
-
-      </div>
-
+      </Card>
     </div>
   );
 }
+
+export default LoginPage;

@@ -1,180 +1,84 @@
-import React, {
-  useState,
-} from "react";
-
-import axios from "axios";
-
+import React, { useState } from "react";
 import {
-  Alert,
   Button,
+  Card,
   Form,
   Input,
   Select,
   Typography,
+  message,
 } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { register } from "../store/slices/authSlice";
 
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
+const { Title } = Typography;
 
-
-export default function RegisterPage() {
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
-
+function RegisterPage() {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const loading = useSelector((state) => state.auth.loading);
 
-  const submit = async (values) => {
+  const [form] = Form.useForm();
 
-    setLoading(true);
-    setError("");
-    setSuccess("");
-
-
+  const handleSubmit = async (values) => {
     try {
+      await dispatch(register(values)).unwrap();
 
-      const response =
-        await axios.post(
-          "/api/auth/register",
-          {
-            username: values.username,
-            password: values.password,
-            preferredCurrency:
-              values.preferredCurrency,
-            role: "ROLE_USER",
-          }
-        );
-
-
-      const data = response.data;
-
-
-      setSuccess(
-        typeof data === "string"
-          ? data
-          : "User registered successfully"
-      );
-
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 500);
-
-
+      message.success("Registration successful! Please login.");
+      form.resetFields();
+      navigate("/login");
     } catch (error) {
+      const errorMsg =
+        typeof error === "string"
+          ? error
+          : error?.message || "Registration failed";
 
-      const message =
-        error?.response?.data?.message ||
-        error?.response?.data ||
-        "Registration failed";
-
-
-      setError(
-        typeof message === "string"
-          ? message
-          : "Registration failed"
-      );
-
-
-    } finally {
-
-      setLoading(false);
-
+      message.error(errorMsg);
     }
   };
 
-
   return (
-    <div className="auth-page">
-
-      <div className="auth-card">
-
-        <div className="brand">
-          Mint
-          <span>Matrix</span>
-        </div>
-
-        <Typography.Paragraph>
-          Create your account
-        </Typography.Paragraph>
-
-
-        {error && (
-          <Alert
-            message={error}
-            type="error"
-            showIcon
-            style={{
-              marginBottom: 12,
-            }}
-          />
-        )}
-
-
-        {success && (
-          <Alert
-            message={success}
-            type="success"
-            showIcon
-            style={{
-              marginBottom: 12,
-            }}
-          />
-        )}
-
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f0f2f5",
+        padding: 20,
+      }}
+    >
+      <Card style={{ width: 450, maxWidth: "100%", borderRadius: 12 }}>
+        <Title level={2} style={{ textAlign: "center" }}>
+          Create Account
+        </Title>
 
         <Form
+          form={form}
           layout="vertical"
-          onFinish={submit}
+          onFinish={handleSubmit}
           initialValues={{
-            preferredCurrency: "USD",
+            preferredCurrency: "INR",
+            role: "ROLE_USER",
           }}
         >
-
           <Form.Item
             label="Username"
             name="username"
-            rules={[
-              {
-                required: true,
-                message:
-                  "Please enter your username",
-              },
-            ]}
+            rules={[{ required: true, message: "Username is required" }]}
           >
-            <Input
-              placeholder="Username"
-            />
+            <Input placeholder="Username" />
           </Form.Item>
-
 
           <Form.Item
             label="Password"
             name="password"
-            rules={[
-              {
-                required: true,
-                min: 4,
-                message:
-                  "Password must contain at least 4 characters",
-              },
-            ]}
+            rules={[{ required: true, message: "Password is required" }]}
           >
-            <Input.Password
-              placeholder="Password"
-            />
+            <Input.Password placeholder="Password" />
           </Form.Item>
-
 
           <Form.Item
             label="Preferred Currency"
@@ -182,60 +86,56 @@ export default function RegisterPage() {
             rules={[
               {
                 required: true,
+                message: "Preferred Currency is required",
               },
             ]}
           >
-
-            <Select
-              options={[
-                {
-                  value: "USD",
-                  label: "USD - US Dollar",
-                },
-                {
-                  value: "INR",
-                  label: "INR - Indian Rupee",
-                },
-                {
-                  value: "EUR",
-                  label: "EUR - Euro",
-                },
-                {
-                  value: "GBP",
-                  label: "GBP - Pound Sterling",
-                },
-              ]}
-            />
-
+            <Select>
+              <Select.Option value="USD">USD</Select.Option>
+              <Select.Option value="EUR">EUR</Select.Option>
+              <Select.Option value="INR">INR</Select.Option>
+              <Select.Option value="GBP">GBP</Select.Option>
+            </Select>
           </Form.Item>
 
+          <Form.Item
+            label="Account Type"
+            name="role"
+            rules={[
+              {
+                required: true,
+                message: "Account Type is required",
+              },
+            ]}
+          >
+            <Select>
+              <Select.Option value="ROLE_USER">
+                ROLE_USER (Regular User)
+              </Select.Option>
+
+              <Select.Option value="ROLE_ADMIN">
+                ROLE_ADMIN (Administrator)
+              </Select.Option>
+            </Select>
+          </Form.Item>
 
           <Button
             type="primary"
             htmlType="submit"
             loading={loading}
             block
+            size="large"
           >
             Register
           </Button>
-
         </Form>
 
-
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: 18,
-          }}
-        >
-          Already have an account?{" "}
-          <Link to="/login">
-            Login
-          </Link>
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          Already have an account? <Link to="/login">Login</Link>
         </div>
-
-      </div>
-
+      </Card>
     </div>
   );
 }
+
+export default RegisterPage;
