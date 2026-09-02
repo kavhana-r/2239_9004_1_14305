@@ -5,39 +5,47 @@ import {
   Button,
   Typography,
   Avatar,
-  Space,
   Tooltip,
 } from "antd";
+
 import {
   DashboardOutlined,
   TransactionOutlined,
   WalletOutlined,
-  TrophyOutlined,
+  AimOutlined,
   BarChartOutlined,
-  TeamOutlined,
+  UserOutlined,
   DollarOutlined,
-  TagsOutlined,
+  AppstoreOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+
 import { logout } from "../store/slices/authSlice";
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
 function MainLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
-
-  const user = useSelector((state) => state.auth.user);
-
   const [collapsed, setCollapsed] = useState(false);
 
-  const isAdmin = user?.role === "ROLE_ADMIN";
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const user = useSelector((state) => state.auth?.user);
+
+  const role = user?.role;
+  const isAdmin = role === "ROLE_ADMIN" || role === "ADMIN";
+
+  const username =
+    user?.username ||
+    user?.user?.username ||
+    "User";
 
   const userItems = [
     {
@@ -57,7 +65,7 @@ function MainLayout() {
     },
     {
       key: "/goals",
-      icon: <TrophyOutlined />,
+      icon: <AimOutlined />,
       label: "Savings Goals",
     },
   ];
@@ -70,7 +78,7 @@ function MainLayout() {
     },
     {
       key: "/admin/users",
-      icon: <TeamOutlined />,
+      icon: <UserOutlined />,
       label: "Manage Users",
     },
     {
@@ -80,16 +88,20 @@ function MainLayout() {
     },
     {
       key: "/admin/categories",
-      icon: <TagsOutlined />,
+      icon: <AppstoreOutlined />,
       label: "Categories",
     },
   ];
 
-  const items = isAdmin ? adminItems : userItems;
+  const menuItems = isAdmin ? adminItems : userItems;
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
+  };
+
+  const handleMenuClick = ({ key }) => {
+    navigate(key);
   };
 
   return (
@@ -99,12 +111,11 @@ function MainLayout() {
         collapsed={collapsed}
         trigger={null}
         width={240}
-        style={{
-          position: "fixed",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
+        breakpoint="lg"
+        onBreakpoint={(broken) => {
+          if (broken) {
+            setCollapsed(true);
+          }
         }}
       >
         <div
@@ -113,38 +124,20 @@ function MainLayout() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "white",
+            color: "#fff",
             fontSize: collapsed ? 20 : 24,
-            fontWeight: "bold",
+            fontWeight: 700,
           }}
         >
           {collapsed ? "MM" : "MintMatrix"}
         </div>
 
-        {!collapsed && user?.username && (
-          <div
-            style={{
-              padding: "10px 20px",
-              color: "rgba(255,255,255,.75)",
-              borderBottom: "1px solid rgba(255,255,255,.1)",
-            }}
-          >
-            <Space>
-              <Avatar size="small">
-                {user.username.charAt(0).toUpperCase()}
-              </Avatar>
-
-              <Text style={{ color: "white" }}>{user.username}</Text>
-            </Space>
-          </div>
-        )}
-
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          items={items}
-          onClick={({ key }) => navigate(key)}
+          items={menuItems}
+          onClick={handleMenuClick}
         />
 
         <div
@@ -152,15 +145,32 @@ function MainLayout() {
             position: "absolute",
             bottom: 20,
             width: "100%",
-            padding: "0 15px",
+            padding: "0 16px",
           }}
         >
+          {!collapsed && (
+            <div
+              style={{
+                color: "#fff",
+                marginBottom: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Avatar size="small" icon={<UserOutlined />} />
+              <Text style={{ color: "#fff" }} ellipsis>
+                {username}
+              </Text>
+            </div>
+          )}
+
           <Tooltip title={collapsed ? "Logout" : ""}>
             <Button
               danger
+              block
               icon={<LogoutOutlined />}
               onClick={handleLogout}
-              block
             >
               {!collapsed && "Logout"}
             </Button>
@@ -168,12 +178,7 @@ function MainLayout() {
         </div>
       </Sider>
 
-      <Layout
-        style={{
-          marginLeft: collapsed ? 80 : 240,
-          transition: "all .2s",
-        }}
-      >
+      <Layout>
         <Header
           style={{
             padding: "0 20px",
@@ -181,22 +186,36 @@ function MainLayout() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
           }}
         >
           <Button
             type="text"
             icon={
-              collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+              collapsed ? (
+                <MenuUnfoldOutlined />
+              ) : (
+                <MenuFoldOutlined />
+              )
             }
             onClick={() => setCollapsed(!collapsed)}
           />
 
-          <Text strong>
-            {isAdmin ? "Administrator" : "Personal Finance"}
-          </Text>
+          <div>
+            <Text strong>
+              {isAdmin ? "Administrator" : `Welcome, ${username}`}
+            </Text>
+          </div>
         </Header>
 
-        <Content style={{ margin: 24 }}>
+        <Content
+          style={{
+            margin: 0,
+            padding: 24,
+            minHeight: 280,
+            background: "#f5f7fa",
+          }}
+        >
           <Outlet />
         </Content>
       </Layout>
