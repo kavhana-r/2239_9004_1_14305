@@ -8,7 +8,12 @@ import {
   Typography,
   message,
 } from "antd";
-import { UserOutlined, DeleteOutlined } from "@ant-design/icons";
+
+import {
+  UserOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+
 import axios from "axios";
 
 const { Title } = Typography;
@@ -17,45 +22,50 @@ function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const config = () => ({
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
-    setLoading(true);
-
     try {
+      setLoading(true);
+
       const response = await axios.get(
-        "/api/admin/users",
-        config()
+        "/api/admin/users"
       );
 
-      setUsers(Array.isArray(response.data) ? response.data : []);
+      const data = response?.data;
+
+      setUsers(
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.content)
+          ? data.content
+          : []
+      );
     } catch (error) {
-      message.error("Unable to load users.");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const deleteUser = async (id) => {
+  const deleteUser = async (user) => {
     try {
       await axios.delete(
-        `/api/admin/users/${id}`,
-        config()
+        `/api/admin/users/${user.id}`
       );
 
-      message.success("User deleted successfully");
+      message.success(
+        "User deleted successfully"
+      );
 
       await fetchUsers();
     } catch (error) {
-      message.error("Unable to delete user.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to delete user."
+      );
     }
   };
 
@@ -65,34 +75,51 @@ function UserManagement() {
       dataIndex: "username",
       key: "username",
       render: (username) => (
-        <>
-          <UserOutlined style={{ marginRight: 8 }} />
+        <span>
+          <UserOutlined
+            style={{ marginRight: 8 }}
+          />
           {username}
-        </>
+        </span>
       ),
     },
+
     {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (role) => (
-        <Tag color={role === "ROLE_ADMIN" ? "gold" : "blue"}>
-          {role}
-        </Tag>
-      ),
+      render: (role) => {
+        const isAdmin =
+          role === "ROLE_ADMIN" ||
+          role === "ADMIN";
+
+        return (
+          <Tag color={isAdmin ? "gold" : "blue"}>
+            {isAdmin ? "ADMIN" : "USER"}
+          </Tag>
+        );
+      },
     },
+
     {
       title: "Preferred Currency",
       dataIndex: "preferredCurrency",
       key: "preferredCurrency",
+      render: (currency, record) =>
+        currency ||
+        record?.currency ||
+        "-",
     },
+
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <Popconfirm
-          title="Are you sure to delete this user?"
-          onConfirm={() => deleteUser(record.id)}
+          title="Delete this user?"
+          onConfirm={() =>
+            deleteUser(record)
+          }
         >
           <Button
             danger
@@ -107,14 +134,17 @@ function UserManagement() {
 
   return (
     <div>
-      <Title level={2}>User Management</Title>
+      <Title level={2}>
+        User Management
+      </Title>
 
       <Card>
         <Table
-          rowKey="id"
+          rowKey={(record) => record.id}
+          loading={loading}
           columns={columns}
           dataSource={users}
-          loading={loading}
+          scroll={{ x: 700 }}
         />
       </Card>
     </div>

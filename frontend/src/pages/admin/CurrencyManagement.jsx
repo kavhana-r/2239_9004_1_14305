@@ -2,120 +2,181 @@ import React, { useEffect, useState } from "react";
 import {
   Button,
   Card,
-  Form,
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Space,
   Table,
   Typography,
   message,
 } from "antd";
-import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+
 import axios from "axios";
 
 const { Title } = Typography;
 
 function CurrencyManagement() {
-  const [currencies, setCurrencies] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [currencies, setCurrencies] =
+    useState([]);
 
-  const [form] = Form.useForm();
+  const [loading, setLoading] =
+    useState(false);
 
-  const config = () => ({
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
+  const [modalOpen, setModalOpen] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [editingCurrency, setEditingCurrency] =
+    useState(null);
+
+  const [formData, setFormData] = useState({
+    code: "",
+    name: "",
+    symbol: "",
+    exchangeRate: null,
   });
-
-  const fetchCurrencies = async () => {
-    try {
-      const response = await axios.get(
-        "/api/currencies",
-        config()
-      );
-
-      setCurrencies(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (error) {
-      message.error("Unable to load currencies.");
-    }
-  };
 
   useEffect(() => {
     fetchCurrencies();
   }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    form.resetFields();
-    setModalOpen(true);
+  const fetchCurrencies = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axios.get(
+        "/api/currencies"
+      );
+
+      const data = response?.data;
+
+      setCurrencies(
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.content)
+          ? data.content
+          : []
+      );
+    } catch (error) {
+      setCurrencies([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const openEdit = (currency) => {
-    setEditing(currency);
+  const getCurrencyId = (currency) =>
+    currency?.id ?? currency?.code;
 
-    form.setFieldsValue({
-      code: currency.code,
-      name: currency.name,
-      symbol: currency.symbol,
-      exchangeRate: currency.exchangeRate,
+  const openAdd = () => {
+    setEditingCurrency(null);
+
+    setFormData({
+      code: "",
+      name: "",
+      symbol: "",
+      exchangeRate: null,
     });
 
     setModalOpen(true);
   };
 
-  const handleSubmit = async (values) => {
-    try {
-      if (editing) {
-        const identifier =
-          editing.id || editing.code;
+  const openEdit = (currency) => {
+    setEditingCurrency(currency);
 
+    setFormData({
+      code: currency?.code || "",
+      name: currency?.name || "",
+      symbol: currency?.symbol || "",
+      exchangeRate:
+        currency?.exchangeRate !== undefined
+          ? Number(currency.exchangeRate)
+          : null,
+    });
+
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.code.trim()) {
+      message.error("Currency code is required");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      message.error("Currency name is required");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const payload = {
+        code: formData.code
+          .trim()
+          .toUpperCase(),
+        name: formData.name.trim(),
+        symbol: formData.symbol,
+        exchangeRate:
+          Number(formData.exchangeRate) || 1,
+      };
+
+      if (editingCurrency) {
         await axios.put(
-          `/api/currencies/${identifier}`,
-          values,
-          config()
+          `/api/currencies/${getCurrencyId(
+            editingCurrency
+          )}`,
+          payload
         );
 
-        message.success("Currency updated");
+        message.success(
+          "Currency updated"
+        );
       } else {
         await axios.post(
           "/api/currencies",
-          values,
-          config()
+          payload
         );
 
         message.success("Currency added");
       }
 
       setModalOpen(false);
-      setEditing(null);
-      form.resetFields();
 
       await fetchCurrencies();
     } catch (error) {
-      message.error("Unable to save currency.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to save currency."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  const deleteCurrency = async (currency) => {
+  const handleDelete = async (currency) => {
     try {
-      const identifier =
-        currency.id || currency.code;
-
       await axios.delete(
-        `/api/currencies/${identifier}`,
-        config()
+        `/api/currencies/${getCurrencyId(
+          currency
+        )}`
       );
 
       message.success("Currency deleted");
 
       await fetchCurrencies();
     } catch (error) {
-      message.error("Unable to delete currency.");
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to delete currency."
+      );
     }
   };
 
@@ -134,12 +195,14 @@ function CurrencyManagement() {
       title: "Symbol",
       dataIndex: "symbol",
       key: "symbol",
-      render: (symbol) => symbol || "-",
+      render: (value) => value || "-",
     },
     {
       title: "Exchange Rate (vs USD)",
       dataIndex: "exchangeRate",
       key: "exchangeRate",
+      render: (value) =>
+        Number(value || 0).toFixed(4),
     },
     {
       title: "Actions",
@@ -148,19 +211,29 @@ function CurrencyManagement() {
         <Space>
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEdit(record)}
+            onClick={() =>
+              openEdit(record)
+            }
           >
             Edit
           </Button>
 
-          <Popconfirm
-            title="Are you sure to delete this currency?"
-            onConfirm={() => deleteCurrency(record)}
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              Modal.confirm({
+                title: "Delete Currency",
+                content:
+                  "Are you sure you want to delete this currency?",
+                okType: "danger",
+                onOk: () =>
+                  handleDelete(record),
+              })
+            }
           >
-            <Button danger>
-              Delete
-            </Button>
-          </Popconfirm>
+            Delete
+          </Button>
         </Space>
       ),
     },
@@ -168,19 +241,15 @@ function CurrencyManagement() {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: 20,
-        }}
-      >
-        <Title level={2}>Currency Management</Title>
+      <div className="page-header">
+        <Title level={2}>
+          Currency Management
+        </Title>
 
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={openCreate}
+          onClick={openAdd}
         >
           Add Currency
         </Button>
@@ -188,77 +257,99 @@ function CurrencyManagement() {
 
       <Card>
         <Table
-          rowKey={(record) => record.id || record.code}
+          rowKey={(record) =>
+            getCurrencyId(record)
+          }
           columns={columns}
           dataSource={currencies}
+          loading={loading}
+          scroll={{ x: 700 }}
         />
       </Card>
 
       <Modal
+        open={modalOpen}
         title={
-          editing
+          editingCurrency
             ? "Edit Currency"
             : "Add Currency"
         }
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
+        onCancel={() =>
+          setModalOpen(false)
+        }
+        onOk={handleSubmit}
+        confirmLoading={saving}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
-          <Form.Item
-            label="Code"
-            name="code"
-            rules={[
-              {
-                required: true,
-                message: "Code is required",
-              },
-            ]}
-          >
-            <Input placeholder="e.g. USD" />
-          </Form.Item>
+        <div style={{ marginTop: 10 }}>
+          <label>Code</label>
 
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[
-              {
-                required: true,
-                message: "Name is required",
-              },
-            ]}
-          >
-            <Input placeholder="e.g. US Dollar" />
-          </Form.Item>
+          <Input
+            placeholder="e.g. USD"
+            value={formData.code}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                code: e.target.value,
+              })
+            }
+            style={{
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
 
-          <Form.Item
-            label="Symbol"
-            name="symbol"
-          >
-            <Input placeholder="e.g. $" />
-          </Form.Item>
+          <label>Name</label>
 
-          <Form.Item
-            label="Exchange Rate"
-            name="exchangeRate"
-            rules={[
-              {
-                required: true,
-                message: "Exchange rate is required",
-              },
-            ]}
-          >
-            <InputNumber
-              step={0.01}
-              precision={2}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-        </Form>
+          <Input
+            placeholder="e.g. US Dollar"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                name: e.target.value,
+              })
+            }
+            style={{
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
+
+          <label>Symbol</label>
+
+          <Input
+            placeholder="e.g. $"
+            value={formData.symbol}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                symbol: e.target.value,
+              })
+            }
+            style={{
+              marginTop: 6,
+              marginBottom: 16,
+            }}
+          />
+
+          <label>Exchange Rate</label>
+
+          <InputNumber
+            step={0.01}
+            min={0}
+            value={formData.exchangeRate}
+            onChange={(value) =>
+              setFormData({
+                ...formData,
+                exchangeRate: value,
+              })
+            }
+            style={{
+              width: "100%",
+              marginTop: 6,
+            }}
+          />
+        </div>
       </Modal>
     </div>
   );
