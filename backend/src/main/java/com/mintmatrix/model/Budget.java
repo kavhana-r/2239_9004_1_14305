@@ -1,5 +1,8 @@
 package com.mintmatrix.model;
 
+
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,11 +35,12 @@ public class Budget {
     
     @ManyToOne
     @JoinColumn(name = "user_id")
-    
+    @Schema(hidden = true)
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
+    @Schema(hidden = true)
     private Category category;
 
     public Budget() {
