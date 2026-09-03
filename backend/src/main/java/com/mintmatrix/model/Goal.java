@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Table(name = "goals")
 public class Goal {
@@ -32,6 +34,7 @@ public class Goal {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @Schema(hidden = true)
     private User user;
 
     public Goal() {
