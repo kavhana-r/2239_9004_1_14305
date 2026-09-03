@@ -32,6 +32,7 @@ public class Budget {
     
     @ManyToOne
     @JoinColumn(name = "user_id")
+    
     private User user;
 
     @ManyToOne
