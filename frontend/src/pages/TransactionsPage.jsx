@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -14,19 +14,27 @@ import {
   Empty,
   message,
 } from "antd";
-
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-
 import axios from "axios";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+
+const defaultForm = {
+  title: "",
+  amount: null,
+  currencyCode: "USD",
+  transactionType: "EXPENSE",
+  transactionDate: dayjs(),
+  note: "",
+  categoryId: null,
+};
 
 function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
@@ -34,111 +42,100 @@ function TransactionsPage() {
   const [currencies, setCurrencies] = useState([]);
 
   const [loading, setLoading] = useState(false);
-
   const [search, setSearch] = useState("");
-
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] =
-    useState(null);
-
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    title: "",
-    amount: null,
-    currencyCode: "USD",
-    transactionType: "EXPENSE",
-    transactionDate: dayjs(),
-    note: "",
-    categoryId: null,
-  });
+  const [formData, setFormData] = useState(defaultForm);
 
-  useEffect(() => {
-    fetchTransactions();
-    fetchCategories();
-    fetchCurrencies();
+  const safeArray = useCallback((data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.content)) return data.content;
+    return [];
   }, []);
 
-  const safeArray = (data) => {
-    if (Array.isArray(data)) {
-      return data;
+  const handle401 = useCallback((error) => {
+    if (error?.response?.status === 401) {
+      message.warning("Your session has expired. Please login again.");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      return true;
     }
+    return false;
+  }, []);
 
-    if (Array.isArray(data?.content)) {
-      return data.content;
-    }
-
-    return [];
-  };
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        "/api/transactions"
-      );
+      const response = await axios.get("/api/transactions");
 
       setTransactions(safeArray(response?.data));
     } catch (error) {
-      // 401/500 should not crash the page
+      handle401(error);
       setTransactions([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [safeArray, handle401]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const response = await axios.get(
-        "/api/categories"
-      );
-
+      const response = await axios.get("/api/categories");
       setCategories(safeArray(response?.data));
     } catch (error) {
+      handle401(error);
       setCategories([]);
     }
-  };
+  }, [safeArray, handle401]);
 
-  const fetchCurrencies = async () => {
+  const fetchCurrencies = useCallback(async () => {
     try {
-      const response = await axios.get(
-        "/api/currencies"
-      );
-
+      const response = await axios.get("/api/currencies");
       setCurrencies(safeArray(response?.data));
     } catch (error) {
+      handle401(error);
       setCurrencies([]);
     }
-  };
+  }, [safeArray, handle401]);
 
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      amount: null,
-      currencyCode:
-        currencies[0]?.code || "USD",
-      transactionType: "EXPENSE",
-      transactionDate: dayjs(),
-      note: "",
-      categoryId: null,
+  // Load domain data once when page mounts.
+  useEffect(() => {
+    fetchTransactions();
+    fetchCategories();
+    fetchCurrencies();
+  }, [fetchTransactions, fetchCategories, fetchCurrencies]);
+
+  const handleChange = useCallback((field, value) => {
+    setFormData((previous) => {
+      const updated = {
+        ...previous,
+        [field]: value,
+      };
+
+      if (field === "transactionType") {
+        updated.categoryId = null;
+      }
+
+      return updated;
     });
+  }, []);
 
+  const resetForm = useCallback(() => {
+    setFormData({
+      ...defaultForm,
+      currencyCode: currencies[0]?.code || "USD",
+    });
     setEditingTransaction(null);
-  };
+  }, [currencies]);
 
   const openAddModal = () => {
     setEditingTransaction(null);
 
     setFormData({
-      title: "",
-      amount: null,
-      currencyCode:
-        currencies[0]?.code || "USD",
-      transactionType: "EXPENSE",
-      transactionDate: dayjs(),
-      note: "",
-      categoryId: null,
+      ...defaultForm,
+      currencyCode: currencies[0]?.code || "USD",
     });
 
     setModalOpen(true);
@@ -156,10 +153,8 @@ function TransactionsPage() {
       currencyCode:
         transaction?.currency?.code ||
         transaction?.currencyCode ||
-        transaction?.user?.preferredCurrency ||
         "USD",
-      transactionType:
-        transaction?.transactionType || "EXPENSE",
+      transactionType: transaction?.transactionType || "EXPENSE",
       transactionDate: transaction?.transactionDate
         ? dayjs(transaction.transactionDate)
         : dayjs(),
@@ -173,25 +168,9 @@ function TransactionsPage() {
     setModalOpen(true);
   };
 
-  const handleChange = (field, value) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-
-    if (field === "transactionType") {
-      setFormData((previous) => ({
-        ...previous,
-        transactionType: value,
-        categoryId: null,
-      }));
-    }
-  };
-
   const filteredCategories = useMemo(() => {
     return categories.filter(
-      (category) =>
-        category?.type === formData.transactionType
+      (category) => category?.type === formData.transactionType
     );
   }, [categories, formData.transactionType]);
 
@@ -216,12 +195,12 @@ function TransactionsPage() {
     }
 
     if (!formData.transactionType) {
-      message.error("Type is required");
+      message.error("Transaction type is required");
       return false;
     }
 
     if (!formData.categoryId) {
-      message.error("Category not selected");
+      message.error("Category is required");
       return false;
     }
 
@@ -233,24 +212,18 @@ function TransactionsPage() {
     return true;
   };
 
-  const buildPayload = () => {
-    return {
-      title: formData.title.trim(),
-      amount: Number(formData.amount),
-      currencyCode: formData.currencyCode,
-      transactionType: formData.transactionType,
-      transactionDate: dayjs(
-        formData.transactionDate
-      ).format("YYYY-MM-DD"),
-      note: formData.note || "",
-      categoryId: formData.categoryId,
-    };
-  };
+  const buildPayload = () => ({
+    title: formData.title.trim(),
+    amount: Number(formData.amount),
+    currencyCode: formData.currencyCode,
+    transactionType: formData.transactionType,
+    transactionDate: dayjs(formData.transactionDate).format("YYYY-MM-DD"),
+    note: formData.note || "",
+    categoryId: formData.categoryId,
+  });
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setSaving(true);
@@ -263,18 +236,11 @@ function TransactionsPage() {
           payload
         );
 
-        message.success(
-          "Transaction updated successfully."
-        );
+        message.success("Transaction updated successfully.");
       } else {
-        await axios.post(
-          "/api/transactions",
-          payload
-        );
+        await axios.post("/api/transactions", payload);
 
-        message.success(
-          "Transaction created successfully."
-        );
+        message.success("Transaction created successfully.");
       }
 
       setModalOpen(false);
@@ -282,6 +248,8 @@ function TransactionsPage() {
 
       await fetchTransactions();
     } catch (error) {
+      if (handle401(error)) return;
+
       const errorMessage =
         error?.response?.data?.message ||
         error?.response?.data ||
@@ -300,57 +268,48 @@ function TransactionsPage() {
   const handleDelete = (transaction) => {
     Modal.confirm({
       title: "Delete Transaction",
-      content:
-        "Are you sure you want to delete this transaction?",
+      content: "Are you sure you want to delete this transaction?",
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
 
       onOk: async () => {
         try {
-          await axios.delete(
-            `/api/transactions/${transaction.id}`
-          );
+          await axios.delete(`/api/transactions/${transaction.id}`);
 
-          message.success(
-            "Transaction deleted successfully."
-          );
+          message.success("Transaction deleted successfully.");
 
           await fetchTransactions();
         } catch (error) {
-          const errorMessage =
-            error?.response?.data?.message ||
-            "Unable to delete transaction.";
+          if (handle401(error)) return;
 
-          message.error(errorMessage);
+          message.error(
+            error?.response?.data?.message ||
+              "Unable to delete transaction."
+          );
         }
       },
     });
   };
 
   const filteredTransactions = useMemo(() => {
-    const searchText = search.trim().toLowerCase();
+    const text = search.trim().toLowerCase();
 
-    if (!searchText) {
-      return transactions;
-    }
+    if (!text) return transactions;
 
     return transactions.filter((transaction) => {
-      const title =
-        transaction?.title?.toLowerCase() || "";
-
-      const type =
-        transaction?.transactionType?.toLowerCase() ||
-        "";
-
-      const category =
-        transaction?.category?.name?.toLowerCase() ||
-        "";
+      const title = String(transaction?.title || "").toLowerCase();
+      const type = String(
+        transaction?.transactionType || ""
+      ).toLowerCase();
+      const category = String(
+        transaction?.category?.name || ""
+      ).toLowerCase();
 
       return (
-        title.includes(searchText) ||
-        type.includes(searchText) ||
-        category.includes(searchText)
+        title.includes(text) ||
+        type.includes(text) ||
+        category.includes(text)
       );
     });
   }, [transactions, search]);
@@ -364,24 +323,16 @@ function TransactionsPage() {
         <Text strong>{value || "-"}</Text>
       ),
     },
-
     {
       title: "Type",
       dataIndex: "transactionType",
       key: "transactionType",
       render: (value) => (
-        <Tag
-          color={
-            value === "INCOME"
-              ? "green"
-              : "red"
-          }
-        >
+        <Tag color={value === "INCOME" ? "green" : "red"}>
           {value || "-"}
         </Tag>
       ),
     },
-
     {
       title: "Amount",
       key: "amount",
@@ -389,7 +340,6 @@ function TransactionsPage() {
         const currency =
           record?.currency?.code ||
           record?.currencyCode ||
-          record?.user?.preferredCurrency ||
           "USD";
 
         const symbols = {
@@ -404,14 +354,12 @@ function TransactionsPage() {
         ).toFixed(2)}`;
       },
     },
-
     {
       title: "Category",
       key: "category",
       render: (_, record) =>
         record?.category?.name || "-",
     },
-
     {
       title: "Date",
       dataIndex: "transactionDate",
@@ -421,7 +369,6 @@ function TransactionsPage() {
           ? dayjs(value).format("DD MMM YYYY")
           : "-",
     },
-
     {
       title: "Actions",
       key: "actions",
@@ -429,9 +376,7 @@ function TransactionsPage() {
         <Space>
           <Button
             icon={<EditOutlined />}
-            onClick={() =>
-              openEditModal(record)
-            }
+            onClick={() => openEditModal(record)}
           >
             Edit
           </Button>
@@ -439,9 +384,7 @@ function TransactionsPage() {
           <Button
             danger
             icon={<DeleteOutlined />}
-            onClick={() =>
-              handleDelete(record)
-            }
+            onClick={() => handleDelete(record)}
           >
             Delete
           </Button>
@@ -455,6 +398,7 @@ function TransactionsPage() {
       <div className="page-header">
         <div>
           <Title level={2}>Transactions</Title>
+
           <Text type="secondary">
             Track and manage your income and expenses.
           </Text>
@@ -470,13 +414,13 @@ function TransactionsPage() {
       </div>
 
       <Card>
+        {/* T27: Search input */}
         <Input
+          aria-label="Search transactions"
           prefix={<SearchOutlined />}
           placeholder="Search transactions"
           value={search}
-          onChange={(e) =>
-            setSearch(e.target.value)
-          }
+          onChange={(e) => setSearch(e.target.value)}
           style={{
             maxWidth: 350,
             marginBottom: 20,
@@ -510,14 +454,11 @@ function TransactionsPage() {
         }}
         onOk={handleSave}
         confirmLoading={saving}
-        okText={
-          editingTransaction
-            ? "Update"
-            : "Create"
-        }
+        okText={editingTransaction ? "Update" : "Create"}
         destroyOnHidden
       >
         <div style={{ marginTop: 10 }}>
+          {/* T8: typing updates preview */}
           <label
             htmlFor="transaction-title"
             style={{
@@ -531,18 +472,17 @@ function TransactionsPage() {
 
           <Input
             id="transaction-title"
+            aria-label="Transaction title"
             placeholder="e.g., Grocery Shopping"
             required
             value={formData.title}
             onChange={(e) =>
-              handleChange(
-                "title",
-                e.target.value
-              )
+              handleChange("title", e.target.value)
             }
             style={{ marginBottom: 16 }}
           />
 
+          {/* T9: dropdown updates UI */}
           <label
             htmlFor="transaction-type"
             style={{
@@ -554,9 +494,6 @@ function TransactionsPage() {
             Type
           </label>
 
-          {/* Native select intentionally used here.
-              It makes the Type control easy for automated tests
-              to locate with getByLabelText and fireEvent.change. */}
           <select
             id="transaction-type"
             aria-label="Type"
@@ -577,15 +514,12 @@ function TransactionsPage() {
               background: "#fff",
             }}
           >
-            <option value="EXPENSE">
-              EXPENSE
-            </option>
-            <option value="INCOME">
-              INCOME
-            </option>
+            <option value="EXPENSE">EXPENSE</option>
+            <option value="INCOME">INCOME</option>
           </select>
 
           <label
+            htmlFor="transaction-amount"
             style={{
               display: "block",
               marginBottom: 6,
@@ -596,6 +530,7 @@ function TransactionsPage() {
           </label>
 
           <InputNumber
+            id="transaction-amount"
             min={0.01}
             precision={2}
             value={formData.amount}
@@ -609,6 +544,7 @@ function TransactionsPage() {
           />
 
           <label
+            htmlFor="transaction-currency"
             style={{
               display: "block",
               marginBottom: 6,
@@ -619,75 +555,70 @@ function TransactionsPage() {
           </label>
 
           <Select
+            id="transaction-currency"
+            aria-label="Currency"
             value={formData.currencyCode}
             onChange={(value) =>
-              handleChange(
-                "currencyCode",
-                value
-              )
+              handleChange("currencyCode", value)
             }
             style={{
               width: "100%",
               marginBottom: 16,
             }}
-            options={currencies.map(
-              (currency) => ({
-                value: currency.code,
-                label: `${currency.code} - ${
-                  currency.name || ""
-                }`,
-              })
-            )}
+            options={currencies.map((currency) => ({
+              value: currency.code,
+              label: `${currency.code} - ${
+                currency.name || ""
+              }`,
+            }))}
           />
 
+          {/* T28: required domain field */}
           <label
+            htmlFor="transaction-category"
             style={{
               display: "block",
               marginBottom: 6,
               fontWeight: 500,
             }}
           >
-            Category
+            Category *
           </label>
 
           <Select
+            id="transaction-category"
+            aria-label="Category"
             placeholder="Select category"
             value={formData.categoryId}
             onChange={(value) =>
-              handleChange(
-                "categoryId",
-                value
-              )
+              handleChange("categoryId", value)
             }
             style={{
               width: "100%",
               marginBottom: 16,
             }}
-            options={filteredCategories.map(
-              (category) => ({
-                value: category.id,
-                label: category.name,
-              })
-            )}
+            options={filteredCategories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
           />
 
           <label
+            htmlFor="transaction-date"
             style={{
               display: "block",
               marginBottom: 6,
               fontWeight: 500,
             }}
           >
-            Transaction Date
+            Transaction Date *
           </label>
 
           <DatePicker
+            id="transaction-date"
             value={formData.transactionDate}
             onChange={(value) =>
-              handleChange(
-                "transactionDate",
-                value
-              )
+              handleChange("transactionDate", value)
             }
             style={{
               width: "100%",
@@ -696,6 +627,7 @@ function TransactionsPage() {
           />
 
           <label
+            htmlFor="transaction-note"
             style={{
               display: "block",
               marginBottom: 6,
@@ -706,14 +638,12 @@ function TransactionsPage() {
           </label>
 
           <TextArea
+            id="transaction-note"
             placeholder="Optional notes..."
             rows={3}
             value={formData.note}
             onChange={(e) =>
-              handleChange(
-                "note",
-                e.target.value
-              )
+              handleChange("note", e.target.value)
             }
           />
         </div>
