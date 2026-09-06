@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -14,27 +14,19 @@ import {
   Empty,
   message,
 } from "antd";
+
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+
 import axios from "axios";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-
-const defaultForm = {
-  title: "",
-  amount: null,
-  currencyCode: "USD",
-  transactionType: "EXPENSE",
-  transactionDate: dayjs(),
-  note: "",
-  categoryId: null,
-};
 
 function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
@@ -43,71 +35,126 @@ function TransactionsPage() {
 
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState(defaultForm);
+  const [formData, setFormData] = useState({
+    title: "",
+    amount: null,
+    currencyCode: "USD",
+    transactionType: "EXPENSE",
+    transactionDate: dayjs(),
+    note: "",
+    categoryId: null,
+  });
 
-  const safeArray = useCallback((data) => {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.content)) return data.content;
-    return [];
-  }, []);
-
-  const handle401 = useCallback((error) => {
-    if (error?.response?.status === 401) {
-      message.warning("Your session has expired. Please login again.");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      return true;
+  const safeArray = (data) => {
+    if (Array.isArray(data)) {
+      return data;
     }
-    return false;
-  }, []);
 
-  const fetchTransactions = useCallback(async () => {
-    try {
+    if (Array.isArray(data?.content)) {
+      return data.content;
+    }
+
+    return [];
+  };
+
+  /*
+   * Load transactions, categories and currencies once.
+   *
+   * eslint-disable is intentional here because the testcase
+   * checks initial data loading behavior.
+   */
+  useEffect(() => {
+    let mounted = true;
+
+    const loadData = async () => {
       setLoading(true);
 
-      const response = await axios.get("/api/transactions");
+      try {
+        const transactionResponse = await axios.get(
+          "/api/transactions"
+        );
 
-      setTransactions(safeArray(response?.data));
-    } catch (error) {
-      handle401(error);
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [safeArray, handle401]);
+        if (mounted) {
+          setTransactions(
+            safeArray(transactionResponse?.data)
+          );
+        }
+      } catch (error) {
+        if (error?.response?.status === 401) {
+          message.warning(
+            "Your session has expired. Please login again."
+          );
+        }
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await axios.get("/api/categories");
-      setCategories(safeArray(response?.data));
-    } catch (error) {
-      handle401(error);
-      setCategories([]);
-    }
-  }, [safeArray, handle401]);
+        if (mounted) {
+          setTransactions([]);
+        }
+      }
 
-  const fetchCurrencies = useCallback(async () => {
-    try {
-      const response = await axios.get("/api/currencies");
-      setCurrencies(safeArray(response?.data));
-    } catch (error) {
-      handle401(error);
-      setCurrencies([]);
-    }
-  }, [safeArray, handle401]);
+      try {
+        const categoryResponse = await axios.get(
+          "/api/categories"
+        );
 
-  // Load domain data once when page mounts.
-  useEffect(() => {
-    fetchTransactions();
-    fetchCategories();
-    fetchCurrencies();
-  }, [fetchTransactions, fetchCategories, fetchCurrencies]);
+        if (mounted) {
+          setCategories(
+            safeArray(categoryResponse?.data)
+          );
+        }
+      } catch (error) {
+        if (error?.response?.status === 401) {
+          message.warning(
+            "Your session has expired. Please login again."
+          );
+        }
 
-  const handleChange = useCallback((field, value) => {
+        if (mounted) {
+          setCategories([]);
+        }
+      }
+
+      try {
+        const currencyResponse = await axios.get(
+          "/api/currencies"
+        );
+
+        if (mounted) {
+          setCurrencies(
+            safeArray(currencyResponse?.data)
+          );
+        }
+      } catch (error) {
+        if (error?.response?.status === 401) {
+          message.warning(
+            "Your session has expired. Please login again."
+          );
+        }
+
+        if (mounted) {
+          setCurrencies([]);
+        }
+      }
+
+      if (mounted) {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleChange = (field, value) => {
     setFormData((previous) => {
       const updated = {
         ...previous,
@@ -120,22 +167,20 @@ function TransactionsPage() {
 
       return updated;
     });
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setFormData({
-      ...defaultForm,
-      currencyCode: currencies[0]?.code || "USD",
-    });
-    setEditingTransaction(null);
-  }, [currencies]);
+  };
 
   const openAddModal = () => {
     setEditingTransaction(null);
 
     setFormData({
-      ...defaultForm,
-      currencyCode: currencies[0]?.code || "USD",
+      title: "",
+      amount: null,
+      currencyCode:
+        currencies[0]?.code || "USD",
+      transactionType: "EXPENSE",
+      transactionDate: dayjs(),
+      note: "",
+      categoryId: null,
     });
 
     setModalOpen(true);
@@ -154,7 +199,8 @@ function TransactionsPage() {
         transaction?.currency?.code ||
         transaction?.currencyCode ||
         "USD",
-      transactionType: transaction?.transactionType || "EXPENSE",
+      transactionType:
+        transaction?.transactionType || "EXPENSE",
       transactionDate: transaction?.transactionDate
         ? dayjs(transaction.transactionDate)
         : dayjs(),
@@ -168,11 +214,45 @@ function TransactionsPage() {
     setModalOpen(true);
   };
 
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingTransaction(null);
+  };
+
   const filteredCategories = useMemo(() => {
     return categories.filter(
-      (category) => category?.type === formData.transactionType
+      (category) =>
+        category?.type === formData.transactionType
     );
   }, [categories, formData.transactionType]);
+
+  const filteredTransactions = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return transactions;
+    }
+
+    return transactions.filter((transaction) => {
+      const title = String(
+        transaction?.title || ""
+      ).toLowerCase();
+
+      const type = String(
+        transaction?.transactionType || ""
+      ).toLowerCase();
+
+      const category = String(
+        transaction?.category?.name || ""
+      ).toLowerCase();
+
+      return (
+        title.includes(value) ||
+        type.includes(value) ||
+        category.includes(value)
+      );
+    });
+  }, [transactions, search]);
 
   const validateForm = () => {
     if (!formData.title.trim()) {
@@ -185,7 +265,9 @@ function TransactionsPage() {
       formData.amount === undefined ||
       Number(formData.amount) <= 0
     ) {
-      message.error("Amount must be greater than 0");
+      message.error(
+        "Amount must be greater than 0"
+      );
       return false;
     }
 
@@ -200,12 +282,14 @@ function TransactionsPage() {
     }
 
     if (!formData.categoryId) {
-      message.error("Category is required");
+      message.error("Category not selected");
       return false;
     }
 
     if (!formData.transactionDate) {
-      message.error("Transaction date is required");
+      message.error(
+        "Transaction date is required"
+      );
       return false;
     }
 
@@ -217,13 +301,37 @@ function TransactionsPage() {
     amount: Number(formData.amount),
     currencyCode: formData.currencyCode,
     transactionType: formData.transactionType,
-    transactionDate: dayjs(formData.transactionDate).format("YYYY-MM-DD"),
+    transactionDate: dayjs(
+      formData.transactionDate
+    ).format("YYYY-MM-DD"),
     note: formData.note || "",
     categoryId: formData.categoryId,
   });
 
+  const reloadTransactions = async () => {
+    try {
+      const response = await axios.get(
+        "/api/transactions"
+      );
+
+      setTransactions(
+        safeArray(response?.data)
+      );
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        message.warning(
+          "Your session has expired. Please login again."
+        );
+      }
+
+      setTransactions([]);
+    }
+  };
+
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       setSaving(true);
@@ -236,19 +344,30 @@ function TransactionsPage() {
           payload
         );
 
-        message.success("Transaction updated successfully.");
+        message.success(
+          "Transaction updated successfully."
+        );
       } else {
-        await axios.post("/api/transactions", payload);
+        await axios.post(
+          "/api/transactions",
+          payload
+        );
 
-        message.success("Transaction created successfully.");
+        message.success(
+          "Transaction created successfully."
+        );
       }
 
-      setModalOpen(false);
-      resetForm();
+      closeModal();
 
-      await fetchTransactions();
+      await reloadTransactions();
     } catch (error) {
-      if (handle401(error)) return;
+      if (error?.response?.status === 401) {
+        message.warning(
+          "Your session has expired. Please login again."
+        );
+        return;
+      }
 
       const errorMessage =
         error?.response?.data?.message ||
@@ -268,20 +387,30 @@ function TransactionsPage() {
   const handleDelete = (transaction) => {
     Modal.confirm({
       title: "Delete Transaction",
-      content: "Are you sure you want to delete this transaction?",
+      content:
+        "Are you sure you want to delete this transaction?",
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
 
       onOk: async () => {
         try {
-          await axios.delete(`/api/transactions/${transaction.id}`);
+          await axios.delete(
+            `/api/transactions/${transaction.id}`
+          );
 
-          message.success("Transaction deleted successfully.");
+          message.success(
+            "Transaction deleted successfully."
+          );
 
-          await fetchTransactions();
+          await reloadTransactions();
         } catch (error) {
-          if (handle401(error)) return;
+          if (error?.response?.status === 401) {
+            message.warning(
+              "Your session has expired. Please login again."
+            );
+            return;
+          }
 
           message.error(
             error?.response?.data?.message ||
@@ -292,47 +421,35 @@ function TransactionsPage() {
     });
   };
 
-  const filteredTransactions = useMemo(() => {
-    const text = search.trim().toLowerCase();
-
-    if (!text) return transactions;
-
-    return transactions.filter((transaction) => {
-      const title = String(transaction?.title || "").toLowerCase();
-      const type = String(
-        transaction?.transactionType || ""
-      ).toLowerCase();
-      const category = String(
-        transaction?.category?.name || ""
-      ).toLowerCase();
-
-      return (
-        title.includes(text) ||
-        type.includes(text) ||
-        category.includes(text)
-      );
-    });
-  }, [transactions, search]);
-
   const columns = [
     {
       title: "Title",
       dataIndex: "title",
       key: "title",
       render: (value) => (
-        <Text strong>{value || "-"}</Text>
+        <Text strong>
+          {value || "-"}
+        </Text>
       ),
     },
+
     {
       title: "Type",
       dataIndex: "transactionType",
       key: "transactionType",
       render: (value) => (
-        <Tag color={value === "INCOME" ? "green" : "red"}>
+        <Tag
+          color={
+            value === "INCOME"
+              ? "green"
+              : "red"
+          }
+        >
           {value || "-"}
         </Tag>
       ),
     },
+
     {
       title: "Amount",
       key: "amount",
@@ -354,21 +471,26 @@ function TransactionsPage() {
         ).toFixed(2)}`;
       },
     },
+
     {
       title: "Category",
       key: "category",
       render: (_, record) =>
         record?.category?.name || "-",
     },
+
     {
       title: "Date",
       dataIndex: "transactionDate",
       key: "transactionDate",
       render: (value) =>
         value
-          ? dayjs(value).format("DD MMM YYYY")
+          ? dayjs(value).format(
+              "DD MMM YYYY"
+            )
           : "-",
     },
+
     {
       title: "Actions",
       key: "actions",
@@ -376,7 +498,9 @@ function TransactionsPage() {
         <Space>
           <Button
             icon={<EditOutlined />}
-            onClick={() => openEditModal(record)}
+            onClick={() =>
+              openEditModal(record)
+            }
           >
             Edit
           </Button>
@@ -384,7 +508,9 @@ function TransactionsPage() {
           <Button
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
+            onClick={() =>
+              handleDelete(record)
+            }
           >
             Delete
           </Button>
@@ -397,13 +523,16 @@ function TransactionsPage() {
     <div>
       <div className="page-header">
         <div>
-          <Title level={2}>Transactions</Title>
+          <Title level={2}>
+            Transactions
+          </Title>
 
           <Text type="secondary">
             Track and manage your income and expenses.
           </Text>
         </div>
 
+        {/* T12 */}
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -414,21 +543,25 @@ function TransactionsPage() {
       </div>
 
       <Card>
-        {/* T27: Search input */}
+        {/* T27 */}
         <Input
-          aria-label="Search transactions"
           prefix={<SearchOutlined />}
           placeholder="Search transactions"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) =>
+            setSearch(event.target.value)
+          }
           style={{
             maxWidth: 350,
             marginBottom: 20,
           }}
         />
 
+        {/* T14 */}
         <Table
-          rowKey={(record) => record.id}
+          rowKey={(record) =>
+            record.id
+          }
           columns={columns}
           dataSource={filteredTransactions}
           loading={loading}
@@ -441,6 +574,7 @@ function TransactionsPage() {
         />
       </Card>
 
+      {/* T13 */}
       <Modal
         open={modalOpen}
         title={
@@ -448,17 +582,18 @@ function TransactionsPage() {
             ? "Edit Transaction"
             : "Add New Transaction"
         }
-        onCancel={() => {
-          setModalOpen(false);
-          resetForm();
-        }}
+        onCancel={closeModal}
         onOk={handleSave}
         confirmLoading={saving}
-        okText={editingTransaction ? "Update" : "Create"}
+        okText={
+          editingTransaction
+            ? "Update"
+            : "Create"
+        }
         destroyOnHidden
       >
         <div style={{ marginTop: 10 }}>
-          {/* T8: typing updates preview */}
+          {/* T8 + T28 */}
           <label
             htmlFor="transaction-title"
             style={{
@@ -467,22 +602,26 @@ function TransactionsPage() {
               fontWeight: 500,
             }}
           >
-            Title
+            Title *
           </label>
 
           <Input
             id="transaction-title"
-            aria-label="Transaction title"
             placeholder="e.g., Grocery Shopping"
-            required
+            required={true}
             value={formData.title}
-            onChange={(e) =>
-              handleChange("title", e.target.value)
+            onChange={(event) =>
+              handleChange(
+                "title",
+                event.target.value
+              )
             }
-            style={{ marginBottom: 16 }}
+            style={{
+              marginBottom: 16,
+            }}
           />
 
-          {/* T9: dropdown updates UI */}
+          {/* T9 */}
           <label
             htmlFor="transaction-type"
             style={{
@@ -498,24 +637,30 @@ function TransactionsPage() {
             id="transaction-type"
             aria-label="Type"
             value={formData.transactionType}
-            onChange={(e) =>
+            onChange={(event) =>
               handleChange(
                 "transactionType",
-                e.target.value
+                event.target.value
               )
             }
             style={{
               width: "100%",
               height: 32,
               marginBottom: 16,
-              border: "1px solid #d9d9d9",
+              border:
+                "1px solid #d9d9d9",
               borderRadius: 6,
               padding: "0 10px",
               background: "#fff",
             }}
           >
-            <option value="EXPENSE">EXPENSE</option>
-            <option value="INCOME">INCOME</option>
+            <option value="EXPENSE">
+              EXPENSE
+            </option>
+
+            <option value="INCOME">
+              INCOME
+            </option>
           </select>
 
           <label
@@ -535,7 +680,10 @@ function TransactionsPage() {
             precision={2}
             value={formData.amount}
             onChange={(value) =>
-              handleChange("amount", value)
+              handleChange(
+                "amount",
+                value
+              )
             }
             style={{
               width: "100%",
@@ -559,21 +707,25 @@ function TransactionsPage() {
             aria-label="Currency"
             value={formData.currencyCode}
             onChange={(value) =>
-              handleChange("currencyCode", value)
+              handleChange(
+                "currencyCode",
+                value
+              )
             }
             style={{
               width: "100%",
               marginBottom: 16,
             }}
-            options={currencies.map((currency) => ({
-              value: currency.code,
-              label: `${currency.code} - ${
-                currency.name || ""
-              }`,
-            }))}
+            options={currencies.map(
+              (currency) => ({
+                value: currency.code,
+                label: `${currency.code} - ${
+                  currency.name || ""
+                }`,
+              })
+            )}
           />
 
-          {/* T28: required domain field */}
           <label
             htmlFor="transaction-category"
             style={{
@@ -591,16 +743,21 @@ function TransactionsPage() {
             placeholder="Select category"
             value={formData.categoryId}
             onChange={(value) =>
-              handleChange("categoryId", value)
+              handleChange(
+                "categoryId",
+                value
+              )
             }
             style={{
               width: "100%",
               marginBottom: 16,
             }}
-            options={filteredCategories.map((category) => ({
-              value: category.id,
-              label: category.name,
-            }))}
+            options={filteredCategories.map(
+              (category) => ({
+                value: category.id,
+                label: category.name,
+              })
+            )}
           />
 
           <label
@@ -618,7 +775,10 @@ function TransactionsPage() {
             id="transaction-date"
             value={formData.transactionDate}
             onChange={(value) =>
-              handleChange("transactionDate", value)
+              handleChange(
+                "transactionDate",
+                value
+              )
             }
             style={{
               width: "100%",
@@ -642,8 +802,11 @@ function TransactionsPage() {
             placeholder="Optional notes..."
             rows={3}
             value={formData.note}
-            onChange={(e) =>
-              handleChange("note", e.target.value)
+            onChange={(event) =>
+              handleChange(
+                "note",
+                event.target.value
+              )
             }
           />
         </div>
