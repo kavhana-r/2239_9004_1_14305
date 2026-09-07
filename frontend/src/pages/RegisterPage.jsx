@@ -17,7 +17,6 @@ const { Title, Text } = Typography;
 
 function RegisterPage() {
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -48,27 +47,40 @@ function RegisterPage() {
     try {
       setLoading(true);
 
-      await axios.post("/api/auth/register", {
-        username: formData.username.trim(),
-        password: formData.password,
-        preferredCurrency: formData.preferredCurrency,
-        role: formData.role,
-      });
+      const response = await axios.post(
+        "http://localhost:8080/api/auth/register",
+        {
+          username: formData.username.trim(),
+          password: formData.password,
+          preferredCurrency: formData.preferredCurrency,
+          role: formData.role,
+        }
+      );
+
+      console.log("Registration response:", response.data);
 
       message.success("Registration successful! Please login.");
+
       navigate("/login");
     } catch (error) {
+      console.error("Registration error:", error);
+
       let errorMessage = "Registration failed.";
 
-      if (error?.response?.data) {
+      if (error.response) {
         if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
-        } else {
+        } else if (error.response.data) {
           errorMessage =
             error.response.data.message ||
             error.response.data.error ||
             errorMessage;
         }
+      } else if (error.request) {
+        errorMessage =
+          "Cannot connect to backend. Make sure Spring Boot is running.";
+      } else {
+        errorMessage = error.message || errorMessage;
       }
 
       message.error(errorMessage);
@@ -81,10 +93,14 @@ function RegisterPage() {
     <div className="auth-page">
       <Card
         className="auth-card"
-        bordered={false}
         style={{ maxWidth: 470, width: "100%" }}
       >
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 24,
+          }}
+        >
           <div className="brand-icon">
             <UserAddOutlined />
           </div>
@@ -96,23 +112,38 @@ function RegisterPage() {
           </Text>
         </div>
 
-        <Form layout="vertical" onFinish={handleSubmit}>
-          <Form.Item label="Username" required>
+        <Form
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
+          <Form.Item
+            label="Username"
+            required
+          >
             <Input
               placeholder="Username"
               value={formData.username}
               onChange={(e) =>
-                handleChange("username", e.target.value)
+                handleChange(
+                  "username",
+                  e.target.value
+                )
               }
             />
           </Form.Item>
 
-          <Form.Item label="Password" required>
+          <Form.Item
+            label="Password"
+            required
+          >
             <Input.Password
               placeholder="Password"
               value={formData.password}
               onChange={(e) =>
-                handleChange("password", e.target.value)
+                handleChange(
+                  "password",
+                  e.target.value
+                )
               }
             />
           </Form.Item>
@@ -121,13 +152,28 @@ function RegisterPage() {
             <Select
               value={formData.preferredCurrency}
               onChange={(value) =>
-                handleChange("preferredCurrency", value)
+                handleChange(
+                  "preferredCurrency",
+                  value
+                )
               }
               options={[
-                { value: "USD", label: "USD - US Dollar" },
-                { value: "EUR", label: "EUR - Euro" },
-                { value: "INR", label: "INR - Indian Rupee" },
-                { value: "GBP", label: "GBP - British Pound" },
+                {
+                  value: "USD",
+                  label: "USD - US Dollar",
+                },
+                {
+                  value: "EUR",
+                  label: "EUR - Euro",
+                },
+                {
+                  value: "INR",
+                  label: "INR - Indian Rupee",
+                },
+                {
+                  value: "GBP",
+                  label: "GBP - British Pound",
+                },
               ]}
             />
           </Form.Item>
@@ -162,7 +208,12 @@ function RegisterPage() {
           </Button>
         </Form>
 
-        <div style={{ textAlign: "center", marginTop: 20 }}>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 20,
+          }}
+        >
           <Text type="secondary">
             Already have an account?{" "}
           </Text>
