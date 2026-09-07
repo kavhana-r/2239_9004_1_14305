@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+
 import {
   Button,
   Card,
   Input,
   Modal,
+  Popconfirm,
   Select,
-  Space,
   Table,
   Tag,
   Typography,
@@ -22,34 +23,27 @@ import axios from "axios";
 const { Title } = Typography;
 
 function CategoryManagement() {
-  const [categories, setCategories] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [modalOpen, setModalOpen] =
-    useState(false);
-
-  const [saving, setSaving] =
-    useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     type: "EXPENSE",
   });
 
+  // Fetch categories when page loads
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // Get all categories
   const fetchCategories = async () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        "/api/categories"
-      );
+      const response = await axios.get("/api/categories");
 
       const data = response?.data;
 
@@ -61,12 +55,16 @@ function CategoryManagement() {
           : []
       );
     } catch (error) {
+      console.error("Error fetching categories:", error);
       setCategories([]);
+
+      message.error("Unable to load categories.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Open add category modal
   const openModal = () => {
     setFormData({
       name: "",
@@ -76,6 +74,14 @@ function CategoryManagement() {
     setModalOpen(true);
   };
 
+  // Close modal
+  const closeModal = () => {
+    if (!saving) {
+      setModalOpen(false);
+    }
+  };
+
+  // Add category
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       message.error("Category name is required");
@@ -85,20 +91,24 @@ function CategoryManagement() {
     try {
       setSaving(true);
 
-      await axios.post(
-        "/api/categories",
-        {
-          name: formData.name.trim(),
-          type: formData.type,
-        }
-      );
+      await axios.post("/api/categories", {
+        name: formData.name.trim(),
+        type: formData.type,
+      });
 
-      message.success("Category added");
+      message.success("Category added successfully");
 
       setModalOpen(false);
 
+      setFormData({
+        name: "",
+        type: "EXPENSE",
+      });
+
       await fetchCategories();
     } catch (error) {
+      console.error("Error adding category:", error);
+
       message.error(
         error?.response?.data?.message ||
           "Unable to add category."
@@ -108,16 +118,19 @@ function CategoryManagement() {
     }
   };
 
+  // Delete category
   const handleDelete = async (category) => {
     try {
       await axios.delete(
         `/api/categories/${category.id}`
       );
 
-      message.success("Category deleted");
+      message.success("Category deleted successfully");
 
       await fetchCategories();
     } catch (error) {
+      console.error("Error deleting category:", error);
+
       message.error(
         error?.response?.data?.message ||
           "Unable to delete category."
@@ -125,6 +138,7 @@ function CategoryManagement() {
     }
   };
 
+  // Table columns
   const columns = [
     {
       title: "Name",
@@ -136,6 +150,7 @@ function CategoryManagement() {
       title: "Type",
       dataIndex: "type",
       key: "type",
+
       render: (type) => (
         <Tag
           color={
@@ -152,19 +167,44 @@ function CategoryManagement() {
     {
       title: "Actions",
       key: "actions",
+
       render: (_, record) => (
-        <PopconfirmWrapper
-          category={record}
-          onDelete={handleDelete}
-        />
+        <Popconfirm
+          title="Delete this category?"
+          description="Are you sure you want to delete this category?"
+          okText="Yes"
+          cancelText="No"
+          onConfirm={() =>
+            handleDelete(record)
+          }
+        >
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+          >
+            Delete
+          </Button>
+        </Popconfirm>
       ),
     },
   ];
 
   return (
     <div>
-      <div className="page-header">
-        <Title level={2}>
+      {/* Page Header */}
+      <div
+        className="page-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        <Title
+          level={2}
+          style={{ margin: 0 }}
+        >
           Category Management
         </Title>
 
@@ -177,28 +217,46 @@ function CategoryManagement() {
         </Button>
       </div>
 
+      {/* Categories Table */}
       <Card>
         <Table
           rowKey={(record) => record.id}
           columns={columns}
           dataSource={categories}
           loading={loading}
+          pagination={{
+            pageSize: 10,
+          }}
+          locale={{
+            emptyText: "No categories found",
+          }}
         />
       </Card>
 
+      {/* Add Category Modal */}
       <Modal
         open={modalOpen}
         title="Add Category"
-        onCancel={() =>
-          setModalOpen(false)
-        }
+        onCancel={closeModal}
         onOk={handleSubmit}
         confirmLoading={saving}
+        okText="Add Category"
+        cancelText="Cancel"
       >
         <div style={{ marginTop: 10 }}>
-          <label>Name</label>
+          {/* Category Name */}
+          <label
+            htmlFor="category-name"
+            style={{
+              display: "block",
+              marginBottom: 6,
+            }}
+          >
+            Name
+          </label>
 
           <Input
+            id="category-name"
             placeholder="e.g. Salary, Groceries"
             value={formData.name}
             onChange={(e) =>
@@ -207,15 +265,25 @@ function CategoryManagement() {
                 name: e.target.value,
               })
             }
+            onPressEnter={handleSubmit}
             style={{
-              marginTop: 6,
               marginBottom: 16,
             }}
           />
 
-          <label>Type</label>
+          {/* Category Type */}
+          <label
+            htmlFor="category-type"
+            style={{
+              display: "block",
+              marginBottom: 6,
+            }}
+          >
+            Type
+          </label>
 
           <Select
+            id="category-type"
             value={formData.type}
             onChange={(value) =>
               setFormData({
@@ -225,7 +293,6 @@ function CategoryManagement() {
             }
             style={{
               width: "100%",
-              marginTop: 6,
             }}
             options={[
               {
@@ -241,29 +308,6 @@ function CategoryManagement() {
         </div>
       </Modal>
     </div>
-  );
-}
-
-function PopconfirmWrapper({
-  category,
-  onDelete,
-}) {
-  const { Popconfirm } = require("antd");
-
-  return (
-    <Popconfirm
-      title="Delete this category?"
-      onConfirm={() =>
-        onDelete(category)
-      }
-    >
-      <Button
-        danger
-        icon={<DeleteOutlined />}
-      >
-        Delete
-      </Button>
-    </Popconfirm>
   );
 }
 
