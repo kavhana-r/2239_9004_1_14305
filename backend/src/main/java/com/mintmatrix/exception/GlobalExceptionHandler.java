@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    // Other exceptions - 500
+    // 500 Internal Server Error
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(
             Exception ex) {
@@ -50,4 +50,3 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 }
-
