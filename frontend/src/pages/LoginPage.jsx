@@ -323,7 +323,7 @@ function LoginPage() {
               </Text>
 
               <Link to="/register">
-                register now!
+                REGISTER !
               </Link>
             </div>
 
