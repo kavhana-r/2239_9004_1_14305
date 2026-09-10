@@ -96,7 +96,7 @@ function CategoryManagement() {
         type: formData.type,
       });
 
-      message.success("Category added successfully");
+      message.success("Category added");
 
       setModalOpen(false);
 
@@ -125,7 +125,7 @@ function CategoryManagement() {
         `/api/categories/${category.id}`
       );
 
-      message.success("Category deleted successfully");
+      message.success("Category deleted");
 
       await fetchCategories();
     } catch (error) {
