@@ -1373,3 +1373,16 @@ input:-webkit-autofill {
 
   overflow: hidden !important;
 }
+
+/* =========================================================
+   SHOWCASE FEATURES — BOLD TEXT
+   ========================================================= */
+
+.auth-showcase-panel .showcase-feature {
+  font-weight: 700 !important;
+}
+
+.auth-showcase-panel .showcase-feature span,
+.auth-showcase-panel .showcase-feature div {
+  font-weight: 700 !important;
+}
