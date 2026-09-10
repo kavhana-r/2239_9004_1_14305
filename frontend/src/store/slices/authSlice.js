@@ -393,19 +393,23 @@ const authSlice = createSlice({
 
             .addCase(login.fulfilled, (state, action) => {
 
-                state.loading = false;
-                state.error = null;
+    state.loading = false;
+    state.error = null;
 
-                state.token = action.payload.token;
+    state.token = action.payload.token;
 
-                state.user =
-                    action.payload.user || {
-                        username: action.payload.username,
-                        role: action.payload.role,
-                    };
+    state.user = {
+        ...(action.payload.user || {}),
+        username:
+            action.payload.user?.username ||
+            action.payload.username,
+        role:
+            action.payload.role ||
+            action.payload.user?.role,
+    };
 
-                state.isAuthenticated = true;
-            })
+    state.isAuthenticated = true;
+})
 
             .addCase(login.rejected, (state, action) => {
 
