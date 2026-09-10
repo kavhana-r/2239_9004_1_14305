@@ -1138,3 +1138,238 @@ body,
 .auth-showcase-panel .showcase-footer {
   display: none !important;
 }
+/* =========================================================
+   RIGHT CARD — LARGER PREMIUM TEXT
+   ========================================================= */
+
+.auth-showcase-panel .showcase-content {
+  max-width: 650px !important;
+}
+
+.auth-showcase-panel .showcase-label {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  margin-bottom: 22px !important;
+}
+
+.auth-showcase-panel .showcase-title.ant-typography {
+  font-size: 52px !important;
+  line-height: 1.08 !important;
+  font-weight: 700 !important;
+  letter-spacing: -2px !important;
+  max-width: 620px !important;
+  margin-bottom: 22px !important;
+}
+
+.auth-showcase-panel .showcase-description.ant-typography {
+  max-width: 620px !important;
+  font-size: 18px !important;
+  line-height: 1.7 !important;
+}
+
+.auth-showcase-panel .showcase-features {
+  margin-top: 30px !important;
+  column-gap: 30px !important;
+  row-gap: 12px !important;
+}
+
+.auth-showcase-panel .showcase-feature {
+  min-height: 48px !important;
+  padding: 10px 12px !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+.auth-showcase-panel .showcase-feature .anticon {
+  font-size: 17px !important;
+}
+
+/* =========================================================
+   FINAL FIX — COMPLETE INPUT RECTANGLES
+   ========================================================= */
+
+/* USERNAME */
+.auth-form-item > .ant-form-item-control .ant-input {
+  width: 100% !important;
+  height: 56px !important;
+  min-height: 56px !important;
+
+  padding: 0 16px !important;
+
+  border: 1.5px solid #d8dfd5 !important;
+  border-radius: 14px !important;
+
+  background: #ffffff !important;
+
+  box-sizing: border-box !important;
+
+  outline: none !important;
+  box-shadow: none !important;
+
+  transform: none !important;
+}
+
+
+/* PASSWORD — OUTER RECTANGLE */
+.auth-form-item .ant-input-affix-wrapper {
+  width: 100% !important;
+  height: 56px !important;
+  min-height: 56px !important;
+
+  padding: 0 16px !important;
+
+  border: 1.5px solid #d8dfd5 !important;
+  border-radius: 14px !important;
+
+  background: #ffffff !important;
+
+  box-sizing: border-box !important;
+
+  display: flex !important;
+  align-items: center !important;
+
+  overflow: hidden !important;
+
+  outline: none !important;
+  box-shadow: none !important;
+
+  transform: none !important;
+}
+
+
+/* PASSWORD — INNER INPUT */
+.auth-form-item .ant-input-affix-wrapper > .ant-input {
+  width: 100% !important;
+
+  height: auto !important;
+  min-height: 0 !important;
+
+  padding: 0 !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+
+  background: transparent !important;
+
+  outline: none !important;
+  box-shadow: none !important;
+
+  transform: none !important;
+}
+
+
+/* USERNAME HOVER */
+.auth-form-item > .ant-form-item-control .ant-input:hover {
+  border-color: #8da795 !important;
+
+  box-shadow:
+    0 5px 15px rgba(45, 83, 61, 0.06) !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+/* PASSWORD HOVER */
+.auth-form-item .ant-input-affix-wrapper:hover {
+  border-color: #8da795 !important;
+
+  box-shadow:
+    0 5px 15px rgba(45, 83, 61, 0.06) !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+/* USERNAME FOCUS */
+.auth-form-item > .ant-form-item-control .ant-input:focus {
+  border-color: #4f8067 !important;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 128, 103, 0.10) !important;
+
+  background: #ffffff !important;
+
+  outline: none !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+/* PASSWORD FOCUS */
+.auth-form-item .ant-input-affix-wrapper:focus,
+.auth-form-item .ant-input-affix-wrapper-focused,
+.auth-form-item .ant-input-affix-wrapper:focus-within {
+  border-color: #4f8067 !important;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 128, 103, 0.10) !important;
+
+  background: #ffffff !important;
+
+  outline: none !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+/* PASSWORD INNER INPUT MUST NOT CREATE ANOTHER BORDER */
+.auth-form-item .ant-input-affix-wrapper > input.ant-input:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+
+/* =========================================================
+   CHROME AUTOFILL
+   ========================================================= */
+
+.auth-page input:-webkit-autofill,
+.auth-page input:-webkit-autofill:hover,
+.auth-page input:-webkit-autofill:focus,
+.auth-page input:-webkit-autofill:active {
+  -webkit-text-fill-color: #193a2c !important;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  background-color: #ffffff !important;
+
+  border-radius: 14px !important;
+}
+
+
+/* Password autofill */
+.auth-page
+.ant-input-affix-wrapper
+input:-webkit-autofill {
+  -webkit-text-fill-color: #193a2c !important;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  background: transparent !important;
+}
+
+
+/* Autofill password wrapper */
+.auth-page
+.ant-input-affix-wrapper:has(input:-webkit-autofill) {
+  background: #ffffff !important;
+
+  border: 1.5px solid #d8dfd5 !important;
+
+  border-radius: 14px !important;
+
+  box-shadow: none !important;
+
+  overflow: hidden !important;
+}
