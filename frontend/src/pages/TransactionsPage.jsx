@@ -762,7 +762,7 @@ export default function TransactionsPage() {
                     e.target.value
                   )
                 }
-                placeholder="Optional note"
+                placeholder="Optional note..."
                 rows={3}
                 style={{
                   ...inputStyle,
