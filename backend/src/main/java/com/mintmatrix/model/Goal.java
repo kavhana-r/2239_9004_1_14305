@@ -12,8 +12,6 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 @Entity
 @Table(name = "goals")
 public class Goal {
