@@ -1130,3 +1130,11 @@ body,
 
   box-shadow: none !important;
 }
+
+/* =========================================================
+   REMOVE SHOWCASE FOOTER COMPLETELY
+   ========================================================= */
+
+.auth-showcase-panel .showcase-footer {
+  display: none !important;
+}
