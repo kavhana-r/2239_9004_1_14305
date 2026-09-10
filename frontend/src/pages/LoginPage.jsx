@@ -399,28 +399,8 @@ function LoginPage() {
               <div className="visual-orbit visual-orbit-one" />
               <div className="visual-orbit visual-orbit-two" />
 
-              <div className="visual-leaf visual-leaf-one">
-                ✦
-              </div>
-
-              <div className="visual-leaf visual-leaf-two">
-                ✦
-              </div>
-
-              <div className="visual-center">
-                <div className="visual-center-small">
-                  MINTMATRIX
-                </div>
-
-                <div className="visual-center-title">
-                  Track.
-                  <br />
-                  Plan.
-                  <br />
-                  Grow.
-                </div>
-              </div>
-
+              
+              
             </div>
 
           </div>
