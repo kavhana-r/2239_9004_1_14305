@@ -278,7 +278,7 @@ export default function TransactionsPage() {
         );
 
         message.success(
-          "Transaction updated successfully."
+          "Transaction updated successfully"
         );
       } else {
         await axios.post(
@@ -287,7 +287,7 @@ export default function TransactionsPage() {
         );
 
         message.success(
-          "Transaction created successfully."
+          "Transaction created successfully"
         );
       }
 
