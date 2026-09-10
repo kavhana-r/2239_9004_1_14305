@@ -855,3 +855,162 @@ body,
 .auth-form-item .ant-input-password-icon:hover {
   color: #315f49 !important;
 }
+
+/* =========================================================
+   SHOWCASE CONTENT — CLEAN ORGANIZED LAYOUT
+   ========================================================= */
+
+.showcase-content {
+  width: 100%;
+  max-width: 570px;
+
+  position: relative;
+  z-index: 2;
+
+  animation: showcaseContentIn 0.9s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    0.35s both;
+}
+
+/* Small heading */
+.showcase-label {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  margin-bottom: 20px;
+
+  color: #567565;
+
+  font-size: 11px;
+  font-weight: 750;
+
+  letter-spacing: 1.7px;
+}
+
+/* Main heading */
+.showcase-title.ant-typography {
+  margin: 0 0 17px !important;
+
+  color: #193b2c !important;
+
+  font-size: 44px !important;
+  line-height: 1.12 !important;
+
+  font-weight: 680 !important;
+
+  letter-spacing: -1.6px !important;
+
+  max-width: 500px;
+}
+
+/* Highlighted word if span exists */
+.showcase-title span {
+  color: #568064;
+}
+
+/* Description */
+.showcase-description.ant-typography {
+  display: block;
+
+  width: 100%;
+  max-width: 510px;
+
+  margin: 0 !important;
+
+  color: #68786e !important;
+
+  font-size: 15px !important;
+
+  line-height: 1.65 !important;
+}
+
+/* =========================================================
+   FEATURES — TWO CLEAN COLUMNS
+   ========================================================= */
+
+.showcase-features {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  column-gap: 28px;
+  row-gap: 8px;
+
+  margin-top: 25px;
+}
+
+/* Individual feature */
+.showcase-feature {
+  min-height: 38px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 7px 8px;
+
+  border-radius: 9px;
+
+  color: #385746;
+
+  font-size: 13px;
+
+  line-height: 1.4;
+
+  white-space: normal;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Feature hover */
+.showcase-feature:hover {
+  transform: translateX(4px);
+
+  background: rgba(255, 255, 255, 0.38);
+
+  box-shadow:
+    0 5px 14px rgba(46, 79, 58, 0.05);
+}
+
+/* Feature icons */
+.showcase-feature .anticon {
+  flex-shrink: 0;
+
+  color: #5b896d;
+
+  font-size: 15px;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.showcase-footer {
+  position: absolute;
+
+  left: 58px;
+  bottom: 25px;
+
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: #789083;
+
+  font-size: 9px;
+
+  letter-spacing: 0.9px;
+
+  text-transform: uppercase;
+}
