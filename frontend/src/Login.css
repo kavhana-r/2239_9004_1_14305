@@ -1074,3 +1074,59 @@ body,
 
   line-height: 1.4;
 }
+
+/* =========================================================
+   CHROME AUTOFILL — REMOVE BLUE/YELLOW RECTANGLE
+   ========================================================= */
+
+.auth-page
+  input:-webkit-autofill,
+.auth-page
+  input:-webkit-autofill:hover,
+.auth-page
+  input:-webkit-autofill:focus,
+.auth-page
+  input:-webkit-autofill:active {
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  -webkit-text-fill-color: #193a2c !important;
+
+  caret-color: #193a2c !important;
+
+  border-color: #d8dfd5 !important;
+
+  transition:
+    background-color 9999s ease-in-out 0s !important;
+}
+
+/* Autofilled password wrapper */
+.auth-page
+  .ant-input-affix-wrapper
+  input:-webkit-autofill {
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset !important;
+
+  -webkit-text-fill-color: #193a2c !important;
+
+  background: transparent !important;
+}
+
+/* Keep the password container clean */
+.auth-page
+  .ant-input-affix-wrapper:has(input:-webkit-autofill) {
+
+  background: #ffffff !important;
+
+  border-color: #d8dfd5 !important;
+
+  box-shadow: none !important;
+}
