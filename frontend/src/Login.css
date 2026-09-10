@@ -1014,3 +1014,63 @@ body,
 
   text-transform: uppercase;
 }
+
+/* =========================================================
+   MINTMATRIX — PREMIUM CSS LOGO
+   ========================================================= */
+
+.showcase-footer {
+  left: 50% !important;
+  bottom: 28px !important;
+  transform: translateX(-50%) !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 5px !important;
+
+  width: auto !important;
+
+  color: #315b44 !important;
+
+  text-transform: none !important;
+
+  letter-spacing: normal !important;
+}
+
+/* Stars / decorative marks */
+.showcase-footer .anticon {
+  color: #668d72 !important;
+  font-size: 12px !important;
+}
+
+/* MINTMATRIX brand */
+.showcase-footer strong,
+.showcase-footer b {
+  display: block;
+
+  color: #234d3b !important;
+
+  font-size: 18px !important;
+  font-weight: 800 !important;
+
+  letter-spacing: 3px !important;
+
+  text-transform: uppercase;
+
+  line-height: 1.1;
+}
+
+/* Track. Plan. Grow. */
+.showcase-footer span {
+  color: #668373 !important;
+
+  font-size: 11px !important;
+  font-weight: 600 !important;
+
+  letter-spacing: 1.8px !important;
+
+  line-height: 1.4;
+}
