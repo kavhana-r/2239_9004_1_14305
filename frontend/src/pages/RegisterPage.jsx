@@ -356,3 +356,266 @@
 // }
 
 // export default RegisterPage;
+
+import React, { useState } from "react";
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Typography,
+  message,
+} from "antd";
+import { LockOutlined, UserOutlined, UserAddOutlined } from "@ant-design/icons";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import "../Login.css";
+
+const { Title, Text } = Typography;
+
+const API_URL = "http://localhost:8080/api/auth";
+
+const isStrongPassword = (password) => {
+  return (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[!@#$%^&*(),.?":{}|<>_\-\\[\]/~`+=;']/ .test(password)
+  );
+};
+
+const RegisterPage = () => {
+  const navigate = useNavigate();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [preferredCurrency, setPreferredCurrency] = useState("USD");
+  const [role, setRole] = useState("ROLE_USER");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!username.trim() || !password) {
+      message.error("Please fill in all required fields.");
+      return;
+    }
+
+    // Password validation
+    if (!isStrongPassword(password)) {
+      message.warning(
+        "Weak password. Use at least 8 characters with uppercase, lowercase, number, and special character."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await axios.post(`${API_URL}/register`, {
+        username: username.trim(),
+        password,
+        preferredCurrency,
+        role,
+      });
+
+      message.success("Registration successful! Please login.");
+      navigate("/login");
+    } catch (error) {
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        "Registration failed.";
+
+      message.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-split-container">
+
+        {/* LEFT CARD */}
+        <div className="auth-form-panel">
+          <div className="auth-form-content">
+
+            <div className="auth-brand">
+              <div className="auth-brand-mark">
+                <UserAddOutlined />
+              </div>
+
+              <div className="auth-brand-name">
+                MINTMATRIX
+              </div>
+            </div>
+
+            <div className="auth-heading">
+              <Title level={1}>Create account</Title>
+              <Text type="secondary">
+                Start managing your finances with MintMatrix
+              </Text>
+            </div>
+
+            <Form
+              layout="vertical"
+              className="auth-form"
+              onFinish={handleSubmit}
+            >
+
+              {/* USERNAME */}
+              <Form.Item
+                label="Username"
+                className="auth-form-item"
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="off"
+                />
+              </Form.Item>
+
+              {/* PASSWORD */}
+              <Form.Item
+                label="Password"
+                className="auth-form-item"
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Form.Item>
+
+              {/* PASSWORD RULES */}
+              <div
+                style={{
+                  marginTop: "-8px",
+                  marginBottom: "18px",
+                  fontSize: "12px",
+                  color: "#718076",
+                  lineHeight: "1.6",
+                }}
+              >
+                Password must contain at least 8 characters, including
+                uppercase, lowercase, number, and special character.
+              </div>
+
+              {/* CURRENCY */}
+              <Form.Item
+                label="Preferred Currency"
+                className="auth-form-item"
+              >
+                <Select
+                  value={preferredCurrency}
+                  onChange={setPreferredCurrency}
+                  options={[
+                    { value: "USD", label: "USD - US Dollar" },
+                    { value: "EUR", label: "EUR - Euro" },
+                    { value: "INR", label: "INR - Indian Rupee" },
+                    { value: "GBP", label: "GBP - British Pound" },
+                  ]}
+                />
+              </Form.Item>
+
+              {/* ROLE */}
+              <Form.Item
+                label="Account Type"
+                className="auth-form-item"
+              >
+                <Select
+                  value={role}
+                  onChange={setRole}
+                  options={[
+                    {
+                      value: "ROLE_USER",
+                      label: "Regular User",
+                    },
+                    {
+                      value: "ROLE_ADMIN",
+                      label: "Administrator",
+                    },
+                  ]}
+                />
+              </Form.Item>
+
+              {/* REGISTER */}
+              <Form.Item>
+                <Button
+                  htmlType="submit"
+                  type="primary"
+                  block
+                  loading={loading}
+                  className="auth-submit-button"
+                  icon={<UserAddOutlined />}
+                >
+                  Register
+                </Button>
+              </Form.Item>
+
+            </Form>
+
+            <div className="auth-switch">
+              <Text>Already have an account?</Text>
+              <Link to="/login">Log in</Link>
+            </div>
+
+          </div>
+        </div>
+
+        {/* RIGHT CARD */}
+        <div className="auth-showcase-panel">
+          <div className="showcase-content">
+
+            <div className="showcase-label">
+              SMART FINANCIAL MANAGEMENT
+            </div>
+
+            <Title className="showcase-title">
+              Build better financial habits.
+            </Title>
+
+            <Text className="showcase-description">
+              Track your money, plan your spending, and build better
+              financial habits — all in one beautifully simple platform.
+            </Text>
+
+            <div className="showcase-features">
+              <div className="showcase-feature">
+                Track your expenses effortlessly
+              </div>
+
+              <div className="showcase-feature">
+                Plan and manage monthly budgets
+              </div>
+
+              <div className="showcase-feature">
+                Set and monitor savings goals
+              </div>
+
+              <div className="showcase-feature">
+                Analyze your financial activity
+              </div>
+
+              <div className="showcase-feature">
+                Manage multiple currencies
+              </div>
+
+              <div className="showcase-feature">
+                Make smarter financial decisions
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default RegisterPage;
