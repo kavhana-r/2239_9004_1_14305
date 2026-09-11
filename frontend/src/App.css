@@ -593,5 +593,600 @@
     background-color 0.25s ease,
     box-shadow 0.25s ease !important;
 }
+/* =========================================================
+   MINTMATRIX — PREMIUM SIDEBAR ENHANCEMENT
+   LIGHT GREEN LUXURY — FINAL POLISH
+   ========================================================= */
 
 
+/* =========================================================
+   29. PREMIUM SIDEBAR DEPTH
+   ========================================================= */
+
+.ant-layout-sider {
+  background:
+    linear-gradient(
+      180deg,
+      #fcfbf7 0%,
+      #f8f7f1 48%,
+      #f4f6f1 100%
+    ) !important;
+
+  border-right: 1px solid #dfe7df !important;
+
+  box-shadow:
+    4px 0 28px rgba(36, 77, 58, 0.075),
+    inset -1px 0 0 rgba(255, 255, 255, 0.8) !important;
+
+  position: relative !important;
+  overflow: hidden;
+}
+
+
+/* Very subtle decorative green glow */
+
+.ant-layout-sider::after {
+  content: "";
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  right: -100px;
+  top: 100px;
+
+  background: rgba(141, 167, 149, 0.10);
+
+  border-radius: 50%;
+
+  filter: blur(30px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   30. BRAND AREA — PREMIUM
+   ========================================================= */
+
+.ant-layout-sider > div:first-child {
+  position: relative !important;
+
+  height: 72px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fffefa 0%,
+      #f8f8f2 100%
+    ) !important;
+
+  border-bottom: 1px solid #e3eae3 !important;
+
+  color: #193a2c !important;
+
+  font-size: 22px !important;
+  font-weight: 800 !important;
+
+  letter-spacing: -0.7px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  box-shadow:
+    0 3px 12px rgba(36, 77, 58, 0.035) !important;
+
+  z-index: 2;
+}
+
+
+/* Brand text subtle luxury effect */
+
+.ant-layout-sider > div:first-child {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+
+/* =========================================================
+   31. MENU AREA
+   ========================================================= */
+
+.ant-layout-sider .ant-menu {
+  position: relative;
+  z-index: 2;
+
+  padding: 20px 13px !important;
+}
+
+
+/* =========================================================
+   32. PREMIUM MENU ITEMS
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item {
+  position: relative !important;
+
+  height: 49px !important;
+  line-height: 49px !important;
+
+  margin: 6px 0 !important;
+
+  border-radius: 14px !important;
+
+  color: #647168 !important;
+
+  font-size: 14px !important;
+  font-weight: 600 !important;
+
+  border: 1px solid transparent !important;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease !important;
+}
+
+
+/* =========================================================
+   33. MENU ICON REFINEMENT
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item .anticon {
+  width: 22px !important;
+
+  color: #708579 !important;
+
+  font-size: 18px !important;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease !important;
+}
+
+
+/* =========================================================
+   34. PREMIUM HOVER
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item:hover {
+  background:
+    linear-gradient(
+      90deg,
+      #eef5ef 0%,
+      #f3f7f2 100%
+    ) !important;
+
+  border-color: #dce8de !important;
+
+  color: #244d3a !important;
+
+  transform: translateX(3px) !important;
+
+  box-shadow:
+    0 4px 12px rgba(36, 77, 58, 0.055) !important;
+}
+
+
+.ant-layout-sider .ant-menu-item:hover .anticon {
+  color: #35654d !important;
+
+  transform: translateX(1px) scale(1.06) !important;
+}
+
+
+/* =========================================================
+   35. PREMIUM ACTIVE ITEM
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item-selected {
+  background:
+    linear-gradient(
+      105deg,
+      #dce9df 0%,
+      #e6f0e7 55%,
+      #edf4ee 100%
+    ) !important;
+
+  border: 1px solid #d1e0d4 !important;
+
+  color: #193a2c !important;
+
+  font-weight: 700 !important;
+
+  box-shadow:
+    inset 3px 0 0 #3f7657,
+    0 5px 16px rgba(36, 77, 58, 0.075) !important;
+
+  transform: translateX(2px) !important;
+}
+
+
+/* Active indicator glow */
+
+.ant-layout-sider .ant-menu-item-selected::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+
+  width: 3px;
+
+  border-radius: 0 4px 4px 0;
+
+  background: #3f7657;
+
+  box-shadow:
+    0 0 8px rgba(63, 118, 87, 0.25);
+}
+
+
+/* Active text */
+
+.ant-layout-sider
+  .ant-menu-item-selected
+  .ant-menu-title-content {
+  color: #193a2c !important;
+
+  font-weight: 700 !important;
+}
+
+
+/* Active icon */
+
+.ant-layout-sider
+  .ant-menu-item-selected
+  .anticon {
+  color: #35654d !important;
+
+  transform: scale(1.05);
+}
+
+
+/* =========================================================
+   36. ACTIVE HOVER — KEEP SAME SHADE
+   ========================================================= */
+
+.ant-layout-sider
+  .ant-menu-item-selected:hover {
+  background:
+    linear-gradient(
+      105deg,
+      #dce9df 0%,
+      #e6f0e7 55%,
+      #edf4ee 100%
+    ) !important;
+
+  border-color: #d1e0d4 !important;
+
+  color: #193a2c !important;
+
+  transform: translateX(2px) !important;
+}
+
+
+/* =========================================================
+   37. MENU TEXT REFINEMENT
+   ========================================================= */
+
+.ant-layout-sider
+  .ant-menu-title-content {
+  letter-spacing: -0.05px !important;
+
+  color: #596960 !important;
+}
+
+
+/* =========================================================
+   38. BOTTOM USER PANEL
+   ========================================================= */
+
+.ant-layout-sider > div:last-child {
+  position: absolute !important;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(248, 249, 244, 0.96) 0%,
+      #f4f6f1 100%
+    ) !important;
+
+  border-top: 1px solid #dfe7df !important;
+
+  padding: 15px 14px !important;
+
+  box-shadow:
+    0 -5px 18px rgba(36, 77, 58, 0.045) !important;
+
+  z-index: 3;
+}
+
+
+/* =========================================================
+   39. USER AVATAR
+   ========================================================= */
+
+.ant-layout-sider .ant-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #dce9df,
+      #edf4ee
+    ) !important;
+
+  color: #35654d !important;
+
+  border: 1px solid #cadbcf !important;
+
+  box-shadow:
+    0 3px 8px rgba(36, 77, 58, 0.08) !important;
+}
+
+
+/* =========================================================
+   40. USERNAME
+   ========================================================= */
+
+.ant-layout-sider .ant-typography {
+  color: #30483c !important;
+
+  font-size: 13px !important;
+
+  font-weight: 700 !important;
+
+  letter-spacing: -0.1px !important;
+}
+
+
+/* =========================================================
+   41. PREMIUM LOGOUT BUTTON
+   ========================================================= */
+
+.ant-layout-sider .ant-btn-dangerous {
+  height: 43px !important;
+
+  border-radius: 13px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffaf8 0%,
+      #fff6f3 100%
+    ) !important;
+
+  border: 1px solid #eadbd7 !important;
+
+  color: #94584f !important;
+
+  font-size: 13px !important;
+
+  font-weight: 700 !important;
+
+  letter-spacing: 0.05px !important;
+
+  box-shadow:
+    0 2px 7px rgba(120, 75, 67, 0.045) !important;
+}
+
+
+/* Logout hover */
+
+.ant-layout-sider .ant-btn-dangerous:hover,
+.ant-layout-sider .ant-btn-dangerous:focus {
+  background:
+    linear-gradient(
+      135deg,
+      #fff3ef 0%,
+      #fcebe7 100%
+    ) !important;
+
+  border-color: #dfc5bf !important;
+
+  color: #88483f !important;
+
+  transform: translateY(-2px) !important;
+
+  box-shadow:
+    0 7px 16px rgba(120, 75, 67, 0.10) !important;
+}
+
+
+/* =========================================================
+   42. HEADER PREMIUM DEPTH
+   ========================================================= */
+
+.ant-layout-header {
+  background:
+    linear-gradient(
+      180deg,
+      #fffefa 0%,
+      #fffdf9 100%
+    ) !important;
+
+  border-bottom: 1px solid #e1e8e1 !important;
+
+  box-shadow:
+    0 3px 18px rgba(36, 77, 58, 0.045) !important;
+
+  position: relative;
+  z-index: 5;
+}
+
+
+/* =========================================================
+   43. HEADER TOGGLE
+   ========================================================= */
+
+.ant-layout-header > .ant-btn {
+  background: #f3f7f3 !important;
+
+  border: 1px solid #e0e9e1 !important;
+
+  color: #3f604f !important;
+
+  box-shadow:
+    0 2px 6px rgba(36, 77, 58, 0.035) !important;
+}
+
+
+.ant-layout-header > .ant-btn:hover {
+  background: #e6f0e7 !important;
+
+  border-color: #cfded2 !important;
+
+  color: #244d3a !important;
+
+  box-shadow:
+    0 5px 12px rgba(36, 77, 58, 0.07) !important;
+}
+
+
+/* =========================================================
+   44. COLLAPSED SIDEBAR PREMIUM STATE
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed {
+  background:
+    linear-gradient(
+      180deg,
+      #fcfbf7 0%,
+      #f5f7f2 100%
+    ) !important;
+
+  box-shadow:
+    4px 0 22px rgba(36, 77, 58, 0.075) !important;
+}
+
+
+/* Collapsed menu item */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu-item {
+  width: 52px !important;
+
+  margin-left: auto !important;
+  margin-right: auto !important;
+
+  border-radius: 14px !important;
+}
+
+
+/* Collapsed hover */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu-item:hover {
+  transform: translateY(-1px) !important;
+}
+
+
+/* Collapsed active */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu-item-selected {
+  transform: none !important;
+
+  box-shadow:
+    inset 3px 0 0 #3f7657,
+    0 5px 14px rgba(36, 77, 58, 0.075) !important;
+}
+
+
+/* =========================================================
+   45. COLLAPSED BRAND
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  > div:first-child {
+  color: #244d3a !important;
+
+  font-size: 18px !important;
+
+  font-weight: 800 !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fffefa,
+      #f5f7f2
+    ) !important;
+}
+
+
+/* =========================================================
+   46. COLLAPSED LOGOUT
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-btn-dangerous {
+  width: 46px !important;
+  height: 42px !important;
+
+  margin: 0 auto !important;
+
+  border-radius: 12px !important;
+}
+
+
+/* =========================================================
+   47. PREMIUM FOCUS STATES
+   ========================================================= */
+
+.ant-layout-sider
+  .ant-menu-item:focus-visible {
+  outline: 2px solid #8da795 !important;
+
+  outline-offset: 3px !important;
+
+  box-shadow:
+    0 0 0 4px rgba(141, 167, 149, 0.12) !important;
+}
+
+
+/* =========================================================
+   48. SUBTLE SIDEBAR SEPARATOR
+   ========================================================= */
+
+.ant-layout-sider .ant-menu::after {
+  content: "";
+
+  display: block;
+
+  width: 78%;
+
+  height: 1px;
+
+  margin: 18px auto 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #dfe7df,
+      transparent
+    );
+}
+
+
+/* =========================================================
+   49. PREMIUM TRANSITIONS
+   ========================================================= */
+
+.ant-layout-sider *,
+.ant-layout-header * {
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease !important;
+}
