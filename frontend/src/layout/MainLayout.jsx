@@ -26,8 +26,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 
 import { logout } from "../store/slices/authSlice";
-
-
+import "../App.css";
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
