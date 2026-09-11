@@ -1,27 +1,26 @@
 /* ==========================================================================
-   MintMatrix Premium Extended Sidebar & Webpage Alignment
+   MintMatrix Compact Sidebar Layout (No Global Collisions)
    ========================================================================== */
 
 :root {
   --bg-main: #f4f6f8;
-  --bg-sidebar: #133b2b;            /* Matte Dark Forest Green from your reference */
-  --bg-sidebar-hover: #1b4e3a;    /* High contrast hover color for side items */
-  --emerald-main: #209274;        /* Vibrant Emerald highlight for primary cards */
+  --bg-sidebar: #133b2b;          /* Matte Dark Forest Green */
+  --bg-sidebar-hover: #1b4e3a;    /* High contrast item focus target */
+  --emerald-main: #209274;        /* Primary summary balance card indicator */
   --text-light: #ffffff;
-  --text-muted: #8cb1a3;          /* Soft sage color for inactive labels */
+  --text-muted: #8cb1a3;          /* Sage layout navigation subtitle text */
   --text-dark: #1f2937;
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   --border-radius: 14px;
 }
 
-/* Global Application Framework Setup */
+/* Global Application Core Document Bounds */
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-dark);
-  -webkit-font-smoothing: antialiased;
 }
 
 .app-layout-container {
@@ -32,127 +31,134 @@ body {
 }
 
 /* ==========================================================================
-   ROLE-AWARE WIDE SIDEBAR (MainLayout)
+   COMPACT SIDEBAR MECHANICS (Width Adjusted to 230px)
    ========================================================================== */
 aside.sidebar-nav,
 aside.ant-layout-sider,
-.ant-layout-sider-children {
-  width: 280px !important;            /* Increased width from 255px/260px to 280px */
-  max-width: 280px !important;
-  min-width: 280px !important;
-  background-color: var(--bg-sidebar) !important; /* Uniform green backdrop */
-  background: var(--bg-sidebar) !important;       /* Overwrites deep dark sub-layers */
-  color: var(--text-light);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 32px 20px 24px 20px;
-  box-sizing: border-box;
+div.ant-layout-sider-children {
+  width: 230px !important;            /* Reduced width from 280px to 230px */
+  max-width: 230px !important;
+  min-width: 230px !important;
+  background-color: var(--bg-sidebar) !important;
+  background: var(--bg-sidebar) !important; 
+  color: var(--text-light) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 28px 14px 20px 14px !important; /* Compact interior padding */
+  box-sizing: border-box !important;
 }
 
-/* Brand Title Formatting */
+/* Brand Text Title Section */
 .brand-section {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 700;
   color: var(--text-light);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-left: 12px;
-  margin-bottom: 40px;
+  gap: 10px;
+  padding-left: 8px;
+  margin-bottom: 32px;
   letter-spacing: -0.5px;
 }
 
-/* Sidebar Menu Stack Alignment */
-.nav-menu-list, 
-.ant-menu {
+/* Specific Navigation Core Menu Lists */
+.nav-menu-list,
+ul.ant-menu {
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-grow: 1;
-  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  flex-grow: 1 !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-.nav-menu-item, 
-.ant-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px !important;      /* More spacious padding rows */
+/* Specific target rows to strip underlying background behaviors */
+.nav-menu-item,
+li.ant-menu-item,
+.ant-menu-item-selected {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 14px !important;      /* Slimmer item row distribution padding */
   color: var(--text-muted) !important;
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 10px !important;
-  transition: all 0.2s ease;
+  text-decoration: none !important;
+  font-size: 14px !important;          /* Balanced typography layout scale */
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
   height: auto !important;
   line-height: normal !important;
   margin: 0 !important;
   background-color: transparent !important;
 }
 
-/* Hover and Active Focus States */
+/* Explicit focus rule targets to keep dark green intact */
 .nav-menu-item:hover,
 .nav-menu-item.active-route,
-.ant-menu-item-selected,
-.ant-menu-item:hover {
-  background-color: var(--bg-sidebar-hover) !important; /* Consistent mid-green highlight */
+li.ant-menu-item:hover,
+li.ant-menu-item-selected {
+  background-color: var(--bg-sidebar-hover) !important;
+  background: var(--bg-sidebar-hover) !important;
   color: var(--text-light) !important;
 }
 
-/* Identity Profile Footer Layout Placement */
+/* Identity Profile Footer Construction */
 .sidebar-footer-profile {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  width: 100% !important;
 }
 
 .profile-identity-display {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-left: 12px;
-  font-size: 15px;
+  gap: 10px;
+  padding-left: 8px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-light);
 }
 
-/* Clean Border Action Control Selector */
-.logout-action-trigger {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-light);
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+/* Professional structural clear line action button text */
+.logout-action-trigger,
+button.ant-btn-background-ghost {
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-light) !important;
+  padding: 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: auto !important;
 }
 
 .logout-action-trigger:hover {
-  background: #dc2626 !important;    /* Refined flat red color for exit action button */
+  background: #dc2626 !important;
   border-color: #dc2626 !important;
   color: #ffffff !important;
 }
 
 /* ==========================================================================
-   MAIN DASHBOARD WORKSPACE VIEWPORT ALIGNMENT
+   PRIMARY WORKSPACE DOCUMENT CANVAS ALIGNMENT
    ========================================================================== */
 .workspace-viewport {
   flex-grow: 1;
-  padding: 48px 56px;                 /* Increased padding for structured web-view whitespace */
+  padding: 40px 48px !important;       /* Balanced view whitespace space context */
   box-sizing: border-box;
   overflow-y: auto;
   background-color: var(--bg-main);
@@ -160,83 +166,59 @@ aside.ant-layout-sider,
   flex-direction: column;
 }
 
-/* Heading section styling */
-.workspace-header,
-.page-title-area {
-  margin-bottom: 32px;
-}
-
 .workspace-header h1,
 .financial-overview-title {
-  font-size: 32px;                   /* Larger premium text scale */
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  font-size: 30px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+  margin: 0 0 6px 0 !important;
+  letter-spacing: -0.5px !important;
 }
 
 .workspace-header p {
-  color: #64748b;
-  margin: 0;
-  font-size: 15px;
-}
-
-/* Primary Action Buttons Container Alignment */
-.action-row-container {
-  margin-bottom: 24px;
+  color: #64748b !important;
+  margin: 0 !important;
+  font-size: 14px !important;
 }
 
 /* ==========================================================================
-   SUMMARY CARD ELEMENT DESIGN MATRIX
+   METRIC CARD DATA PANELS BLOCK
    ========================================================================== */
 .metrics-row-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  margin-bottom: 36px;
-  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 24px !important;
+  margin-bottom: 32px !important;
+  width: 100% !important;
 }
 
-/* Standard Secondary White Panels Layout */
 .metric-panel-card,
-.ant-card,
-.empty-data-wrapper-card {
-  background: #ffffff;
+div.ant-card-body {
+  background: #ffffff !important;
   border-radius: var(--border-radius) !important;
-  padding: 32px;                      /* Expanded canvas boundaries */
-  box-shadow: var(--card-shadow);
+  padding: 28px !important;
+  box-shadow: var(--card-shadow) !important;
   border: 1px solid rgba(0, 0, 0, 0.02) !important;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Center empty layouts elegantly within white panels */
-.empty-data-wrapper-card {
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 280px;
-  color: #64748b;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
 }
 
 .metric-card-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
 }
 
-.metric-card-value,
-.ant-statistic-content {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 4px 0 0 0;
+.metric-card-value {
+  font-size: 34px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+  margin: 4px 0 0 0 !important;
 }
 
-/* Leftmost Primary Metric Box (Total Balance Card Overrides) */
+/* Highlight Primary Overrides: Only maps to the explicitly tagged element */
 .metric-panel-card.primary-balance {
   background: var(--emerald-main) !important;
   color: var(--text-light) !important;
@@ -249,17 +231,4 @@ aside.ant-layout-sider,
 
 .metric-panel-card.primary-balance .metric-card-value {
   color: var(--text-light) !important;
-}
-
-/* ==========================================================================
-   RESPONSIVE DESIGN VIEWPORT WRAPPERS
-   ========================================================================== */
-@media (max-width: 1024px) {
-  .metrics-row-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  .workspace-viewport {
-    padding: 32px;
-  }
 }
