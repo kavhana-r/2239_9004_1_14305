@@ -1,0 +1,865 @@
+```css
+/* =========================================================
+   MINTMATRIX — GLOBAL DESIGN SYSTEM
+   Option 3: Light Green Luxury
+   ========================================================= */
+
+/* =========================================================
+   1. GOOGLE FONT
+   ========================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap");
+
+
+/* =========================================================
+   2. GLOBAL DESIGN VARIABLES
+   ========================================================= */
+
+:root {
+  /* Brand */
+  --mm-forest: #244d3a;
+  --mm-forest-dark: #193a2c;
+  --mm-forest-light: #35654d;
+
+  /* Green accents */
+  --mm-sage: #8da795;
+  --mm-sage-light: #dfe9e1;
+  --mm-mint: #edf4ee;
+  --mm-soft-green: #f3f7f3;
+
+  /* Backgrounds */
+  --mm-ivory: #f7f5ef;
+  --mm-cream: #fbfaf6;
+  --mm-white: #ffffff;
+
+  /* Text */
+  --mm-text: #193a2c;
+  --mm-text-secondary: #68766d;
+  --mm-text-muted: #8a958e;
+
+  /* Borders */
+  --mm-border: #dfe5df;
+  --mm-border-light: #e9eee9;
+
+  /* Status */
+  --mm-success: #3f7657;
+  --mm-success-light: #e8f2eb;
+
+  --mm-warning: #a47735;
+  --mm-warning-light: #f7f0df;
+
+  --mm-danger: #a6534c;
+  --mm-danger-light: #f8e9e7;
+
+  /* Radius */
+  --mm-radius-sm: 8px;
+  --mm-radius-md: 12px;
+  --mm-radius-lg: 16px;
+  --mm-radius-xl: 20px;
+  --mm-radius-pill: 999px;
+
+  /* Shadows */
+  --mm-shadow-sm:
+    0 2px 8px rgba(36, 77, 58, 0.05);
+
+  --mm-shadow-md:
+    0 8px 24px rgba(36, 77, 58, 0.08);
+
+  --mm-shadow-lg:
+    0 16px 40px rgba(36, 77, 58, 0.10);
+
+  /* Transitions */
+  --mm-transition:
+    all 0.25s ease;
+
+  --mm-transition-fast:
+    all 0.18s ease;
+
+  /* Layout */
+  --mm-sidebar-width: 250px;
+  --mm-content-max-width: 1500px;
+}
+
+
+/* =========================================================
+   3. RESET
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+
+  background: var(--mm-ivory);
+  color: var(--mm-text);
+
+  font-family:
+    "DM Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  font-size: 14px;
+  line-height: 1.6;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+
+/* =========================================================
+   4. TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0;
+  color: var(--mm-text);
+  font-family:
+    "DM Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+h4 {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+p {
+  margin-top: 0;
+  color: var(--mm-text-secondary);
+}
+
+.ant-typography {
+  color: var(--mm-text);
+}
+
+.ant-typography-secondary {
+  color: var(--mm-text-secondary) !important;
+}
+
+
+/* =========================================================
+   5. LINKS
+   ========================================================= */
+
+a {
+  color: var(--mm-forest);
+  text-decoration: none;
+  transition: var(--mm-transition-fast);
+}
+
+a:hover {
+  color: var(--mm-forest-light);
+}
+
+
+/* =========================================================
+   6. SELECTION
+   ========================================================= */
+
+::selection {
+  background: var(--mm-sage-light);
+  color: var(--mm-forest-dark);
+}
+
+
+/* =========================================================
+   7. SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mm-ivory);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b7c5ba;
+  border-radius: var(--mm-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mm-sage);
+}
+
+
+/* =========================================================
+   8. ANT DESIGN — GLOBAL COLOR OVERRIDES
+   ========================================================= */
+
+.ant-layout {
+  background: var(--mm-ivory) !important;
+}
+
+.ant-layout-content {
+  background: var(--mm-ivory);
+}
+
+
+/* =========================================================
+   9. BUTTONS
+   ========================================================= */
+
+.ant-btn {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 600;
+  border-radius: var(--mm-radius-md);
+  transition: var(--mm-transition);
+}
+
+.ant-btn-primary {
+  background: var(--mm-forest) !important;
+  border-color: var(--mm-forest) !important;
+  color: var(--mm-white) !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: var(--mm-forest-light) !important;
+  border-color: var(--mm-forest-light) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--mm-shadow-sm);
+}
+
+.ant-btn-default {
+  color: var(--mm-forest);
+  border-color: var(--mm-border);
+  background: var(--mm-white);
+}
+
+.ant-btn-default:hover,
+.ant-btn-default:focus {
+  color: var(--mm-forest);
+  border-color: var(--mm-sage);
+  background: var(--mm-soft-green);
+}
+
+
+/* =========================================================
+   10. INPUTS
+   ========================================================= */
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-picker,
+.ant-input-number,
+.ant-select-selector,
+.ant-input-textarea {
+  border-color: var(--mm-border) !important;
+  border-radius: var(--mm-radius-md) !important;
+  transition: var(--mm-transition);
+}
+
+.ant-input:hover,
+.ant-input-affix-wrapper:hover,
+.ant-picker:hover,
+.ant-input-number:hover,
+.ant-select-selector:hover {
+  border-color: var(--mm-sage) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-picker-focused,
+.ant-input-number-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--mm-forest-light) !important;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 128, 103, 0.10) !important;
+}
+
+.ant-input::placeholder {
+  color: #a1aaa4;
+}
+
+
+/* =========================================================
+   11. SELECT DROPDOWN
+   ========================================================= */
+
+.ant-select-dropdown {
+  border-radius: var(--mm-radius-md);
+  box-shadow: var(--mm-shadow-lg);
+  border: 1px solid var(--mm-border-light);
+  overflow: hidden;
+}
+
+.ant-select-item {
+  border-radius: 8px;
+  margin: 3px 5px;
+  transition: var(--mm-transition-fast);
+}
+
+.ant-select-item-option-selected {
+  background: var(--mm-mint) !important;
+  color: var(--mm-forest-dark) !important;
+  font-weight: 600;
+}
+
+.ant-select-item-option-active {
+  background: var(--mm-soft-green) !important;
+}
+
+
+/* =========================================================
+   12. CARDS
+   ========================================================= */
+
+.ant-card {
+  border: 1px solid var(--mm-border-light) !important;
+  border-radius: var(--mm-radius-xl) !important;
+  background: var(--mm-white) !important;
+  box-shadow: var(--mm-shadow-sm);
+
+  transition: var(--mm-transition);
+}
+
+.ant-card:hover {
+  box-shadow: var(--mm-shadow-md);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid var(--mm-border-light) !important;
+}
+
+.ant-card-head-title {
+  color: var(--mm-text);
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   13. TABLES
+   ========================================================= */
+
+.ant-table-wrapper {
+  border-radius: var(--mm-radius-lg);
+  overflow: hidden;
+}
+
+.ant-table {
+  background: var(--mm-white);
+}
+
+.ant-table-thead > tr > th {
+  background: var(--mm-soft-green) !important;
+  color: var(--mm-forest-dark) !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid var(--mm-border-light) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--mm-border-light) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f7faf7 !important;
+}
+
+
+/* =========================================================
+   14. TAGS
+   ========================================================= */
+
+.ant-tag {
+  border-radius: var(--mm-radius-pill);
+  font-weight: 600;
+  padding: 2px 10px;
+}
+
+
+/* =========================================================
+   15. MODALS
+   ========================================================= */
+
+.ant-modal-content {
+  border-radius: var(--mm-radius-xl) !important;
+  overflow: hidden;
+  box-shadow: var(--mm-shadow-lg);
+}
+
+.ant-modal-header {
+  background: var(--mm-white);
+  border-bottom: 1px solid var(--mm-border-light);
+}
+
+.ant-modal-title {
+  color: var(--mm-text);
+  font-weight: 700;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid var(--mm-border-light);
+}
+
+
+/* =========================================================
+   16. FORM LABELS
+   ========================================================= */
+
+.ant-form-item-label > label {
+  color: var(--mm-text) !important;
+  font-weight: 600;
+}
+
+.ant-form-item-required::before {
+  color: var(--mm-danger) !important;
+}
+
+
+/* =========================================================
+   17. PROGRESS
+   ========================================================= */
+
+.ant-progress-bg {
+  background: var(--mm-forest) !important;
+}
+
+.ant-progress-success-bg {
+  background: var(--mm-success) !important;
+}
+
+.ant-progress-inner {
+  background: var(--mm-sage-light) !important;
+}
+
+
+/* =========================================================
+   18. BADGES
+   ========================================================= */
+
+.ant-badge-status-success {
+  background: var(--mm-success);
+}
+
+.ant-badge-status-warning {
+  background: var(--mm-warning);
+}
+
+.ant-badge-status-error {
+  background: var(--mm-danger);
+}
+
+
+/* =========================================================
+   19. ALERTS
+   ========================================================= */
+
+.ant-alert {
+  border-radius: var(--mm-radius-md);
+  border: 1px solid var(--mm-border-light);
+}
+
+
+/* =========================================================
+   20. PAGINATION
+   ========================================================= */
+
+.ant-pagination-item {
+  border-radius: 8px;
+  border-color: var(--mm-border);
+}
+
+.ant-pagination-item a {
+  color: var(--mm-forest);
+}
+
+.ant-pagination-item-active {
+  border-color: var(--mm-forest) !important;
+  background: var(--mm-forest) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--mm-white) !important;
+}
+
+
+/* =========================================================
+   21. TABS
+   ========================================================= */
+
+.ant-tabs-tab {
+  color: var(--mm-text-secondary);
+  font-weight: 600;
+}
+
+.ant-tabs-tab:hover {
+  color: var(--mm-forest);
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--mm-forest) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: var(--mm-forest) !important;
+}
+
+
+/* =========================================================
+   22. TOOLTIP
+   ========================================================= */
+
+.ant-tooltip-inner {
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+}
+
+
+/* =========================================================
+   23. DROPDOWN MENUS
+   ========================================================= */
+
+.ant-dropdown {
+  border-radius: var(--mm-radius-md);
+  overflow: hidden;
+  box-shadow: var(--mm-shadow-lg);
+}
+
+.ant-dropdown-menu {
+  padding: 6px;
+  border-radius: var(--mm-radius-md);
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 8px;
+  transition: var(--mm-transition-fast);
+}
+
+.ant-dropdown-menu-item:hover {
+  background: var(--mm-mint) !important;
+  color: var(--mm-forest-dark) !important;
+}
+
+
+/* =========================================================
+   24. DIVIDERS
+   ========================================================= */
+
+.ant-divider {
+  border-color: var(--mm-border-light);
+}
+
+
+/* =========================================================
+   25. AVATARS
+   ========================================================= */
+
+.ant-avatar {
+  background: var(--mm-mint);
+  color: var(--mm-forest);
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   26. MESSAGE / NOTIFICATION
+   ========================================================= */
+
+.ant-message-notice-content,
+.ant-notification-notice {
+  border-radius: var(--mm-radius-md);
+  box-shadow: var(--mm-shadow-lg);
+}
+
+
+/* =========================================================
+   27. RADIO / CHECKBOX
+   ========================================================= */
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--mm-forest) !important;
+  border-color: var(--mm-forest) !important;
+}
+
+.ant-radio-checked .ant-radio-inner {
+  border-color: var(--mm-forest) !important;
+}
+
+.ant-radio-inner::after {
+  background-color: var(--mm-forest) !important;
+}
+
+
+/* =========================================================
+   28. SWITCH
+   ========================================================= */
+
+.ant-switch-checked {
+  background: var(--mm-forest) !important;
+}
+
+
+/* =========================================================
+   29. DATE PICKER
+   ========================================================= */
+
+.ant-picker-panel-container {
+  border-radius: var(--mm-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--mm-shadow-lg);
+}
+
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  background: var(--mm-forest) !important;
+}
+
+
+/* =========================================================
+   30. STATISTIC
+   ========================================================= */
+
+.ant-statistic-title {
+  color: var(--mm-text-secondary) !important;
+  font-weight: 500;
+}
+
+.ant-statistic-content {
+  color: var(--mm-text) !important;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   31. DRAWER
+   ========================================================= */
+
+.ant-drawer-content {
+  background: var(--mm-cream);
+}
+
+.ant-drawer-header {
+  border-bottom: 1px solid var(--mm-border-light);
+}
+
+.ant-drawer-title {
+  color: var(--mm-text);
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   32. IMAGE / MEDIA
+   ========================================================= */
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+
+/* =========================================================
+   33. BUTTON ICON ALIGNMENT
+   ========================================================= */
+
+.ant-btn .anticon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* =========================================================
+   34. FOCUS ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--mm-sage);
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   35. DISABLED ELEMENTS
+   ========================================================= */
+
+.ant-btn:disabled,
+.ant-input-disabled,
+.ant-select-disabled .ant-select-selector {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   36. UTILITY CLASSES
+   ========================================================= */
+
+.mm-page {
+  min-height: 100vh;
+  background: var(--mm-ivory);
+}
+
+.mm-container {
+  width: 100%;
+  max-width: var(--mm-content-max-width);
+  margin: 0 auto;
+}
+
+.mm-card {
+  background: var(--mm-white);
+  border: 1px solid var(--mm-border-light);
+  border-radius: var(--mm-radius-xl);
+  box-shadow: var(--mm-shadow-sm);
+}
+
+.mm-section-title {
+  color: var(--mm-text);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.mm-muted {
+  color: var(--mm-text-secondary);
+}
+
+.mm-green {
+  color: var(--mm-forest);
+}
+
+
+/* =========================================================
+   37. RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (max-width: 992px) {
+  :root {
+    --mm-sidebar-width: 220px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  h2 {
+    font-size: 25px;
+  }
+
+  .ant-card {
+    border-radius: var(--mm-radius-lg) !important;
+  }
+}
+
+
+/* =========================================================
+   38. RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  body {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 27px;
+  }
+
+  h2 {
+    font-size: 23px;
+  }
+
+  h3 {
+    font-size: 20px;
+  }
+
+  .ant-card {
+    border-radius: var(--mm-radius-lg) !important;
+  }
+
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
+
+/* =========================================================
+   39. SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  .ant-btn {
+    border-radius: 10px;
+  }
+
+  .ant-card {
+    border-radius: 14px !important;
+  }
+}
+
+
+/* =========================================================
+   40. REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+```
