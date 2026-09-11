@@ -27,6 +27,7 @@ import { useNavigate, Outlet, useLocation } from "react-router-dom";
 
 import { logout } from "../store/slices/authSlice";
 
+
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
