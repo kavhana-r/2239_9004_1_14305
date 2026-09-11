@@ -1,48 +1,69 @@
 /* ==========================================================================
-   MintMatrix Executive UI Theme Framework
+   MintMatrix Premium Forest Green & Emerald Theme Stylesheet
    ========================================================================== */
+
+:root {
+  --bg-main: #f4f6f8;
+  --bg-sidebar: #133b2b;            /* Matte Dark Forest Green from your reference */
+  --bg-sidebar-hover: #1b4e3a;    /* High contrast hover color for side items */
+  --emerald-main: #209274;        /* Vibrant Emerald highlight for primary cards */
+  --text-light: #ffffff;
+  --text-muted: #8cb1a3;          /* Soft sage color for inactive labels */
+  --text-dark: #1f2937;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --border-radius: 14px;
+}
+
+/* Global Application Framework Setup */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+}
 
 .app-layout-container {
   display: flex;
   min-height: 100vh;
-  background-color: var(--bg-main);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  width: 100vw;
+  overflow: hidden;
 }
 
-/* Sidebar Wrapper Adjustments */
-aside.sidebar-nav {
-  width: 260px;
-  background-color: var(--bg-sidebar);
-  color: #ffffff;
+/* ==========================================================================
+   ROLE-AWARE SIDEBAR (MainLayout)
+   ========================================================================== */
+aside.sidebar-nav,
+aside.ant-layout-sider {
+  width: 260px !important;
+  max-width: 260px !important;
+  min-width: 260px !important;
+  background-color: var(--bg-sidebar) !important;
+  color: var(--text-light);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 16px;
+  padding: 32px 18px 24px 18px;
   box-sizing: border-box;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
 }
 
+/* Logo Section Wrapper */
 .brand-section {
   font-size: 22px;
   font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.5px;
-  padding-left: 12px;
-  margin-bottom: 36px;
+  color: var(--text-light);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding-left: 12px;
+  margin-bottom: 36px;
+  letter-spacing: 0.5px;
 }
 
-.brand-section::before {
-  content: '';
-  display: block;
-  width: 8px;
-  height: 20px;
-  background-color: var(--primary-accent);
-  border-radius: 2px;
-}
-
-/* Menu Layout Mechanics */
+/* Sidebar Functional Menu List Stack */
 .nav-menu-list {
   display: flex;
   flex-direction: column;
@@ -50,158 +71,167 @@ aside.sidebar-nav {
   flex-grow: 1;
 }
 
-.nav-menu-item {
+.nav-menu-item, 
+.ant-menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  color: #a7f3d0 !important; /* Soft light-green readable text */
+  gap: 14px;
+  padding: 12px 16px !important;
+  color: var(--text-muted) !important;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  border-radius: var(--radius-standard);
-  transition: all 0.2s ease-in-out;
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+  height: auto !important;
+  line-height: normal !important;
+  margin: 0 !important;
 }
 
+/* Reference-Matched Hover and Active Focus States */
 .nav-menu-item:hover,
-.nav-menu-item.active-route {
-  background-color: var(--bg-sidebar-hover);
-  color: #ffffff !important;
+.nav-menu-item.active-route,
+.ant-menu-item-selected,
+.ant-menu-item:hover {
+  background-color: var(--bg-sidebar-hover) !important;
+  color: var(--text-light) !important;
 }
 
-.nav-menu-item.active-route {
-  border-left: 4px solid var(--primary-accent);
-}
-
-/* Footer Section Identity Grouping */
+/* Identity Profile Footer Layout Placement */
 .sidebar-footer-profile {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .profile-identity-display {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding-left: 12px;
-  color: #ffffff;
+  font-size: 15px;
   font-weight: 500;
-  font-size: 14px;
+  color: var(--text-light);
 }
 
+/* Clean Border Action Control Selector */
 .logout-action-trigger {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  padding: 10px;
-  font-size: 13px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  padding: 12px;
+  font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .logout-action-trigger:hover {
-  background-color: #ef4444; /* Clean warnings action switch on hover */
+  background: #ef4444; /* Clean operational exit warnings toggle */
   border-color: #ef4444;
 }
 
 /* ==========================================================================
-   Main Presentation Workspace Area
+   MAIN DASHBOARD WORKSPACE VIEWPORT
    ========================================================================== */
 .workspace-viewport {
   flex-grow: 1;
   padding: 40px;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  overflow-y: auto;
+  background-color: var(--bg-main);
 }
 
-.workspace-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-title-block h1 {
-  margin: 0;
+.workspace-header h1,
+.financial-overview-title {
   font-size: 28px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-dark);
+  margin: 0 0 6px 0;
   letter-spacing: -0.5px;
 }
 
-.header-title-block p {
-  margin: 4px 0 0 0;
+.workspace-header p {
+  color: #6b7280;
+  margin: 0 0 32px 0;
   font-size: 14px;
-  color: var(--text-muted);
 }
 
-/* Professional State Alert Banner styling */
-.alert-banner-toast {
-  background-color: #fefce8;
-  border: 1px solid #fef08a;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 14px;
-  color: #854d0e;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Alert Notification Banner Formatting */
+.alert-banner-toast,
+.ant-alert {
+  border-radius: 8px !important;
+  margin-bottom: 24px !important;
+  border: 1px solid #fef08a !important;
+  background-color: #fefce8 !important;
 }
 
-/* Three Card Metric Distribution Grid */
+/* ==========================================================================
+   SUMMARY CARD ELEMENT DESIGN MATRIX
+   ========================================================================== */
 .metrics-row-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+  margin-bottom: 32px;
 }
 
-.metric-panel-card {
+/* Standard Secondary White Panels Layout */
+.metric-panel-card,
+.ant-card {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: var(--radius-standard);
+  border-radius: var(--border-radius) !important;
   padding: 24px;
   box-shadow: var(--card-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.02) !important;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  position: relative;
-  overflow: hidden;
 }
 
 .metric-card-label {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
-.metric-card-value {
+.metric-card-value,
+.ant-statistic-content {
   font-size: 32px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin: 4px 0;
+  color: var(--text-dark);
+  margin: 4px 0 0 0;
 }
 
-.metric-indicator-trend {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 500;
-  gap: 4px;
+/* Leftmost Primary Metric Box (Total Balance Card Overrides) */
+.metric-panel-card.primary-balance {
+  background: var(--emerald-main) !important;
+  color: var(--text-light) !important;
+  border: none !important;
 }
 
-.trend-up { color: #10b981; }
-.trend-down { color: #ef4444; }
-.trend-neutral { color: var(--text-muted); }
+.metric-panel-card.primary-balance .metric-card-label {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.metric-panel-card.primary-balance .metric-card-value {
+  color: var(--text-light) !important;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN VIEWPORT WRAPPERS
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .metrics-row-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
