@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MintMatrix Premium Forest Green & Emerald Theme Stylesheet
+   MintMatrix Premium Extended Sidebar & Webpage Alignment
    ========================================================================== */
 
 :root {
@@ -32,43 +32,48 @@ body {
 }
 
 /* ==========================================================================
-   ROLE-AWARE SIDEBAR (MainLayout)
+   ROLE-AWARE WIDE SIDEBAR (MainLayout)
    ========================================================================== */
 aside.sidebar-nav,
-aside.ant-layout-sider {
-  width: 260px !important;
-  max-width: 260px !important;
-  min-width: 260px !important;
-  background-color: var(--bg-sidebar) !important;
+aside.ant-layout-sider,
+.ant-layout-sider-children {
+  width: 280px !important;            /* Increased width from 255px/260px to 280px */
+  max-width: 280px !important;
+  min-width: 280px !important;
+  background-color: var(--bg-sidebar) !important; /* Uniform green backdrop */
+  background: var(--bg-sidebar) !important;       /* Overwrites deep dark sub-layers */
   color: var(--text-light);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 32px 18px 24px 18px;
+  padding: 32px 20px 24px 20px;
   box-sizing: border-box;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
 }
 
-/* Logo Section Wrapper */
+/* Brand Title Formatting */
 .brand-section {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-light);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding-left: 12px;
-  margin-bottom: 36px;
-  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+  letter-spacing: -0.5px;
 }
 
-/* Sidebar Functional Menu List Stack */
-.nav-menu-list {
+/* Sidebar Menu Stack Alignment */
+.nav-menu-list, 
+.ant-menu {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex-grow: 1;
+  width: 100%;
 }
 
 .nav-menu-item, 
@@ -76,7 +81,7 @@ aside.ant-layout-sider {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px !important;
+  padding: 14px 18px !important;      /* More spacious padding rows */
   color: var(--text-muted) !important;
   text-decoration: none;
   font-size: 15px;
@@ -86,14 +91,15 @@ aside.ant-layout-sider {
   height: auto !important;
   line-height: normal !important;
   margin: 0 !important;
+  background-color: transparent !important;
 }
 
-/* Reference-Matched Hover and Active Focus States */
+/* Hover and Active Focus States */
 .nav-menu-item:hover,
 .nav-menu-item.active-route,
 .ant-menu-item-selected,
 .ant-menu-item:hover {
-  background-color: var(--bg-sidebar-hover) !important;
+  background-color: var(--bg-sidebar-hover) !important; /* Consistent mid-green highlight */
   color: var(--text-light) !important;
 }
 
@@ -101,9 +107,10 @@ aside.ant-layout-sider {
 .sidebar-footer-profile {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 16px;
+  padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
 }
 
 .profile-identity-display {
@@ -119,13 +126,13 @@ aside.ant-layout-sider {
 /* Clean Border Action Control Selector */
 .logout-action-trigger {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-light);
   padding: 12px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -135,43 +142,48 @@ aside.ant-layout-sider {
 }
 
 .logout-action-trigger:hover {
-  background: #ef4444; /* Clean operational exit warnings toggle */
-  border-color: #ef4444;
+  background: #dc2626 !important;    /* Refined flat red color for exit action button */
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
 }
 
 /* ==========================================================================
-   MAIN DASHBOARD WORKSPACE VIEWPORT
+   MAIN DASHBOARD WORKSPACE VIEWPORT ALIGNMENT
    ========================================================================== */
 .workspace-viewport {
   flex-grow: 1;
-  padding: 40px;
+  padding: 48px 56px;                 /* Increased padding for structured web-view whitespace */
   box-sizing: border-box;
   overflow-y: auto;
   background-color: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Heading section styling */
+.workspace-header,
+.page-title-area {
+  margin-bottom: 32px;
 }
 
 .workspace-header h1,
 .financial-overview-title {
-  font-size: 28px;
+  font-size: 32px;                   /* Larger premium text scale */
   font-weight: 700;
   color: var(--text-dark);
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
   letter-spacing: -0.5px;
 }
 
 .workspace-header p {
-  color: #6b7280;
-  margin: 0 0 32px 0;
-  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  font-size: 15px;
 }
 
-/* Alert Notification Banner Formatting */
-.alert-banner-toast,
-.ant-alert {
-  border-radius: 8px !important;
-  margin-bottom: 24px !important;
-  border: 1px solid #fef08a !important;
-  background-color: #fefce8 !important;
+/* Primary Action Buttons Container Alignment */
+.action-row-container {
+  margin-bottom: 24px;
 }
 
 /* ==========================================================================
@@ -180,32 +192,45 @@ aside.ant-layout-sider {
 .metrics-row-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
+  gap: 28px;
+  margin-bottom: 36px;
+  width: 100%;
 }
 
 /* Standard Secondary White Panels Layout */
 .metric-panel-card,
-.ant-card {
+.ant-card,
+.empty-data-wrapper-card {
   background: #ffffff;
   border-radius: var(--border-radius) !important;
-  padding: 24px;
+  padding: 32px;                      /* Expanded canvas boundaries */
   box-shadow: var(--card-shadow);
   border: 1px solid rgba(0, 0, 0, 0.02) !important;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Center empty layouts elegantly within white panels */
+.empty-data-wrapper-card {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 280px;
+  color: #64748b;
 }
 
 .metric-card-label {
   font-size: 14px;
   font-weight: 500;
-  color: #6b7280;
+  color: #64748b;
 }
 
 .metric-card-value,
 .ant-statistic-content {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
   color: var(--text-dark);
   margin: 4px 0 0 0;
@@ -232,6 +257,9 @@ aside.ant-layout-sider {
 @media (max-width: 1024px) {
   .metrics-row-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 20px;
+  }
+  .workspace-viewport {
+    padding: 32px;
   }
 }
