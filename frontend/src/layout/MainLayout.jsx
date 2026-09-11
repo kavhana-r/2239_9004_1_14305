@@ -124,7 +124,7 @@ function MainLayout() {
           {!collapsed && (
             
               <Avatar size="small" icon={<UserOutlined />} />
-              <Text className="user-profile-name" ellipsis>
+              <Text className="user-profile-name" style={{ color: '#fff' }} ellipsis>
                 {username}
               </Text>
             </div>
