@@ -1,3 +1,596 @@
+```css
+/* =========================================================
+   MINTMATRIX — APPLICATION UI
+   OPTION 3: LIGHT GREEN LUXURY
+   PREMIUM SIDEBAR + MAIN LAYOUT
+   ========================================================= */
+
+
+/* =========================================================
+   1. APPLICATION SHELL
+   ========================================================= */
+
+.ant-layout {
+  background: #f7f5ef !important;
+}
+
+
+/* =========================================================
+   2. PREMIUM SIDEBAR
+   ========================================================= */
+
 .ant-layout-sider {
-  background: red !important;
+  background: #fbfaf6 !important;
+  border-right: 1px solid #e3e9e3 !important;
+
+  box-shadow:
+    4px 0 24px rgba(36, 77, 58, 0.06) !important;
+
+  z-index: 100;
+}
+
+
+/* =========================================================
+   3. SIDEBAR BRAND AREA
+   ========================================================= */
+
+.ant-layout-sider > div:first-child {
+  background: #fbfaf6 !important;
+}
+
+
+/*
+   The first div inside Sider is currently the
+   MintMatrix brand area.
+*/
+
+.ant-layout-sider > div:first-child {
+  color: #244d3a !important;
+  border-bottom: 1px solid #edf1ed !important;
+}
+
+
+/* Brand text */
+
+.ant-layout-sider > div:first-child {
+  font-family:
+    "DM Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+
+  letter-spacing: -0.3px !important;
+}
+
+
+/* =========================================================
+   4. SIDEBAR MENU
+   ========================================================= */
+
+.ant-layout-sider .ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+
+  padding: 18px 12px !important;
+}
+
+
+/* Menu item */
+
+.ant-layout-sider .ant-menu-item {
+  height: 48px !important;
+  line-height: 48px !important;
+
+  margin: 5px 0 !important;
+  width: 100% !important;
+
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+
+  border-radius: 13px !important;
+
+  color: #647168 !important;
+
+  font-family:
+    "DM Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif !important;
+
+  font-size: 14px !important;
+  font-weight: 600 !important;
+
+  transition:
+    background 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease !important;
+}
+
+
+/* =========================================================
+   5. SIDEBAR ICONS
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item .anticon {
+  color: #708579 !important;
+
+  font-size: 18px !important;
+
+  transition:
+    color 0.22s ease,
+    transform 0.22s ease !important;
+}
+
+
+/* =========================================================
+   6. MENU HOVER
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item:hover {
+  background: #edf4ee !important;
+  color: #244d3a !important;
+
+  transform: translateX(2px) !important;
+}
+
+
+.ant-layout-sider .ant-menu-item:hover .anticon {
+  color: #244d3a !important;
+
+  transform: scale(1.05) !important;
+}
+
+
+/* =========================================================
+   7. ACTIVE MENU ITEM
+   ========================================================= */
+
+.ant-layout-sider .ant-menu-item-selected {
+  background:
+    linear-gradient(
+      90deg,
+      #dfece2 0%,
+      #eaf2eb 100%
+    ) !important;
+
+  color: #193a2c !important;
+
+  font-weight: 700 !important;
+
+  box-shadow:
+    inset 3px 0 0 #3f7657,
+    0 3px 10px rgba(36, 77, 58, 0.05) !important;
+}
+
+
+/* Active text */
+
+.ant-layout-sider
+  .ant-menu-item-selected
+  .ant-menu-title-content {
+  color: #193a2c !important;
+}
+
+
+/* Active icon */
+
+.ant-layout-sider
+  .ant-menu-item-selected
+  .anticon {
+  color: #35654d !important;
+}
+
+
+/* Prevent active item from becoming blue on hover */
+
+.ant-layout-sider
+  .ant-menu-item-selected:hover {
+  background:
+    linear-gradient(
+      90deg,
+      #dfece2 0%,
+      #eaf2eb 100%
+    ) !important;
+
+  color: #193a2c !important;
+}
+
+
+/* =========================================================
+   8. SIDEBAR MENU TEXT
+   ========================================================= */
+
+.ant-layout-sider
+  .ant-menu-title-content {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+
+  color: #5f6e65 !important;
+}
+
+
+.ant-layout-sider
+  .ant-menu-item-selected
+  .ant-menu-title-content {
+  font-weight: 700 !important;
+}
+
+
+/* =========================================================
+   9. LOGOUT / BOTTOM USER AREA
+   ========================================================= */
+
+.ant-layout-sider > div:last-child {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(251, 250, 246, 0.90),
+      #fbfaf6
+    ) !important;
+
+  border-top: 1px solid #e8eee8 !important;
+
+  padding: 16px !important;
+}
+
+
+/* =========================================================
+   10. USER PROFILE
+   ========================================================= */
+
+.ant-layout-sider .ant-avatar {
+  background: #e4eee6 !important;
+  color: #35654d !important;
+
+  border: 1px solid #d3e1d6 !important;
+
+  flex-shrink: 0;
+}
+
+
+/* Username */
+
+.ant-layout-sider .ant-typography {
+  color: #405249 !important;
+
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+
+/* =========================================================
+   11. LOGOUT BUTTON
+   ========================================================= */
+
+.ant-layout-sider .ant-btn-dangerous {
+  height: 42px !important;
+
+  border-radius: 12px !important;
+
+  background: #fff8f6 !important;
+
+  border: 1px solid #ead9d5 !important;
+
+  color: #9a554d !important;
+
+  font-weight: 600 !important;
+
+  box-shadow: none !important;
+
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease !important;
+}
+
+
+.ant-layout-sider .ant-btn-dangerous:hover,
+.ant-layout-sider .ant-btn-dangerous:focus {
+  background: #f9ece9 !important;
+
+  border-color: #dcbdb7 !important;
+
+  color: #91483f !important;
+
+  transform: translateY(-1px) !important;
+
+  box-shadow:
+    0 5px 14px rgba(145, 72, 63, 0.08) !important;
+}
+
+
+/* =========================================================
+   12. LOGOUT ICON
+   ========================================================= */
+
+.ant-layout-sider .ant-btn-dangerous .anticon {
+  color: #9a554d !important;
+}
+
+
+/* =========================================================
+   13. COLLAPSED SIDEBAR
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed {
+  width: 78px !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
+}
+
+
+/* Collapsed menu */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+
+/* Collapsed menu item */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu-item {
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  margin: 6px 0 !important;
+}
+
+
+/* Collapsed icon */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-menu-item .anticon {
+  margin: 0 !important;
+  font-size: 19px !important;
+}
+
+
+/* =========================================================
+   14. COLLAPSED BRAND
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  > div:first-child {
+  font-size: 18px !important;
+  letter-spacing: -0.5px !important;
+}
+
+
+/* =========================================================
+   15. COLLAPSED LOGOUT
+   ========================================================= */
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-btn {
+  padding: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+
+.ant-layout-sider.ant-layout-sider-collapsed
+  .ant-btn .anticon {
+  margin: 0 !important;
+}
+
+
+/* =========================================================
+   16. PREMIUM HEADER
+   ========================================================= */
+
+.ant-layout-header {
+  background: #fffdf9 !important;
+
+  border-bottom: 1px solid #e8ede8 !important;
+
+  box-shadow:
+    0 2px 14px rgba(36, 77, 58, 0.04) !important;
+
+  height: 68px !important;
+
+  display: flex !important;
+  align-items: center !important;
+}
+
+
+/* =========================================================
+   17. HEADER TOGGLE BUTTON
+   ========================================================= */
+
+.ant-layout-header > .ant-btn {
+  width: 42px !important;
+  height: 42px !important;
+
+  border-radius: 11px !important;
+
+  color: #496457 !important;
+
+  background: transparent !important;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+
+.ant-layout-header > .ant-btn:hover {
+  background: #edf4ee !important;
+
+  color: #244d3a !important;
+
+  transform: translateY(-1px) !important;
+}
+
+
+.ant-layout-header > .ant-btn .anticon {
+  font-size: 18px !important;
+}
+
+
+/* =========================================================
+   18. HEADER USER / WELCOME TEXT
+   ========================================================= */
+
+.ant-layout-header
+  .ant-typography {
+  color: #244d3a !important;
+
+  font-size: 14px !important;
+
+  font-weight: 700 !important;
+}
+
+
+/* =========================================================
+   19. MAIN CONTENT AREA
+   ========================================================= */
+
+.ant-layout-content {
+  background: #f7f5ef !important;
+
+  padding: 28px !important;
+}
+
+
+/* =========================================================
+   20. CONTENT INNER FEEL
+   ========================================================= */
+
+.ant-layout-content > * {
+  max-width: 1500px;
+}
+
+
+/* =========================================================
+   21. GLOBAL ANT DESIGN PRIMARY COLOR
+   ========================================================= */
+
+.ant-btn-primary {
+  background: #244d3a !important;
+  border-color: #244d3a !important;
+
+  border-radius: 11px !important;
+
+  font-weight: 600 !important;
+}
+
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: #35654d !important;
+  border-color: #35654d !important;
+}
+
+
+/* =========================================================
+   22. GLOBAL MENU TRANSITIONS
+   ========================================================= */
+
+.ant-menu-item,
+.ant-btn,
+.ant-card,
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector {
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* =========================================================
+   23. PREMIUM CARD FEEL
+   ========================================================= */
+
+.ant-card {
+  background: #fffefa !important;
+
+  border: 1px solid #e7ece7 !important;
+
+  border-radius: 18px !important;
+
+  box-shadow:
+    0 4px 18px rgba(36, 77, 58, 0.055) !important;
+}
+
+
+/* =========================================================
+   24. RESPONSIVE SIDEBAR
+   ========================================================= */
+
+@media (max-width: 991px) {
+  .ant-layout-sider {
+    box-shadow:
+      6px 0 24px rgba(36, 77, 58, 0.10) !important;
+  }
+
+  .ant-layout-content {
+    padding: 22px !important;
+  }
+}
+
+
+/* =========================================================
+   25. MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .ant-layout-header {
+    height: 62px !important;
+    padding: 0 16px !important;
+  }
+
+  .ant-layout-content {
+    padding: 16px !important;
+  }
+}
+
+
+/* =========================================================
+   26. SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .ant-layout-content {
+    padding: 12px !important;
+  }
+
+  .ant-layout-header {
+    padding: 0 12px !important;
+  }
+}
+
+
+/* =========================================================
+   27. ACCESSIBILITY
+   ========================================================= */
+
+.ant-layout-sider
+  .ant-menu-item:focus-visible {
+  outline: 2px solid #8da795 !important;
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   28. SMOOTH APPLICATION FEEL
+   ========================================================= */
+
+.ant-layout-sider,
+.ant-layout-header,
+.ant-layout-content {
+  transition:
+    background-color 0.25s ease,
+    box-shadow 0.25s ease !important;
 }
