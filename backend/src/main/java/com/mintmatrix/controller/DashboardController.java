@@ -1,126 +1,126 @@
-package com.mintmatrix.controller;
+// package com.mintmatrix.controller;
 
-import com.mintmatrix.model.Transaction;
-import com.mintmatrix.model.TransactionType;
-import com.mintmatrix.model.User;
-import com.mintmatrix.repository.TransactionRepository;
-import com.mintmatrix.repository.UserRepository;
+// import com.mintmatrix.model.Transaction;
+// import com.mintmatrix.model.TransactionType;
+// import com.mintmatrix.model.User;
+// import com.mintmatrix.repository.TransactionRepository;
+// import com.mintmatrix.repository.UserRepository;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+// import org.springframework.http.ResponseEntity;
+// import org.springframework.security.core.Authentication;
+// import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
-@RestController
-@RequestMapping("/api/dashboard")
-public class DashboardController {
+// import java.util.HashMap;
+// import java.util.List;
+// import java.util.Map;
 
 
-    private final UserRepository userRepository;
+// @RestController
+// @RequestMapping("/api/dashboard")
+// public class DashboardController {
 
-    private final TransactionRepository transactionRepository;
 
+//     private final UserRepository userRepository;
 
-
-    public DashboardController(
-            UserRepository userRepository,
-            TransactionRepository transactionRepository) {
-
-        this.userRepository = userRepository;
-        this.transactionRepository = transactionRepository;
-    }
+//     private final TransactionRepository transactionRepository;
 
 
 
+//     public DashboardController(
+//             UserRepository userRepository,
+//             TransactionRepository transactionRepository) {
 
-    @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getSummary(
-            Authentication authentication) {
-
-
-        User user =
-                userRepository.findByUsername(
-                        authentication.getName()
-                )
-                .orElseThrow(() ->
-                        new RuntimeException("User not found")
-                );
+//         this.userRepository = userRepository;
+//         this.transactionRepository = transactionRepository;
+//     }
 
 
 
-        List<Transaction> transactions =
-                transactionRepository.findByUser(user);
+
+//     @GetMapping("/summary")
+//     public ResponseEntity<Map<String, Object>> getSummary(
+//             Authentication authentication) {
+
+
+//         User user =
+//                 userRepository.findByUsername(
+//                         authentication.getName()
+//                 )
+//                 .orElseThrow(() ->
+//                         new RuntimeException("User not found")
+//                 );
 
 
 
-        double totalIncome = 0.0;
-
-        double totalExpense = 0.0;
-
-
-
-        for (Transaction transaction : transactions) {
-
-
-            if (transaction.getTransactionType()
-                    == TransactionType.INCOME) {
-
-
-                totalIncome +=
-                        transaction.getConvertedAmount();
-
-            }
-
-
-            else if (transaction.getTransactionType()
-                    == TransactionType.EXPENSE) {
-
-
-                totalExpense +=
-                        transaction.getConvertedAmount();
-            }
-        }
+//         List<Transaction> transactions =
+//                 transactionRepository.findByUser(user);
 
 
 
-        double totalBalance =
-                totalIncome - totalExpense;
+//         double totalIncome = 0.0;
+
+//         double totalExpense = 0.0;
 
 
 
-        Map<String, Object> summary =
-                new HashMap<>();
+//         for (Transaction transaction : transactions) {
 
 
-        summary.put(
-                "totalBalance",
-                totalBalance
-        );
+//             if (transaction.getTransactionType()
+//                     == TransactionType.INCOME) {
 
 
-        summary.put(
-                "totalIncome",
-                totalIncome
-        );
+//                 totalIncome +=
+//                         transaction.getConvertedAmount();
+
+//             }
 
 
-        summary.put(
-                "totalExpense",
-                totalExpense
-        );
+//             else if (transaction.getTransactionType()
+//                     == TransactionType.EXPENSE) {
 
 
-        summary.put(
-                "currency",
-                user.getPreferredCurrency()
-        );
+//                 totalExpense +=
+//                         transaction.getConvertedAmount();
+//             }
+//         }
 
 
 
-        return ResponseEntity.ok(summary);
-    }
-}
+//         double totalBalance =
+//                 totalIncome - totalExpense;
+
+
+
+//         Map<String, Object> summary =
+//                 new HashMap<>();
+
+
+//         summary.put(
+//                 "totalBalance",
+//                 totalBalance
+//         );
+
+
+//         summary.put(
+//                 "totalIncome",
+//                 totalIncome
+//         );
+
+
+//         summary.put(
+//                 "totalExpense",
+//                 totalExpense
+//         );
+
+
+//         summary.put(
+//                 "currency",
+//                 user.getPreferredCurrency()
+//         );
+
+
+
+//         return ResponseEntity.ok(summary);
+//     }
+// }
