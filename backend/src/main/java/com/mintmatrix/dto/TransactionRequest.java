@@ -1,28 +1,28 @@
-package com.mintmatrix.dto;
+// package com.mintmatrix.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+// import lombok.AllArgsConstructor;
+// import lombok.Data;
+// import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+// import java.time.LocalDate;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class TransactionRequest {
+// @Data
+// @NoArgsConstructor
+// @AllArgsConstructor
+// public class TransactionRequest {
 
-    private String title;
+//     private String title;
 
-    private Double amount;
+//     private Double amount;
 
-    private String currencyCode;
+//     private String currencyCode;
 
-    private String transactionType;
+//     private String transactionType;
 
-    private LocalDate transactionDate;
+//     private LocalDate transactionDate;
 
-    private String note;
+//     private String note;
 
-    private Long categoryId;
+//     private Long categoryId;
 
-}
+// }
