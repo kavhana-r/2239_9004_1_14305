@@ -1,148 +1,148 @@
-package com.mintmatrix.controller;
+// package com.mintmatrix.controller;
 
-import com.mintmatrix.dto.JwtResponse;
-import com.mintmatrix.dto.LoginRequest;
-import com.mintmatrix.dto.RegisterRequest;
-import com.mintmatrix.model.User;
-import com.mintmatrix.repository.UserRepository;
-import com.mintmatrix.security.JwtTokenProvider;
+// import com.mintmatrix.dto.JwtResponse;
+// import com.mintmatrix.dto.LoginRequest;
+// import com.mintmatrix.dto.RegisterRequest;
+// import com.mintmatrix.model.User;
+// import com.mintmatrix.repository.UserRepository;
+// import com.mintmatrix.security.JwtTokenProvider;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+// import org.springframework.http.ResponseEntity;
+// import org.springframework.security.authentication.AuthenticationManager;
+// import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+// import org.springframework.security.core.Authentication;
+// import org.springframework.security.core.context.SecurityContextHolder;
+// import org.springframework.security.crypto.password.PasswordEncoder;
 
-import org.springframework.web.bind.annotation.*;
+// import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/auth")
-public class AuthController {
-
-
-    private final AuthenticationManager authenticationManager;
-
-    private final JwtTokenProvider tokenProvider;
-
-    private final UserRepository userRepository;
-
-    private final PasswordEncoder passwordEncoder;
+// @RestController
+// @RequestMapping("/api/auth")
+// public class AuthController {
 
 
+//     private final AuthenticationManager authenticationManager;
 
-    public AuthController(
-            AuthenticationManager authenticationManager,
-            JwtTokenProvider tokenProvider,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+//     private final JwtTokenProvider tokenProvider;
 
-        this.authenticationManager = authenticationManager;
-        this.tokenProvider = tokenProvider;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+//     private final UserRepository userRepository;
+
+//     private final PasswordEncoder passwordEncoder;
 
 
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest loginRequest) {
+//     public AuthController(
+//             AuthenticationManager authenticationManager,
+//             JwtTokenProvider tokenProvider,
+//             UserRepository userRepository,
+//             PasswordEncoder passwordEncoder) {
 
-
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                loginRequest.getUsername(),
-                                loginRequest.getPassword()
-                        )
-                );
-
-
-        SecurityContextHolder.getContext()
-                .setAuthentication(authentication);
+//         this.authenticationManager = authenticationManager;
+//         this.tokenProvider = tokenProvider;
+//         this.userRepository = userRepository;
+//         this.passwordEncoder = passwordEncoder;
+//     }
 
 
 
-        String jwt =
-                tokenProvider.generateToken(authentication);
+//     @PostMapping("/login")
+//     public ResponseEntity<?> login(
+//             @RequestBody LoginRequest loginRequest) {
+
+
+//         Authentication authentication =
+//                 authenticationManager.authenticate(
+//                         new UsernamePasswordAuthenticationToken(
+//                                 loginRequest.getUsername(),
+//                                 loginRequest.getPassword()
+//                         )
+//                 );
+
+
+//         SecurityContextHolder.getContext()
+//                 .setAuthentication(authentication);
 
 
 
-        User user =
-                userRepository.findByUsername(
-                        loginRequest.getUsername()
-                ).orElseThrow();
+//         String jwt =
+//                 tokenProvider.generateToken(authentication);
 
 
 
-        return ResponseEntity.ok(
-                new JwtResponse(
-                        jwt,
-                        user.getUsername(),
-                        user.getRole()
-                )
-        );
-    }
+//         User user =
+//                 userRepository.findByUsername(
+//                         loginRequest.getUsername()
+//                 ).orElseThrow();
+
+
+
+//         return ResponseEntity.ok(
+//                 new JwtResponse(
+//                         jwt,
+//                         user.getUsername(),
+//                         user.getRole()
+//                 )
+//         );
+//     }
 
 
 
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(
-            @RequestBody RegisterRequest registerRequest) {
+//     @PostMapping("/register")
+//     public ResponseEntity<?> register(
+//             @RequestBody RegisterRequest registerRequest) {
 
 
-        if (userRepository
-                .findByUsername(
-                        registerRequest.getUsername()
-                )
-                .isPresent()) {
+//         if (userRepository
+//                 .findByUsername(
+//                         registerRequest.getUsername()
+//                 )
+//                 .isPresent()) {
 
-            return ResponseEntity
-                    .badRequest()
-                    .body("Username already taken");
-        }
-
-
-
-        User user = new User();
-
-        user.setUsername(
-                registerRequest.getUsername()
-        );
-
-        user.setPassword(
-                passwordEncoder.encode(
-                        registerRequest.getPassword()
-                )
-        );
-
-
-        if (registerRequest.getRole() != null) {
-
-            user.setRole(
-                    registerRequest.getRole()
-            );
-
-        } else {
-
-            user.setRole("ROLE_USER");
-        }
+//             return ResponseEntity
+//                     .badRequest()
+//                     .body("Username already taken");
+//         }
 
 
 
-        user.setPreferredCurrency(
-                registerRequest.getPreferredCurrency()
-        );
+//         User user = new User();
+
+//         user.setUsername(
+//                 registerRequest.getUsername()
+//         );
+
+//         user.setPassword(
+//                 passwordEncoder.encode(
+//                         registerRequest.getPassword()
+//                 )
+//         );
 
 
-        userRepository.save(user);
+//         if (registerRequest.getRole() != null) {
+
+//             user.setRole(
+//                     registerRequest.getRole()
+//             );
+
+//         } else {
+
+//             user.setRole("ROLE_USER");
+//         }
 
 
 
-        return ResponseEntity.ok(
-                "User registered successfully"
-        );
-    }
-}
+//         user.setPreferredCurrency(
+//                 registerRequest.getPreferredCurrency()
+//         );
+
+
+//         userRepository.save(user);
+
+
+
+//         return ResponseEntity.ok(
+//                 "User registered successfully"
+//         );
+//     }
+// }
