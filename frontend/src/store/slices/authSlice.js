@@ -353,106 +353,13 @@ const initialState = {
 // =========================
 // SLICE
 // =========================
-const authSlice = createSlice({
-    name: "auth",
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
 
-    initialState,
-
-    reducers: {
-
-        logout: (state) => {
-
-            state.user = null;
-            state.token = null;
-            state.isAuthenticated = false;
-            state.error = null;
-
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-
-            delete axios.defaults.headers.common["Authorization"];
-        },
-
-        clearError: (state) => {
-            state.error = null;
-        },
-    },
-
-    extraReducers: (builder) => {
-
-        // =========================
-        // LOGIN
-        // =========================
-
-        builder
-
-            .addCase(login.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-
-            .addCase(login.fulfilled, (state, action) => {
-
-    state.loading = false;
-    state.error = null;
-
-    state.token = action.payload.token;
-
-    state.user = {
-        ...(action.payload.user || {}),
-        username:
-            action.payload.user?.username ||
-            action.payload.username,
-        role:
-            action.payload.role ||
-            action.payload.user?.role,
-    };
-
-    state.isAuthenticated = true;
-})
-
-            .addCase(login.rejected, (state, action) => {
-
-                state.loading = false;
-
-                state.error =
-                    action.payload || "Login failed";
-
-                state.isAuthenticated = false;
-            });
-
-
-        // =========================
-        // REGISTER
-        // =========================
-
-        builder
-
-            .addCase(register.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-
-            .addCase(register.fulfilled, (state) => {
-                state.loading = false;
-                state.error = null;
-            })
-
-            .addCase(register.rejected, (state, action) => {
-
-                state.loading = false;
-
-                state.error =
-                    action.payload || "Registration failed";
-            });
-    },
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+  },
 });
 
-
-export const {
-    logout,
-    clearError,
-} = authSlice.actions;
-
-
-export default authSlice.reducer;
+export default store;
