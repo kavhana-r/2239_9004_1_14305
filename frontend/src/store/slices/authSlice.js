@@ -579,6 +579,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+// =========================
+// API URL
+// =========================
+const API_URL = "http://localhost:8080/api/auth";
+
+// =========================
+// RESTORE STORED AUTH
+// =========================
 const storedUser = localStorage.getItem("user");
 const storedToken = localStorage.getItem("token");
 const storedAuth = localStorage.getItem("isAuthenticated");
@@ -593,29 +601,45 @@ try {
   parsedUser = null;
 }
 
+// =========================
+// RESTORE AXIOS TOKEN
+// =========================
 if (storedToken && axios.defaults?.headers?.common) {
-  axios.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+  axios.defaults.headers.common.Authorization =
+    `Bearer ${storedToken}`;
 }
 
+// =========================
+// AXIOS REQUEST INTERCEPTOR
+// =========================
 if (typeof axios.interceptors?.request?.use === "function") {
   axios.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem("token");
-      if (token && config.headers && !config.headers.Authorization) {
+
+      if (
+        token &&
+        config.headers &&
+        !config.headers.Authorization
+      ) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
       return config;
     },
     (error) => Promise.reject(error)
   );
 }
 
+// =========================
+// LOGIN
+// =========================
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        "/api/auth/login",
+        `${API_URL}/login`,
         credentials
       );
 
@@ -643,7 +667,8 @@ export const login = createAsyncThunk(
       let errorMessage = "Invalid username or password.";
 
       if (!error?.response && error?.request) {
-        errorMessage = "Unable to connect to the server. Please try again.";
+        errorMessage =
+          "Unable to connect to the server. Please try again.";
       } else if (error?.response?.data) {
         if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
@@ -660,22 +685,25 @@ export const login = createAsyncThunk(
   }
 );
 
+// =========================
+// REGISTER
+// =========================
 export const register = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
-      const response =
-        await axios.post(
-          "/api/auth/register",
-          userData
-        );
+      const response = await axios.post(
+        `${API_URL}/register`,
+        userData
+      );
 
       return response?.data;
     } catch (error) {
       let errorMessage = "Registration failed.";
 
       if (!error?.response && error?.request) {
-        errorMessage = "Unable to connect to the server. Please try again.";
+        errorMessage =
+          "Unable to connect to the server. Please try again.";
       } else if (error?.response?.data) {
         if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
@@ -692,20 +720,30 @@ export const register = createAsyncThunk(
   }
 );
 
+// =========================
+// INITIAL STATE
+// =========================
 const initialState = {
   user: parsedUser,
   token: storedToken || null,
-  isAuthenticated: storedAuth === "true" || !!storedToken,
+  isAuthenticated:
+    storedAuth === "true" || !!storedToken,
   loading: false,
   error: null,
 };
 
+// =========================
+// AUTH SLICE
+// =========================
 const authSlice = createSlice({
   name: "auth",
 
   initialState,
 
   reducers: {
+    // =========================
+    // LOGOUT
+    // =========================
     logout: (state) => {
       state.user = null;
       state.token = null;
@@ -721,6 +759,9 @@ const authSlice = createSlice({
         .Authorization;
     },
 
+    // =========================
+    // CLEAR ERROR
+    // =========================
     clearError: (state) => {
       state.error = null;
     },
@@ -728,6 +769,10 @@ const authSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
+
+      // =========================
+      // LOGIN PENDING
+      // =========================
       .addCase(
         login.pending,
         (state) => {
@@ -736,6 +781,9 @@ const authSlice = createSlice({
         }
       )
 
+      // =========================
+      // LOGIN SUCCESS
+      // =========================
       .addCase(
         login.fulfilled,
         (state, action) => {
@@ -769,7 +817,11 @@ const authSlice = createSlice({
               "token",
               action.payload.token
             );
-            localStorage.setItem("isAuthenticated", "true");
+
+            localStorage.setItem(
+              "isAuthenticated",
+              "true"
+            );
           }
 
           localStorage.setItem(
@@ -784,19 +836,30 @@ const authSlice = createSlice({
         }
       )
 
+      // =========================
+      // LOGIN FAILED
+      // =========================
       .addCase(
         login.rejected,
         (state, action) => {
           state.loading = false;
+
           state.error =
             action.payload ||
             action.error?.message ||
             "Login failed.";
+
           state.isAuthenticated = false;
-          localStorage.removeItem("isAuthenticated");
+
+          localStorage.removeItem(
+            "isAuthenticated"
+          );
         }
       )
 
+      // =========================
+      // REGISTER PENDING
+      // =========================
       .addCase(
         register.pending,
         (state) => {
@@ -805,6 +868,9 @@ const authSlice = createSlice({
         }
       )
 
+      // =========================
+      // REGISTER SUCCESS
+      // =========================
       .addCase(
         register.fulfilled,
         (state) => {
@@ -813,10 +879,14 @@ const authSlice = createSlice({
         }
       )
 
+      // =========================
+      // REGISTER FAILED
+      // =========================
       .addCase(
         register.rejected,
         (state, action) => {
           state.loading = false;
+
           state.error =
             action.payload ||
             action.error?.message ||
@@ -826,10 +896,15 @@ const authSlice = createSlice({
   },
 });
 
+// =========================
+// EXPORT ACTIONS
+// =========================
 export const {
   logout,
   clearError,
 } = authSlice.actions;
 
+// =========================
+// EXPORT REDUCER
+// =========================
 export default authSlice.reducer;
-
