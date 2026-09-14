@@ -576,797 +576,775 @@
 // // // };
 
 // // // export default LoginPage;
-// import React, { useEffect, useMemo, useState } from "react";
-// import { useSelector } from "react-redux";
-// import {
-//   Button,
-//   Card,
-//   Col,
-//   InputNumber,
-//   Modal,
-//   Progress,
-//   Row,
-//   Select,
-//   Typography,
-//   message,
-//   Tag,
-//   Space,
-//   Spin,
-//   Popconfirm,
-//   Empty,
-// } from "antd";
-// import {
-//   PlusOutlined,
-//   WalletOutlined,
-//   CheckCircleOutlined,
-//   ExclamationCircleOutlined,
-//   EditOutlined,
-//   DeleteOutlined,
-// } from "@ant-design/icons";
-// import axios from "axios";
-
-// const { Title, Text } = Typography;
-
-// const months = [
-//   "January",
-//   "February",
-//   "March",
-//   "April",
-//   "May",
-//   "June",
-//   "July",
-//   "August",
-//   "September",
-//   "October",
-//   "November",
-//   "December",
-// ];
-
-// const CATEGORY_ICONS = {
-//   Food: "🍔",
-//   Groceries: "🛒",
-//   Transport: "🚗",
-//   Shopping: "🛍️",
-//   Bills: "⚡",
-//   Utilities: "💡",
-//   Entertainment: "🎬",
-//   Housing: "🏠",
-//   Health: "💊",
-//   Travel: "✈️",
-//   Salary: "💼",
-//   Freelance: "💻",
-//   Investment: "📈",
-//   Others: "📦",
-// };
-
-// const DEFAULT_CATEGORIES = [
-//   { id: "c1", name: "Food", icon: "🍔" },
-//   { id: "c2", name: "Groceries", icon: "🛒" },
-//   { id: "c3", name: "Transport", icon: "🚗" },
-//   { id: "c4", name: "Shopping", icon: "🛍️" },
-//   { id: "c5", name: "Bills", icon: "⚡" },
-//   { id: "c6", name: "Utilities", icon: "💡" },
-//   { id: "c7", name: "Entertainment", icon: "🎬" },
-//   { id: "c8", name: "Housing", icon: "🏠" },
-//   { id: "c9", name: "Health", icon: "💊" },
-//   { id: "c10", name: "Travel", icon: "✈️" },
-//   { id: "c11", name: "Others", icon: "📦" },
-// ];
-
-// const DEFAULT_BUDGET_ITEMS = [
-//   { id: "b1", name: "Food", icon: "🍔", limit: 800, spent: 620, remaining: 180, pct: 78 },
-//   { id: "b2", name: "Transport", icon: "🚗", limit: 400, spent: 310.25, remaining: 89.75, pct: 78 },
-//   { id: "b3", name: "Shopping", icon: "🛍️", limit: 500, spent: 420, remaining: 80, pct: 84 },
-//   { id: "b4", name: "Bills", icon: "⚡", limit: 600, spent: 480, remaining: 120, pct: 80 },
-//   { id: "b5", name: "Others", icon: "📦", limit: 200, spent: 109, remaining: 91, pct: 55 },
-// ];
-
-// const getCurrencySymbol = (currency) => {
-//   switch (currency) {
-//     case "INR":
-//       return "₹";
-//     case "EUR":
-//       return "€";
-//     case "GBP":
-//       return "£";
-//     case "JPY":
-//       return "¥";
-//     case "AUD":
-//       return "A$";
-//     case "CAD":
-//       return "C$";
-//     case "USD":
-//     default:
-//       return "$";
-//   }
-// };
-
-// function BudgetsPage() {
-//   const authUser = useSelector((state) => state?.auth?.user);
-
-//   const [currency, setCurrency] = useState(() => {
-//     return localStorage.getItem("preferredCurrency") || authUser?.preferredCurrency || "USD";
-//   });
-
-//   const [budgets, setBudgets] = useState([]);
-//   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-//   const [loading, setLoading] = useState(false);
-
-//   const [modalOpen, setModalOpen] = useState(false);
-//   const [saving, setSaving] = useState(false);
-//   const [editingBudget, setEditingBudget] = useState(null);
-
-//   const currentMonthName = months[new Date().getMonth()];
-
-//   const [formData, setFormData] = useState({
-//     categoryName: "Food",
-//     categoryId: null,
-//     month: currentMonthName,
-//     year: new Date().getFullYear(),
-//     limitAmount: null,
-//   });
-
-//   useEffect(() => {
-//     const handleCurrencyChange = (e) => {
-//       const newCurr = e.detail || localStorage.getItem("preferredCurrency") || "USD";
-//       setCurrency(newCurr);
-//     };
-
-//     window.addEventListener("currencyChange", handleCurrencyChange);
-//     return () => {
-//       window.removeEventListener("currencyChange", handleCurrencyChange);
-//     };
-//   }, []);
-
-//   useEffect(() => {
-//     if (!localStorage.getItem("preferredCurrency")) {
-//       const userCurrency = authUser?.preferredCurrency || authUser?.user?.preferredCurrency;
-//       if (userCurrency) {
-//         setCurrency(userCurrency);
-//       }
-//     }
-//   }, [authUser]);
-
-//   useEffect(() => {
-//     fetchBudgets();
-//   }, []);
-
-//   const fetchBudgets = async () => {
-//     try {
-//       setLoading(true);
-//       const [budgetRes, catRes, summaryRes, txRes] = await Promise.allSettled([
-//         axios.get("/api/budgets"),
-//         axios.get("/api/categories"),
-//         axios.get("/api/dashboard/summary"),
-//         axios.get("/api/transactions"),
-//       ]);
-
-//       let txList = [];
-//       if (txRes.status === "fulfilled") {
-//         const txData = txRes.value?.data;
-//         txList = Array.isArray(txData)
-//           ? txData
-//           : Array.isArray(txData?.content)
-//           ? txData.content
-//           : [];
-//       }
-
-//       if (catRes.status === "fulfilled") {
-//         const catData = catRes.value?.data;
-//         const catList = Array.isArray(catData)
-//           ? catData
-//           : Array.isArray(catData?.content)
-//           ? catData.content
-//           : [];
-//         if (catList.length > 0) {
-//           setCategories(catList);
-//         }
-//       }
-
-//       if (budgetRes.status === "fulfilled") {
-//         const data = budgetRes.value?.data;
-//         const list = Array.isArray(data)
-//           ? data
-//           : Array.isArray(data?.content)
-//             ? data.content
-//             : [];
-        
-//         const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-//         const filteredList = list.filter((b) => !deletedIds.includes(String(b.id)));
-        
-//         const calculatedList = filteredList.map((b) => {
-//           const bMonth = typeof b.month === "number" ? b.month : months.indexOf(b.month) + 1;
-//           const bYear = Number(b.year) || new Date().getFullYear();
-//           const bCatId = b.category?.id;
-//           const bCatName = b.category?.name || b.name;
-
-//           let txSpent = 0;
-//           txList.forEach((tx) => {
-//             const isExpense = tx.transactionType === "EXPENSE" || tx.type === "EXPENSE";
-//             if (!isExpense) return;
-
-//             const txDate = tx.transactionDate ? new Date(tx.transactionDate) : null;
-//             if (txDate && !isNaN(txDate.getTime())) {
-//               const txMonth = txDate.getMonth() + 1;
-//               const txYear = txDate.getFullYear();
-//               if (txMonth !== bMonth || txYear !== bYear) return;
-//             }
-
-//             const txCatId = tx.category?.id;
-//             const txCatName = tx.category?.name;
-//             const catMatches =
-//               (bCatId && txCatId && Number(bCatId) === Number(txCatId)) ||
-//               (bCatName && txCatName && String(bCatName).toLowerCase() === String(txCatName).toLowerCase());
-
-//             if (catMatches || !bCatId) {
-//               txSpent += Number(tx.amount != null ? tx.amount : (tx.convertedAmount || 0));
-//             }
-//           });
-
-//           return {
-//             ...b,
-//             spentAmount: txSpent > 0 ? txSpent : (b.spentAmount != null ? Number(b.spentAmount) : 0),
-//           };
-//         });
-
-//         setBudgets(calculatedList);
-
-//         const foundCurrency = list.find((b) => b?.user?.preferredCurrency)?.user?.preferredCurrency;
-//         if (foundCurrency) {
-//           setCurrency(foundCurrency);
-//         }
-//       } else {
-//         setBudgets([]);
-//       }
-
-//       if (summaryRes.status === "fulfilled" && summaryRes.value?.data?.currency) {
-//         setCurrency(summaryRes.value.data.currency);
-//       }
-//     } catch (error) {
-//       setBudgets([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const openAdd = () => {
-//     setEditingBudget(null);
-//     const firstCat = categories.length > 0 ? categories[0] : DEFAULT_CATEGORIES[0];
-//     setFormData({
-//       categoryName: firstCat.name,
-//       categoryId: firstCat.id,
-//       month: currentMonthName,
-//       year: new Date().getFullYear(),
-//       limitAmount: null,
-//     });
-//     setModalOpen(true);
-//   };
-
-//   const openEdit = (budget) => {
-//     setEditingBudget(budget);
-//     const monthNum = typeof budget.month === "number" ? budget.month : months.indexOf(budget.month) + 1;
-//     const monthName = months[monthNum - 1] || budget.month || currentMonthName;
-//     const catName = budget.category?.name || budget.name || "Food";
-//     const catObj = categories.find((c) => c.name === catName);
-
-//     setFormData({
-//       categoryName: catName,
-//       categoryId: catObj?.id || budget.category?.id || null,
-//       month: monthName,
-//       year: budget.year || new Date().getFullYear(),
-//       limitAmount: getLimit(budget),
-//     });
-//     setModalOpen(true);
-//   };
-
-//   const handleDelete = async (budget) => {
-//     try {
-//       if (budget.id && typeof budget.id === "number") {
-//         try {
-//           await axios.delete(`/api/budgets/${budget.id}`);
-//         } catch (apiErr) {
-//           console.warn("Backend DELETE API warning:", apiErr);
-//         }
-//       }
-
-//       // Track deleted budget locally so it persists
-//       const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-//       if (budget.id) deletedIds.push(String(budget.id));
-//       if (budget.name) deletedIds.push(String(budget.name));
-//       localStorage.setItem("deleted_budget_ids", JSON.stringify(deletedIds));
-
-//       setBudgets((prev) => prev.filter((b) => b.id !== budget.id && b.name !== budget.name));
-//       message.success("Budget deleted successfully");
-//     } catch (error) {
-//       message.error("Unable to delete budget.");
-//     }
-//   };
-
-//   const handleSubmit = async () => {
-//     if (!formData.month) {
-//       message.error("Month is required");
-//       return;
-//     }
-
-//     if (!formData.year) {
-//       message.error("Year is required");
-//       return;
-//     }
-
-//     if (
-//       formData.limitAmount === null ||
-//       Number(formData.limitAmount) < 1
-//     ) {
-//       message.error("Limit amount must be at least 1");
-//       return;
-//     }
-
-//     try {
-//       setSaving(true);
-
-//       const monthIdx = months.indexOf(formData.month);
-//       const monthVal = monthIdx !== -1 ? monthIdx + 1 : Number(formData.month) || 1;
-
-//       const payload = {
-//         month: monthVal,
-//         year: Number(formData.year),
-//         limitAmount: Number(formData.limitAmount),
-//       };
-
-//       if (formData.categoryId && typeof formData.categoryId === "number") {
-//         payload.category = { id: formData.categoryId, name: formData.categoryName };
-//       }
-
-//       if (editingBudget && editingBudget.id && typeof editingBudget.id === "number") {
-//         try {
-//           await axios.put(`/api/budgets/${editingBudget.id}`, payload);
-//         } catch (err) {
-//           // Fallback to POST /api/budgets which creates or updates by month & year
-//           await axios.post("/api/budgets", payload);
-//         }
-//         message.success("Budget set successfully.");
-//       } else {
-//         await axios.post("/api/budgets", payload);
-//         message.success("Budget set successfully.");
-//       }
-
-//       // Save category association in local storage
-//       try {
-//         const catMap = JSON.parse(localStorage.getItem("budget_category_map") || "{}");
-//         const key = `${monthVal}_${formData.year}`;
-//         catMap[key] = {
-//           name: formData.categoryName,
-//           icon: CATEGORY_ICONS[formData.categoryName] || "🏷️",
-//         };
-//         localStorage.setItem("budget_category_map", JSON.stringify(catMap));
-//       } catch (e) {}
-
-//       setModalOpen(false);
-//       await fetchBudgets();
-//     } catch (error) {
-//       message.error(
-//         error?.response?.data?.message || "Unable to save budget."
-//       );
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
-
-//   const getSpent = (budget) =>
-//     Number(
-//       budget?.spentAmount ??
-//       budget?.spent ??
-//       budget?.totalSpent ??
-//       0
-//     );
-
-//   const getLimit = (budget) =>
-//     Number(
-//       budget?.limitAmount ??
-//       budget?.amount ??
-//       budget?.limit ??
-//       0
-//     );
-
-//   const getPercent = (budget) => {
-//     const limit = getLimit(budget);
-//     if (limit <= 0) return 0;
-//     return Math.round((getSpent(budget) / limit) * 100);
-//   };
-
-//   const formatMonthTitle = (month, year) => {
-//     if (typeof month === "number") {
-//       const name = months[month - 1] || month;
-//       return `${name} ${year || ""}`;
-//     }
-//     return `${month || ""} ${year || ""}`;
-//   };
-
-//   const symbol = getCurrencySymbol(currency);
-
-//   const displayItems = useMemo(() => {
-//     const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-//     if (budgets.length > 0) {
-//       return budgets.filter((b) => !deletedIds.includes(String(b.id)));
-//     }
-//     return DEFAULT_BUDGET_ITEMS.filter(
-//       (b) => !deletedIds.includes(String(b.id)) && !deletedIds.includes(String(b.name))
-//     );
-//   }, [budgets]);
-
-//   // Overall totals calculation
-//   const overallTotals = useMemo(() => {
-//     let totalLimit = 0;
-//     let totalSpent = 0;
-
-//     displayItems.forEach((b) => {
-//       totalLimit += getLimit(b);
-//       totalSpent += getSpent(b);
-//     });
-
-//     const displayRemaining = Math.max(0, totalLimit - totalSpent);
-//     const overallPct = totalLimit > 0 ? Math.min(100, Math.round((totalSpent / totalLimit) * 100)) : 0;
-
-//     return {
-//       limit: totalLimit,
-//       spent: totalSpent,
-//       remaining: displayRemaining,
-//       pct: overallPct,
-//       hasRealData: totalLimit > 0,
-//     };
-//   }, [displayItems]);
-
-//   return (
-//     <div>
-//       {/* Top Page Header */}
-//       <div className="page-header">
-//         <div>
-//           <Title level={2} style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>
-//             Budgets
-//           </Title>
-//           <Text style={{ color: "#64748b", fontSize: 14 }}>
-//             Set monthly spending limits and monitor budget utilization
-//           </Text>
-//         </div>
-
-//         <Button
-//           type="primary"
-//           icon={<PlusOutlined />}
-//           size="large"
-//           onClick={openAdd}
-//           style={{
-//             borderRadius: 8,
-//             fontWeight: 700,
-//             background: "#10b981",
-//             borderColor: "#10b981",
-//           }}
-//         >
-//           Create Budget
-//         </Button>
-//       </div>
-
-//       {/* 4 Summary Metric Cards (Screen 6) */}
-//       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
-//         {/* Total Budget */}
-//         <Col xs={24} sm={12} lg={6}>
-//           <div className="kpi-card" style={{ padding: "18px 22px" }}>
-//             <div className="kpi-card-header">
-//               <span className="kpi-card-label">Total Budget</span>
-//               <div className="kpi-card-icon budget">
-//                 <WalletOutlined />
-//               </div>
-//             </div>
-//             <div className="kpi-card-value">
-//               {symbol}
-//               {overallTotals.limit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//             </div>
-//           </div>
-//         </Col>
-
-//         {/* Spent */}
-//         <Col xs={24} sm={12} lg={6}>
-//           <div className="kpi-card" style={{ padding: "18px 22px" }}>
-//             <div className="kpi-card-header">
-//               <span className="kpi-card-label">Spent</span>
-//               <div className="kpi-card-icon expense">
-//                 <ExclamationCircleOutlined />
-//               </div>
-//             </div>
-//             <div className="kpi-card-value" style={{ color: "#ef4444" }}>
-//               {symbol}
-//               {overallTotals.spent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//             </div>
-//           </div>
-//         </Col>
-
-//         {/* Remaining */}
-//         <Col xs={24} sm={12} lg={6}>
-//           <div className="kpi-card" style={{ padding: "18px 22px" }}>
-//             <div className="kpi-card-header">
-//               <span className="kpi-card-label">Remaining</span>
-//               <div className="kpi-card-icon balance">
-//                 <CheckCircleOutlined />
-//               </div>
-//             </div>
-//             <div className="kpi-card-value" style={{ color: "#10b981" }}>
-//               {symbol}
-//               {overallTotals.remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//             </div>
-//           </div>
-//         </Col>
-
-//         {/* Overall Progress */}
-//         <Col xs={24} sm={12} lg={6}>
-//           <div className="kpi-card" style={{ padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-//             <div>
-//               <span className="kpi-card-label">Overall Progress</span>
-//               <div className="kpi-card-value" style={{ margin: "4px 0 0 0" }}>
-//                 {overallTotals.pct}%
-//               </div>
-//               <span style={{ fontSize: 12, color: "#64748b" }}>of total cap</span>
-//             </div>
-//             <Progress
-//               type="circle"
-//               percent={overallTotals.pct}
-//               width={56}
-//               strokeColor="#10b981"
-//               strokeWidth={10}
-//               format={() => `${overallTotals.pct}%`}
-//             />
-//           </div>
-//         </Col>
-//       </Row>
-
-//       {/* Budget List Card */}
-//       <Card className="modern-card">
-//         <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-//           <div>
-//             <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0f172a" }}>
-//               Active Category Budgets
-//             </h3>
-//             <span style={{ fontSize: 13, color: "#64748b" }}>
-//               Real-time expenditure progress bars
-//             </span>
-//           </div>
-//           <Tag color="success" style={{ borderRadius: 20, fontWeight: 600 }}>
-//             {currentMonthName} {new Date().getFullYear()}
-//           </Tag>
-//         </div>
-
-//         {loading ? (
-//           <div style={{ textAlign: "center", padding: 40 }}>
-//             <Spin size="large" />
-//           </div>
-//         ) : displayItems.length === 0 ? (
-//           <div style={{ padding: "40px 0", textAlign: "center" }}>
-//             <Empty description="No budgets found. Create one to monitor your spending limits!" />
-//             <Button
-//               type="primary"
-//               icon={<PlusOutlined />}
-//               onClick={openAdd}
-//               style={{ marginTop: 16, borderRadius: 8, background: "#10b981", borderColor: "#10b981" }}
-//             >
-//               Add Budget
-//             </Button>
-//           </div>
-//         ) : (
-//           <div className="custom-table" style={{ overflowX: "auto" }}>
-//             <table>
-//               <thead>
-//                 <tr>
-//                   <th>Category</th>
-//                   <th>Budgeted</th>
-//                   <th>Spent</th>
-//                   <th>Remaining</th>
-//                   <th style={{ minWidth: 160 }}>Progress</th>
-//                   <th style={{ textAlign: "center", width: 120 }}>Actions</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {displayItems.map((b, idx) => {
-//                   let name = b.category?.name || b.name;
-//                   if (!name && b.month) {
-//                     try {
-//                       const catMap = JSON.parse(localStorage.getItem("budget_category_map") || "{}");
-//                       const monthVal = typeof b.month === "number" ? b.month : months.indexOf(b.month) + 1;
-//                       const saved = catMap[`${monthVal}_${b.year}`];
-//                       if (saved?.name) name = saved.name;
-//                     } catch (e) {}
-//                   }
-//                   if (!name) name = formatMonthTitle(b.month, b.year);
-
-//                   const icon = b.icon || CATEGORY_ICONS[name] || "🏷️";
-//                   const limitVal = b.limit || getLimit(b);
-//                   const spentVal = b.spent || getSpent(b);
-//                   const remainingVal = b.remaining !== undefined ? b.remaining : Math.max(0, limitVal - spentVal);
-//                   const pct = b.pct !== undefined ? b.pct : getPercent(b);
-//                   const isOver = pct >= 100;
-
-//                   return (
-//                     <tr key={b.id || idx}>
-//                       <td style={{ fontWeight: 600, color: "#0f172a" }}>
-//                         <Space size="middle">
-//                           <span style={{ fontSize: 20 }}>{icon}</span>
-//                           <span>{name}</span>
-//                         </Space>
-//                       </td>
-//                       <td style={{ fontWeight: 600, color: "#334155" }}>
-//                         {symbol}{limitVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//                       </td>
-//                       <td style={{ fontWeight: 700, color: isOver ? "#ef4444" : "#0f172a" }}>
-//                         {symbol}{spentVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//                       </td>
-//                       <td style={{ fontWeight: 600, color: isOver ? "#ef4444" : "#10b981" }}>
-//                         {symbol}{remainingVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-//                       </td>
-//                       <td>
-//                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-//                           <Progress
-//                             percent={Math.min(100, pct)}
-//                             strokeColor={isOver ? "#ef4444" : "#10b981"}
-//                             trailColor="#f1f5f9"
-//                             showInfo={false}
-//                             style={{ flex: 1, margin: 0 }}
-//                           />
-//                           <span
-//                             style={{
-//                               fontWeight: 700,
-//                               fontSize: 13,
-//                               color: isOver ? "#ef4444" : "#0f172a",
-//                               minWidth: 40,
-//                               textAlign: "right",
-//                             }}
-//                           >
-//                             {pct}%
-//                           </span>
-//                         </div>
-//                       </td>
-//                       <td style={{ textAlign: "center" }}>
-//                         <Space size="small">
-//                           <button
-//                             type="button"
-//                             className="action-btn-circle"
-//                             onClick={() => openEdit(b)}
-//                             title="Edit Budget"
-//                           >
-//                             <EditOutlined />
-//                           </button>
-//                           <Popconfirm
-//                             title="Delete budget"
-//                             description="Are you sure you want to delete this budget?"
-//                             onConfirm={() => handleDelete(b)}
-//                             okText="Delete"
-//                             cancelText="Cancel"
-//                             okButtonProps={{ danger: true }}
-//                           >
-//                             <button
-//                               type="button"
-//                               className="action-btn-circle danger"
-//                               title="Delete Budget"
-//                             >
-//                               <DeleteOutlined />
-//                             </button>
-//                           </Popconfirm>
-//                         </Space>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//               </tbody>
-//             </table>
-//           </div>
-//         )}
-//       </Card>
-
-//       {/* Add / Edit Budget Modal */}
-//       <Modal
-//         title={
-//           <div>
-//             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-//               {editingBudget ? "Edit Budget" : "Create Monthly Budget"}
-//             </h3>
-//             <span style={{ fontSize: 13, color: "#64748b" }}>
-//               Set spending limits to keep expenditures in check
-//             </span>
-//           </div>
-//         }
-//         open={modalOpen}
-//         onCancel={() => setModalOpen(false)}
-//         footer={null}
-//         destroyOnClose
-//       >
-//         <div style={{ padding: "16px 0" }}>
-//           <div style={{ marginBottom: 16 }}>
-//             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-//               Category <span style={{ color: "#ef4444" }}>*</span>
-//             </label>
-//             <Select
-//               size="large"
-//               style={{ width: "100%", height: 42 }}
-//               value={formData.categoryName}
-//               onChange={(name) => {
-//                 const found = categories.find((c) => c.name === name);
-//                 setFormData((p) => ({
-//                   ...p,
-//                   categoryName: name,
-//                   categoryId: found?.id || null,
-//                 }));
-//               }}
-//               options={categories.map((c) => ({
-//                 value: c.name,
-//                 label: `${c.icon || CATEGORY_ICONS[c.name] || "🏷️"} ${c.name}`,
-//               }))}
-//             />
-//           </div>
-
-//           <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 16 }}>
-//             <div>
-//               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-//                 Month <span style={{ color: "#ef4444" }}>*</span>
-//               </label>
-//               <Select
-//                 size="large"
-//                 style={{ width: "100%", height: 42 }}
-//                 value={formData.month}
-//                 onChange={(value) => setFormData((p) => ({ ...p, month: value }))}
-//                 options={months.map((m) => ({ value: m, label: m }))}
-//               />
-//             </div>
-
-//             <div>
-//               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-//                 Year <span style={{ color: "#ef4444" }}>*</span>
-//               </label>
-//               <InputNumber
-//                 size="large"
-//                 style={{ width: "100%", height: 42 }}
-//                 min={2020}
-//                 max={2035}
-//                 value={formData.year}
-//                 onChange={(val) => setFormData((p) => ({ ...p, year: val }))}
-//               />
-//             </div>
-//           </div>
-
-//           <div style={{ marginBottom: 24 }}>
-//             <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-//               Budget Limit Amount ({symbol}) <span style={{ color: "#ef4444" }}>*</span>
-//             </label>
-//             <InputNumber
-//               size="large"
-//               style={{ width: "100%", height: 42 }}
-//               min={1}
-//               step={50}
-//               placeholder="e.g., 2500"
-//               value={formData.limitAmount}
-//               onChange={(val) => setFormData((p) => ({ ...p, limitAmount: val }))}
-//             />
-//           </div>
-
-//           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-//             <Button size="large" onClick={() => setModalOpen(false)} style={{ borderRadius: 8 }}>
-//               Cancel
-//             </Button>
-//             <Button
-//               type="primary"
-//               size="large"
-//               loading={saving}
-//               onClick={handleSubmit}
-//               style={{
-//                 borderRadius: 8,
-//                 fontWeight: 700,
-//                 background: "#10b981",
-//                 borderColor: "#10b981",
-//                 minWidth: 120,
-//               }}
-//             >
-//               {editingBudget ? "Update Budget" : "Save Budget"}
-//             </Button>
-//           </div>
-//         </div>
-//       </Modal>
-//     </div>
-//   );
-// }
-
-// export default BudgetsPage;
+import React, { useEffect, useState } from "react";
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  App as AntdApp,
+  message as staticMessage,
+} from "antd";
+import {
+  LockOutlined,
+  UserOutlined,
+  ThunderboltFilled,
+  ArrowRightOutlined,
+  GlobalOutlined,
+  PieChartOutlined,
+  AimOutlined,
+  SafetyCertificateOutlined,
+  CheckCircleFilled,
+  CloseCircleFilled,
+  CrownOutlined,
+  SafetyOutlined,
+  CopyOutlined,
+  ReloadOutlined,
+  CheckOutlined,
+} from "@ant-design/icons";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+
+import { login, logout, clearError } from "../store/slices/authSlice";
+
+const checkPasswordCriteria = (pwd = "") => {
+  return {
+    minLength: pwd.length >= 8,
+    hasUpper: /[A-Z]/.test(pwd),
+    hasLower: /[a-z]/.test(pwd),
+    hasNumber: /[0-9]/.test(pwd),
+    hasSpecial: /[^a-zA-Z0-9]/.test(pwd),
+  };
+};
+
+const isStrongPassword = (pwd = "") => {
+  if (!pwd) return false;
+  const c = checkPasswordCriteria(pwd);
+  return c.minLength && c.hasUpper && c.hasLower && c.hasNumber && c.hasSpecial;
+};
+
+const generateStrongPassword = () => {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const numbers = "23456789";
+  const specials = "!@#$%^&*()_+-=";
+
+  let pwd = [
+    upper[Math.floor(Math.random() * upper.length)],
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+    specials[Math.floor(Math.random() * specials.length)],
+  ];
+
+  const allChars = upper + lower + numbers + specials;
+  for (let i = 0; i < 6; i++) {
+    pwd.push(allChars[Math.floor(Math.random() * allChars.length)]);
+  }
+
+  for (let i = pwd.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
+  }
+
+  return pwd.join("");
+};
+
+function LoginPage() {
+  let appMessage = staticMessage;
+  try {
+    const antdContext = AntdApp.useApp();
+    if (antdContext?.message) {
+      appMessage = antdContext.message;
+    }
+  } catch (e) {
+    // Fallback to static message
+  }
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { loading, error, token, user } = useSelector(
+    (state) => state.auth || {}
+  );
+
+  const searchParams = new URLSearchParams(location?.search || "");
+  const isAdminQuery = searchParams.get("admin") === "true";
+  const isInitialAdminPath =
+    (typeof location !== "undefined" &&
+      location?.pathname &&
+      location.pathname.includes("/admin")) ||
+    isAdminQuery;
+
+  const [isAdminMode, setIsAdminMode] = useState(Boolean(isInitialAdminPath));
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [localError, setLocalError] = useState(null);
+  const [localSuccess, setLocalSuccess] = useState(false);
+  const [suggestedPassword, setSuggestedPassword] = useState(() => generateStrongPassword());
+  const [copiedSuggestion, setCopiedSuggestion] = useState(false);
+  const [weakPasswordModalOpen, setWeakPasswordModalOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location?.search || "");
+    const adminQuery = params.get("admin") === "true";
+    if (location?.pathname?.includes("/admin") || adminQuery) {
+      setIsAdminMode(true);
+    }
+  }, [location?.pathname, location?.search]);
+
+  // Handle auto-redirect if already logged in with matching role
+  useEffect(() => {
+    if (token && user && !localSuccess) {
+      const role = user?.role || user?.user?.role;
+      const isAdminRole = role === "ROLE_ADMIN" || role === "ADMIN";
+
+      if (isAdminMode && isAdminRole) {
+        navigate("/admin/stats", { replace: true });
+      } else if (!isAdminMode && !isAdminRole) {
+        navigate("/dashboard", { replace: true });
+      }
+      // If role does not match current portal, do not auto-redirect!
+    }
+  }, [token, user, isAdminMode, navigate, localSuccess]);
+
+  // Sync Redux errors to local state
+  useEffect(() => {
+    if (error) {
+      const errorMessage =
+        typeof error === "string"
+          ? error
+          : error?.message || "Login failed. Please verify credentials.";
+
+      setLocalError(errorMessage);
+    }
+  }, [error]);
+
+  const handleRoleSwitch = (targetAdmin) => {
+    setIsAdminMode(targetAdmin);
+    setLocalError(null);
+    setLocalSuccess(false);
+    dispatch(clearError());
+  };
+
+  const handleRegeneratePassword = () => {
+    setSuggestedPassword(generateStrongPassword());
+    setCopiedSuggestion(false);
+  };
+
+  const handleCopySuggestion = async (pwdToCopy) => {
+    const text = pwdToCopy || suggestedPassword;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      }
+      setCopiedSuggestion(true);
+      if (appMessage?.success) {
+        appMessage.success("Strong password copied to clipboard!");
+      }
+      setTimeout(() => setCopiedSuggestion(false), 2500);
+    } catch (e) {
+      if (appMessage?.info) {
+        appMessage.info(`Copied password: ${text}`);
+      }
+    }
+  };
+
+  const handleUseSuggestedPassword = (pwdToUse) => {
+    const chosen = pwdToUse || suggestedPassword;
+    setPassword(chosen);
+    setWeakPasswordModalOpen(false);
+    if (localError && localError.includes("Weak password")) {
+      setLocalError(null);
+    }
+    if (appMessage?.info) {
+      appMessage.info("Applied suggested strong password to password field!");
+    }
+  };
+
+  const executeLogin = async (targetUsername, targetPassword) => {
+    try {
+      const data = await dispatch(
+        login({
+          username: targetUsername.trim(),
+          password: targetPassword,
+        })
+      ).unwrap();
+
+      const role = data?.role || data?.user?.role;
+      const isAdminRole = role === "ROLE_ADMIN" || role === "ADMIN";
+
+      // Enforce role isolation
+      if (!isAdminMode && isAdminRole) {
+        // Admin entered credentials into User Login
+        dispatch(logout());
+        const roleError = "Admin accounts must use Admin Login.";
+        setLocalError(roleError);
+        if (appMessage?.error) appMessage.error(roleError);
+        return;
+      }
+
+      if (isAdminMode && !isAdminRole) {
+        // Normal user entered credentials into Admin Login
+        dispatch(logout());
+        const roleError = "User accounts cannot access Admin Login.";
+        setLocalError(roleError);
+        if (appMessage?.error) appMessage.error(roleError);
+        return;
+      }
+
+      // Valid credentials with matching role
+      setLocalSuccess(true);
+      if (isAdminRole) {
+        if (appMessage?.success) appMessage.success("Admin login successful.");
+        navigate("/admin/stats", { replace: true });
+      } else {
+        if (appMessage?.success) appMessage.success("Login successful.");
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (err) {
+      let errorMessage = "Invalid email or password.";
+      if (typeof err === "string") {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      setLocalError(errorMessage);
+      if (appMessage?.error) appMessage.error(errorMessage);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setLocalError(null);
+    setLocalSuccess(false);
+
+    if (!username.trim() || !password) {
+      const msg = "Please enter username and password.";
+      setLocalError(msg);
+      if (appMessage?.error) appMessage.error(msg);
+      return;
+    }
+
+    // Check if user is trying to log in with a weak password
+    if (!isStrongPassword(password)) {
+      const strongSuggestion = generateStrongPassword();
+      setSuggestedPassword(strongSuggestion);
+      setWeakPasswordModalOpen(true);
+      const weakMsg =
+        "Weak password detected! MintMatrix requires strong passwords (min 8 chars, uppercase, lowercase, numbers, and symbols). A suggested strong password has been generated for you below.";
+      setLocalError(weakMsg);
+      if (appMessage?.warning) {
+        appMessage.warning("Weak password detected! A strong password recommendation has been generated.");
+      }
+      return;
+    }
+
+    await executeLogin(username, password);
+  };
+
+  return (
+    <div className={`auth-split-wrapper ${isAdminMode ? "admin-portal" : ""}`}>
+      {/* Left Showcase Side */}
+      <div className="auth-split-left">
+        <div>
+          {/* MintMatrix Brand Lockup */}
+          <div className="auth-brand-lockup">
+            <div className="auth-brand-logo-badge">
+              <ThunderboltFilled />
+            </div>
+            <div>
+              <div className="auth-brand-name">
+                Mint<span>Matrix</span>
+              </div>
+              <div className="auth-brand-subline">
+                {isAdminMode
+                  ? "Enterprise Admin Console"
+                  : "MULTI-CURRENCY BUDGET ANALYTICS"}
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-hero-content">
+            <div
+              className={`auth-portal-badge ${isAdminMode ? "admin-badge" : "user-badge"
+                }`}
+            >
+              {isAdminMode ? (
+                <>
+                  <SafetyOutlined /> Admin Console
+                </>
+              ) : (
+                <>
+                  <CrownOutlined /> USER FINANCIAL PORTAL
+                </>
+              )}
+            </div>
+
+            <h1 className="auth-hero-heading">
+              {isAdminMode ? (
+                <>
+                  Control. Secure. <span>Scale.</span>
+                </>
+              ) : (
+                <>
+                  Track. Plan. <span>Grow.</span>
+                </>
+              )}
+            </h1>
+
+            <p className="auth-hero-desc">
+              {isAdminMode
+                ? "Unified administration console for MintMatrix. Securely manage platform users, exchange rates, category taxonomies, and system-wide telemetry."
+                : "Take full control of your personal finances with intelligent multi-currency budgeting, real-time conversions, and precision analytics."}
+            </p>
+
+            {/* Feature Cards Grid */}
+            <div className="auth-feature-grid">
+              {isAdminMode ? (
+                <>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <SafetyCertificateOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">User Administration</div>
+                    </div>
+                  </div>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <GlobalOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">Currency Management</div>
+                    </div>
+                  </div>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <PieChartOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">Taxonomy Controls</div>
+                    </div>
+                  </div>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <AimOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">System Telemetry</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <GlobalOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">Multi-Currency</div>
+                      <div className="auth-feature-subtitle">USD / EUR / GBP / INR</div>
+                    </div>
+                  </div>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <PieChartOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">Smart Budget Analytics</div>
+                    </div>
+                  </div>
+                  <div className="auth-feature-card">
+                    <div className="auth-feature-icon">
+                      <AimOutlined />
+                    </div>
+                    <div className="auth-feature-text-block">
+                      <div className="auth-feature-title">Financial Goal Tracking</div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Tagline Banner */}
+        <div className="auth-bottom-banner">
+          <div className="auth-bottom-icon">
+            {isAdminMode ? "🛡️" : "💳"}
+          </div>
+          <div>
+            <div className="auth-bottom-tagline">
+              {isAdminMode
+                ? "Role-Gated Security Architecture"
+                : "Your Finances. Your Control."}
+            </div>
+            <div className="auth-bottom-sub">
+              {isAdminMode
+                ? "Strict JWT authentication with fine-grained role authorization."
+                : "Real-time exchange rates across USD, EUR, GBP, and INR."}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Authentication Form Side */}
+      <div className="auth-split-right">
+        <div className="auth-form-card">
+          {/* Interactive Role Switcher */}
+          <div className="auth-role-switch-container" role="tablist">
+            <button
+              type="button"
+              id="user-portal-tab"
+              role="tab"
+              aria-selected={!isAdminMode}
+              className={`auth-role-btn ${!isAdminMode ? "active-user" : ""}`}
+              onClick={() => handleRoleSwitch(false)}
+            >
+              <UserOutlined /> User Login
+            </button>
+            <button
+              type="button"
+              id="admin-portal-tab"
+              role="tab"
+              aria-selected={isAdminMode}
+              className={`auth-role-btn ${isAdminMode ? "active-admin" : ""}`}
+              onClick={() => handleRoleSwitch(true)}
+            >
+              <SafetyOutlined /> Admin Login
+            </button>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <h2 className="auth-form-title">
+              {isAdminMode ? "Admin Portal" : "Welcome Back"}
+            </h2>
+            <div className="auth-form-subtitle">
+              {isAdminMode
+                ? "Sign in with your system administrator credentials"
+                : "Sign in to access your MintMatrix dashboard"}
+            </div>
+
+            {/* Quick Demo Credentials Helper */}
+            <div className="auth-demo-box">
+              <span className="auth-demo-title">
+                ⚡ Quick Demo Sign In:
+              </span>
+              <div className="auth-demo-actions">
+                <button
+                  type="button"
+                  id="user-demo-btn"
+                  className="auth-demo-btn user-demo"
+                  onClick={() => {
+                    handleRoleSwitch(false);
+                    setUsername("user");
+                    setPassword("User@123");
+                  }}
+                >
+                  User Demo
+                </button>
+                <button
+                  type="button"
+                  id="admin-demo-btn"
+                  className="auth-demo-btn admin-demo"
+                  onClick={() => {
+                    handleRoleSwitch(true);
+                    setUsername("admin");
+                    setPassword("Admin@123");
+                  }}
+                >
+                  Admin Demo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Error Banner */}
+          {localError && (
+            <div className="auth-alert-box error" role="alert">
+              <CloseCircleFilled className="auth-alert-icon" />
+              <div className="auth-alert-text">{localError}</div>
+            </div>
+          )}
+
+          {/* Success Banner */}
+          {localSuccess && (
+            <div className="auth-alert-box success" role="status">
+              <CheckCircleFilled className="auth-alert-icon" />
+              <div className="auth-alert-text">
+                Authentication successful! Redirecting...
+              </div>
+            </div>
+          )}
+
+          <Form layout="vertical" onFinish={handleSubmit}>
+            <Form.Item
+              label={
+                <span className="auth-input-label">
+                  {isAdminMode ? "Admin Username" : "Username"}
+                </span>
+              }
+              required
+              style={{ marginBottom: 20 }}
+            >
+              <div className="auth-input-wrapper">
+                <Input
+                  id="username"
+                  prefix={<UserOutlined style={{ color: "#94a3b8", marginRight: 10, fontSize: 18 }} />}
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (localError) setLocalError(null);
+                  }}
+                  autoComplete="username"
+                  size="large"
+                  disabled={loading}
+                />
+              </div>
+            </Form.Item>
+
+            <Form.Item
+              label={
+                <span className="auth-input-label">
+                  Password
+                </span>
+              }
+              required
+              style={{ marginBottom: 26 }}
+            >
+              <div className="auth-input-wrapper">
+                <Input.Password
+                  id="password"
+                  prefix={<LockOutlined style={{ color: "#94a3b8", marginRight: 10, fontSize: 18 }} />}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (localError) setLocalError(null);
+                  }}
+                  autoComplete="current-password"
+                  size="large"
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Weak Password Live Suggestion Box */}
+              {password.length > 0 && !isStrongPassword(password) && (
+                <div
+                  className="auth-weak-password-suggestion"
+                  data-testid="weak-password-suggestion"
+                >
+                  <div className="suggestion-header">
+                    <SafetyCertificateOutlined style={{ color: "#d97706", fontSize: 16 }} />
+                    <span>Weak Password Detected:</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#92400e", marginBottom: 8, lineHeight: 1.4 }}>
+                    Passwords must be at least 8 characters and include uppercase, lowercase, numbers, and special symbols. Here is a recommended strong password:
+                  </div>
+                  <div className="suggestion-body">
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span className="suggested-password-code" data-testid="suggested-password-code">
+                        {suggestedPassword}
+                      </span>
+                      <Button
+                        size="small"
+                        icon={<ReloadOutlined />}
+                        onClick={handleRegeneratePassword}
+                        title="Generate another password"
+                      >
+                        New
+                      </Button>
+                    </div>
+                    <div className="suggestion-actions">
+                      <Button
+                        size="small"
+                        icon={copiedSuggestion ? <CheckOutlined style={{ color: "#16a34a" }} /> : <CopyOutlined />}
+                        onClick={() => handleCopySuggestion()}
+                      >
+                        {copiedSuggestion ? "Copied!" : "Copy Strong Password"}
+                      </Button>
+                      <Button
+                        size="small"
+                        type="primary"
+                        style={{ background: "#f59e0b", borderColor: "#d97706" }}
+                        onClick={() => handleUseSuggestedPassword()}
+                      >
+                        Use This Password
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Form.Item>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              size="large"
+              loading={loading}
+              disabled={loading}
+              icon={!loading && <ArrowRightOutlined style={{ fontSize: 18, marginLeft: 6 }} />}
+              iconPosition="end"
+              className={`auth-submit-btn ${isAdminMode ? "admin-btn" : ""}`}
+            >
+              {loading ? "Authenticating..." : "Login"}
+            </Button>
+          </Form>
+
+          {/* Weak Password Security Modal */}
+          <Modal
+            open={weakPasswordModalOpen}
+            onCancel={() => setWeakPasswordModalOpen(false)}
+            title={
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#b45309", fontWeight: 700, fontSize: 16 }}>
+                <SafetyCertificateOutlined style={{ fontSize: 20 }} />
+                <span>Weak Password Detected</span>
+              </div>
+            }
+            footer={[
+              <Button key="cancel" onClick={() => setWeakPasswordModalOpen(false)}>
+                Dismiss
+              </Button>,
+              <Button
+                key="proceed"
+                onClick={() => {
+                  setWeakPasswordModalOpen(false);
+                  executeLogin(username, password);
+                }}
+              >
+                Try Logging In Anyway
+              </Button>,
+              <Button
+                key="use"
+                type="primary"
+                style={{ background: "#10b981", borderColor: "#059669" }}
+                onClick={() => handleUseSuggestedPassword()}
+              >
+                Use Suggested Password
+              </Button>,
+            ]}
+          >
+            <div style={{ padding: "8px 0" }}>
+              <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.5, marginBottom: 14 }}>
+                The password you entered does not meet security requirements. Passwords must have at least <strong>8 characters</strong>, including <strong>uppercase</strong>, <strong>lowercase</strong>, <strong>numbers</strong>, and <strong>symbols</strong>.
+              </p>
+
+              <div
+                style={{
+                  background: "#fffbeb",
+                  border: "1.5px solid #fde68a",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ fontWeight: 600, color: "#92400e", fontSize: 12, marginBottom: 6 }}>
+                  RECOMMENDED STRONG PASSWORD:
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: 15,
+                      fontWeight: 700,
+                      background: "#ffffff",
+                      border: "1px dashed #f59e0b",
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      color: "#0f172a",
+                    }}
+                  >
+                    {suggestedPassword}
+                  </span>
+                  <Button
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={handleRegeneratePassword}
+                  >
+                    New
+                  </Button>
+                  <Button
+                    size="small"
+                    icon={copiedSuggestion ? <CheckOutlined style={{ color: "#16a34a" }} /> : <CopyOutlined />}
+                    onClick={() => handleCopySuggestion()}
+                  >
+                    {copiedSuggestion ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+                💡 Tip: You can change your password anytime via <strong>Change Password</strong> inside your profile menu once signed in.
+              </p>
+            </div>
+          </Modal>
+
+          {/* Footer Switching / Registration Link */}
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: 26,
+              paddingTop: 20,
+              borderTop: "1px solid #f1f5f9",
+            }}
+          >
+            {!isAdminMode ? (
+              <div>
+                <span className="auth-footer-text">
+                  Don't have an account?{" "}
+                </span>
+                <Link
+                  to="/register"
+                  className="auth-footer-link"
+                >
+                  Register User
+                </Link>
+                <span style={{ margin: "0 8px", color: "#cbd5e1" }}>|</span>
+                <Link
+                  to="/register?admin=true"
+                  className="auth-footer-link"
+                  style={{ color: "#d97706", fontWeight: 600 }}
+                >
+                  Register Admin
+                </Link>
+              </div>
+            ) : (
+              <div>
+                <span className="auth-footer-text">
+                  Don't have an admin account?{" "}
+                </span>
+                <Link
+                  to="/register?admin=true"
+                  className="auth-footer-link"
+                  style={{ color: "#d97706", fontWeight: 600 }}
+                >
+                  Register Admin
+                </Link>
+                <span style={{ margin: "0 8px", color: "#cbd5e1" }}>|</span>
+                <button
+                  type="button"
+                  onClick={() => handleRoleSwitch(false)}
+                  className="auth-footer-btn"
+                >
+                  Go to User Login
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="auth-footer-copyright">
+            © 2026 MintMatrix. Secure Financial Analytics
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default LoginPage;
