@@ -156,6 +156,8 @@
 
 package com.mintmatrix.security;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -175,15 +177,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfig {
 
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
 
     public WebSecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -192,13 +196,11 @@ public class WebSecurityConfig {
     }
 
 
-
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder();
     }
-
 
 
     @Bean
@@ -210,11 +212,9 @@ public class WebSecurityConfig {
     }
 
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http) throws Exception {
-
 
         http
 
@@ -246,12 +246,35 @@ public class WebSecurityConfig {
                             "/error"
                     ).permitAll()
 
-                    .requestMatchers(HttpMethod.GET, "/api/goals", "/api/goals/**").hasAnyRole("USER", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/goals", "/api/goals/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT, "/api/goals", "/api/goals/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/goals", "/api/goals/**").hasRole("ADMIN")
+                    // Allow browser CORS preflight requests
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers(
+                            HttpMethod.GET,
+                            "/api/goals",
+                            "/api/goals/**"
+                    ).hasAnyRole("USER", "ADMIN")
+
+                    .requestMatchers(
+                            HttpMethod.POST,
+                            "/api/goals",
+                            "/api/goals/**"
+                    ).hasRole("ADMIN")
+
+                    .requestMatchers(
+                            HttpMethod.PUT,
+                            "/api/goals",
+                            "/api/goals/**"
+                    ).hasRole("ADMIN")
+
+                    .requestMatchers(
+                            HttpMethod.DELETE,
+                            "/api/goals",
+                            "/api/goals/**"
+                    ).hasRole("ADMIN")
+
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
 
                     .anyRequest().authenticated()
             )
@@ -311,5 +334,48 @@ public class WebSecurityConfig {
 
 
         return http.build();
+    }
+
+
+    // =========================
+    // CORS CONFIGURATION
+    // =========================
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration =
+                new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                List.of("http://localhost:3000")
+        );
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
+
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
+
+        return source;
     }
 }
