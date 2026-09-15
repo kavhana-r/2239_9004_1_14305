@@ -1,473 +1,25 @@
-// // import React, { useEffect, useState } from "react";
-// // import {
-// //   Button,
-// //   Card,
-// //   Col,
-// //   DatePicker,
-// //   Input,
-// //   InputNumber,
-// //   Modal,
-// //   Popconfirm,
-// //   Progress,
-// //   Row,
-// //   Tag,
-// //   Typography,
-// //   Empty,
-// //   message,
-// // } from "antd";
-
-// // import { PlusOutlined } from "@ant-design/icons";
-// // import axios from "axios";
-// // import dayjs from "dayjs";
-
-// // const { Title, Text } = Typography;
-
-// // function GoalsPage() {
-// //   const [goals, setGoals] = useState([]);
-// //   const [loading, setLoading] = useState(false);
-
-// //   const [createModalOpen, setCreateModalOpen] =
-// //     useState(false);
-
-// //   const [fundModalOpen, setFundModalOpen] =
-// //     useState(false);
-
-// //   const [selectedGoal, setSelectedGoal] =
-// //     useState(null);
-
-// //   const [saving, setSaving] = useState(false);
-
-// //   const [formData, setFormData] = useState({
-// //     title: "",
-// //     targetAmount: null,
-// //     deadline: null,
-// //   });
-
-// //   const [fundAmount, setFundAmount] =
-// //     useState(null);
-
-// //   useEffect(() => {
-// //     fetchGoals();
-// //   }, []);
-
-// //   const fetchGoals = async () => {
-// //     try {
-// //       setLoading(true);
-
-// //       const response = await axios.get(
-// //         "/api/goals"
-// //       );
-
-// //       const data = response?.data;
-
-// //       setGoals(
-// //         Array.isArray(data)
-// //           ? data
-// //           : Array.isArray(data?.content)
-// //           ? data.content
-// //           : []
-// //       );
-// //     } catch (error) {
-// //       setGoals([]);
-// //     } finally {
-// //       setLoading(false);
-// //     }
-// //   };
-
-// //   const getSavedAmount = (goal) =>
-// //     Number(
-// //       goal?.savedAmount ??
-// //         goal?.currentAmount ??
-// //         0
-// //     );
-
-// //   const getTargetAmount = (goal) =>
-// //     Number(
-// //       goal?.targetAmount ?? 0
-// //     );
-
-// //   const getProgress = (goal) => {
-// //     const target = getTargetAmount(goal);
-
-// //     if (target <= 0) {
-// //       return 0;
-// //     }
-
-// //     return Math.round(
-// //       (getSavedAmount(goal) / target) * 100
-// //     );
-// //   };
-
-// //   const openCreateModal = () => {
-// //     setFormData({
-// //       title: "",
-// //       targetAmount: null,
-// //       deadline: null,
-// //     });
-
-// //     setCreateModalOpen(true);
-// //   };
-
-// //   const handleCreate = async () => {
-// //     if (!formData.title.trim()) {
-// //       message.error("Title is required");
-// //       return;
-// //     }
-
-// //     if (
-// //       formData.targetAmount === null ||
-// //       Number(formData.targetAmount) <= 0
-// //     ) {
-// //       message.error(
-// //         "Target amount must be greater than 0"
-// //       );
-// //       return;
-// //     }
-
-// //     if (!formData.deadline) {
-// //       message.error("Deadline is required");
-// //       return;
-// //     }
-
-// //     try {
-// //       setSaving(true);
-
-// //       await axios.post("/api/goals", {
-// //         title: formData.title.trim(),
-// //         targetAmount: Number(
-// //           formData.targetAmount
-// //         ),
-// //         deadline: dayjs(
-// //           formData.deadline
-// //         ).format("YYYY-MM-DD"),
-// //         savedAmount: 0,
-// //       });
-
-// //       message.success(
-// //         "Goal created successfully"
-// //       );
-
-// //       setCreateModalOpen(false);
-
-// //       await fetchGoals();
-// //     } catch (error) {
-// //       message.error(
-// //         error?.response?.data?.message ||
-// //           "Unable to create goal."
-// //       );
-// //     } finally {
-// //       setSaving(false);
-// //     }
-// //   };
-
-// //   const openFundModal = (goal) => {
-// //     setSelectedGoal(goal);
-// //     setFundAmount(null);
-// //     setFundModalOpen(true);
-// //   };
-
-// //   const handleAddFunds = async () => {
-// //     if (
-// //       fundAmount === null ||
-// //       Number(fundAmount) <= 0
-// //     ) {
-// //       message.error(
-// //         "Fund amount must be greater than 0"
-// //       );
-// //       return;
-// //     }
-
-// //     try {
-// //       setSaving(true);
-
-// //       await axios.put(
-// //         `/api/goals/${selectedGoal.id}/add-funds?amount=${Number(
-// //           fundAmount
-// //         )}`
-// //       );
-
-// //       message.success(
-// //         "Funds added to goal"
-// //       );
-
-// //       setFundModalOpen(false);
-
-// //       await fetchGoals();
-// //     } catch (error) {
-// //       message.error(
-// //         error?.response?.data?.message ||
-// //           "Unable to add funds."
-// //       );
-// //     } finally {
-// //       setSaving(false);
-// //     }
-// //   };
-
-// //   const handleDelete = async (goal) => {
-// //     try {
-// //       await axios.delete(
-// //         `/api/goals/${goal.id}`
-// //       );
-
-// //       message.success("Goal deleted");
-
-// //       await fetchGoals();
-// //     } catch (error) {
-// //       message.error(
-// //         error?.response?.data?.message ||
-// //           "Unable to delete goal."
-// //       );
-// //     }
-// //   };
-
-// //   return (
-// //     <div>
-// //       <div className="page-header">
-// //         <div>
-// //           <Title level={2}>Savings Goals</Title>
-// //           <Text type="secondary">
-// //             Set targets and build your savings.
-// //           </Text>
-// //         </div>
-
-// //         <Button
-// //           type="primary"
-// //           icon={<PlusOutlined />}
-// //           onClick={openCreateModal}
-// //         >
-// //           Create New Goal
-// //         </Button>
-// //       </div>
-
-// //       {goals.length === 0 && !loading ? (
-// //         <Card>
-// //           <Empty description="No savings goals yet. Set a target and start saving!" />
-// //         </Card>
-// //       ) : (
-// //         <Row gutter={[20, 20]}>
-// //           {goals.map((goal, index) => {
-// //             const saved =
-// //               getSavedAmount(goal);
-
-// //             const target =
-// //               getTargetAmount(goal);
-
-// //             const progress =
-// //               getProgress(goal);
-
-// //             return (
-// //               <Col
-// //                 xs={24}
-// //                 sm={12}
-// //                 lg={8}
-// //                 key={goal?.id || index}
-// //               >
-// //                 <Card loading={loading}>
-// //                   <Title level={4}>
-// //                     {goal?.title}
-// //                   </Title>
-
-// //                   <div className="goal-row">
-// //                     <Text>
-// //                       Target Amount
-// //                     </Text>
-
-// //                     <Text strong>
-// //                       ${target.toFixed(2)}
-// //                     </Text>
-// //                   </div>
-
-// //                   <div className="goal-row">
-// //                     <Text>
-// //                       Saved Amount
-// //                     </Text>
-
-// //                     <Text strong>
-// //                       ${saved.toFixed(2)}
-// //                     </Text>
-// //                   </div>
-
-// //                   <div className="goal-row">
-// //                     <Text>Deadline</Text>
-
-// //                     <Text>
-// //                       {goal?.deadline
-// //                         ? dayjs(
-// //                             goal.deadline
-// //                           ).format(
-// //                             "DD MMM YYYY"
-// //                           )
-// //                         : "-"}
-// //                     </Text>
-// //                   </div>
-
-// //                   <Progress
-// //                     percent={Math.min(
-// //                       progress,
-// //                       100
-// //                     )}
-// //                   />
-
-// //                   {progress > 100 && (
-// //                     <Tag
-// //                       color="green"
-// //                       style={{
-// //                         marginBottom: 12,
-// //                       }}
-// //                     >
-// //                       Goal Achieved!
-// //                     </Tag>
-// //                   )}
-
-// //                   <div
-// //                     style={{
-// //                       display: "flex",
-// //                       gap: 8,
-// //                     }}
-// //                   >
-// //                     <Button
-// //                       type="primary"
-// //                       onClick={() =>
-// //                         openFundModal(goal)
-// //                       }
-// //                     >
-// //                       Add Funds
-// //                     </Button>
-
-// //                     <Popconfirm
-// //                       title="Delete this goal?"
-// //                       onConfirm={() =>
-// //                         handleDelete(goal)
-// //                       }
-// //                     >
-// //                       <Button danger>
-// //                         Delete
-// //                       </Button>
-// //                     </Popconfirm>
-// //                   </div>
-// //                 </Card>
-// //               </Col>
-// //             );
-// //           })}
-// //         </Row>
-// //       )}
-
-// //       {/* Create Goal Modal */}
-// //       <Modal
-// //         open={createModalOpen}
-// //         title="Create New Goal"
-// //         onCancel={() =>
-// //           setCreateModalOpen(false)
-// //         }
-// //         onOk={handleCreate}
-// //         confirmLoading={saving}
-// //       >
-// //         <div style={{ marginTop: 10 }}>
-// //           <label>Title</label>
-
-// //           <Input
-// //             placeholder="e.g., New Car, Vacation"
-// //             value={formData.title}
-// //             onChange={(e) =>
-// //               setFormData({
-// //                 ...formData,
-// //                 title: e.target.value,
-// //               })
-// //             }
-// //             style={{
-// //               marginTop: 6,
-// //               marginBottom: 16,
-// //             }}
-// //           />
-
-// //           <label>Target Amount</label>
-
-// //           <InputNumber
-// //             min={0.01}
-// //             precision={2}
-// //             value={formData.targetAmount}
-// //             onChange={(value) =>
-// //               setFormData({
-// //                 ...formData,
-// //                 targetAmount: value,
-// //               })
-// //             }
-// //             style={{
-// //               width: "100%",
-// //               marginTop: 6,
-// //               marginBottom: 16,
-// //             }}
-// //           />
-
-// //           <label>Deadline</label>
-
-// //           <DatePicker
-// //             value={formData.deadline}
-// //             onChange={(value) =>
-// //               setFormData({
-// //                 ...formData,
-// //                 deadline: value,
-// //               })
-// //             }
-// //             style={{
-// //               width: "100%",
-// //               marginTop: 6,
-// //             }}
-// //           />
-// //         </div>
-// //       </Modal>
-
-// //       {/* Add Funds Modal */}
-// //       <Modal
-// //         open={fundModalOpen}
-// //         title={`Add Funds to ${
-// //           selectedGoal?.title || ""
-// //         }`}
-// //         onCancel={() =>
-// //           setFundModalOpen(false)
-// //         }
-// //         onOk={handleAddFunds}
-// //         confirmLoading={saving}
-// //       >
-// //         <div style={{ marginTop: 10 }}>
-// //           <label>Amount</label>
-
-// //           <InputNumber
-// //             min={0.01}
-// //             precision={2}
-// //             value={fundAmount}
-// //             onChange={setFundAmount}
-// //             style={{
-// //               width: "100%",
-// //               marginTop: 6,
-// //             }}
-// //           />
-// //         </div>
-// //       </Modal>
-// //     </div>
-// //   );
-// // }
-
-// // export default GoalsPage;
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   Button,
+  Card,
   Col,
   DatePicker,
+  Empty,
   Input,
   InputNumber,
   Modal,
   Popconfirm,
   Progress,
   Row,
-  Typography,
-  message,
+  Select,
   Space,
   Spin,
-  Select,
   Tag,
-  Empty,
+  Typography,
+  message,
 } from "antd";
+
 import {
   PlusOutlined,
   CalendarOutlined,
@@ -483,6 +35,7 @@ import {
   UserOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
@@ -490,29 +43,13 @@ import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
+const API_BASE_URL = "http://localhost:8080/api";
 
-const getGoalIcon = (title = "") => {
-  const lower = title.toLowerCase();
-  if (lower.includes("trip") || lower.includes("travel") || lower.includes("vacation") || lower.includes("europe")) {
-    return <RocketFilled style={{ color: "#0ea5e9" }} />;
-  }
-  if (lower.includes("laptop") || lower.includes("pc") || lower.includes("tech") || lower.includes("phone")) {
-    return <LaptopOutlined style={{ color: "#3b82f6" }} />;
-  }
-  if (lower.includes("emergency") || lower.includes("health") || lower.includes("fund") || lower.includes("safety")) {
-    return <SafetyCertificateOutlined style={{ color: "#10b981" }} />;
-  }
-  if (lower.includes("car") || lower.includes("vehicle") || lower.includes("bike")) {
-    return <CarOutlined style={{ color: "#f59e0b" }} />;
-  }
-  if (lower.includes("house") || lower.includes("home") || lower.includes("rent")) {
-    return <HomeOutlined style={{ color: "#8b5cf6" }} />;
-  }
-  return <RocketFilled style={{ color: "#10b981" }} />;
-};
-
+// ============================================================
+// CURRENCY SYMBOL
+// ============================================================
 const getCurrencySymbol = (currency) => {
-  switch (currency) {
+  switch (String(currency || "INR").toUpperCase()) {
     case "INR":
       return "₹";
     case "EUR":
@@ -526,171 +63,656 @@ const getCurrencySymbol = (currency) => {
     case "CAD":
       return "C$";
     case "USD":
+      return "$";
     default:
       return "$";
   }
 };
 
+// ============================================================
+// INITIAL FORM
+// ============================================================
+const getInitialForm = () => ({
+  title: "",
+  targetAmount: null,
+  currentAmount: 0,
+  deadline: null,
+  userId: null,
+});
+
+// ============================================================
+// GOAL ICON
+// ============================================================
+const getGoalIcon = (title = "") => {
+  const text = String(title).toLowerCase();
+
+  if (
+    text.includes("trip") ||
+    text.includes("travel") ||
+    text.includes("vacation") ||
+    text.includes("europe")
+  ) {
+    return (
+      <RocketFilled
+        style={{
+          color: "#0ea5e9",
+          fontSize: 28,
+        }}
+      />
+    );
+  }
+
+  if (
+    text.includes("laptop") ||
+    text.includes("pc") ||
+    text.includes("computer") ||
+    text.includes("tech") ||
+    text.includes("phone")
+  ) {
+    return (
+      <LaptopOutlined
+        style={{
+          color: "#3b82f6",
+          fontSize: 28,
+        }}
+      />
+    );
+  }
+
+  if (
+    text.includes("emergency") ||
+    text.includes("health") ||
+    text.includes("safety") ||
+    text.includes("fund")
+  ) {
+    return (
+      <SafetyCertificateOutlined
+        style={{
+          color: "#10b981",
+          fontSize: 28,
+        }}
+      />
+    );
+  }
+
+  if (
+    text.includes("car") ||
+    text.includes("vehicle") ||
+    text.includes("bike")
+  ) {
+    return (
+      <CarOutlined
+        style={{
+          color: "#f59e0b",
+          fontSize: 28,
+        }}
+      />
+    );
+  }
+
+  if (
+    text.includes("house") ||
+    text.includes("home") ||
+    text.includes("rent")
+  ) {
+    return (
+      <HomeOutlined
+        style={{
+          color: "#8b5cf6",
+          fontSize: 28,
+        }}
+      />
+    );
+  }
+
+  return (
+    <RocketFilled
+      style={{
+        color: "#10b981",
+        fontSize: 28,
+      }}
+    />
+  );
+};
+
+// ============================================================
+// GOALS PAGE
+// ============================================================
 function GoalsPage() {
   const location = useLocation();
-  const authUser = useSelector((state) => state.auth?.user);
-  const role = authUser?.role || authUser?.user?.role;
+
+  const authUser = useSelector(
+    (state) => state.auth?.user
+  );
+
+  // ==========================================================
+  // ROLE
+  // ==========================================================
+  const role =
+    authUser?.role ||
+    authUser?.user?.role ||
+    localStorage.getItem("role") ||
+    "";
+
+  const normalizedRole = String(role).toUpperCase();
+
   const isAdmin =
-    role === "ROLE_ADMIN" ||
-    role === "ADMIN" ||
-    location.pathname.startsWith("/admin");
+    normalizedRole === "ROLE_ADMIN" ||
+    normalizedRole === "ADMIN" ||
+    location.pathname.toLowerCase().startsWith("/admin");
 
-  const [currency, setCurrency] = useState(() => {
-    return localStorage.getItem("preferredCurrency") || "USD";
-  });
+  // ==========================================================
+  // USER ID
+  // ==========================================================
+  const currentUserId =
+    authUser?.id ||
+    authUser?.user?.id ||
+    localStorage.getItem("userId") ||
+    null;
 
+  // ==========================================================
+  // CURRENCY
+  // ==========================================================
+  const getStoredCurrency = () => {
+    const stored =
+      localStorage.getItem("preferredCurrency") ||
+      localStorage.getItem("currency") ||
+      localStorage.getItem("activeCurrency") ||
+      authUser?.preferredCurrency ||
+      "INR";
+
+    return String(stored).toUpperCase();
+  };
+
+  const [currency, setCurrency] = useState(
+    getStoredCurrency()
+  );
+
+  // ==========================================================
+  // STATE
+  // ==========================================================
   const [goals, setGoals] = useState([]);
   const [usersList, setUsersList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [fundModalOpen, setFundModalOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState(null);
-  const [editingGoal, setEditingGoal] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    title: "",
-    targetAmount: null,
-    currentAmount: null,
-    deadline: null,
-    userId: null,
-  });
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [fundAmount, setFundAmount] = useState(null);
+  const [goalModalOpen, setGoalModalOpen] =
+    useState(false);
 
-  useEffect(() => {
-    fetchGoals();
-    if (isAdmin) {
-      fetchUsers();
+  const [fundModalOpen, setFundModalOpen] =
+    useState(false);
+
+  const [editingGoal, setEditingGoal] =
+    useState(null);
+
+  const [selectedGoal, setSelectedGoal] =
+    useState(null);
+
+  const [fundAmount, setFundAmount] =
+    useState(null);
+
+  const [formData, setFormData] =
+    useState(getInitialForm());
+
+  // ==========================================================
+  // ERROR MESSAGE
+  // ==========================================================
+  const getErrorMessage = (error, fallback) => {
+    const responseData = error?.response?.data;
+
+    if (responseData?.message) {
+      return responseData.message;
     }
 
-    const handleCurrencyChange = (e) => {
-      const newCurr = e.detail || localStorage.getItem("preferredCurrency") || "USD";
-      setCurrency(newCurr);
+    if (responseData?.error) {
+      return responseData.error;
+    }
+
+    if (typeof responseData === "string") {
+      return responseData;
+    }
+
+    return fallback;
+  };
+
+  // ==========================================================
+  // CURRENCY EVENT
+  // ==========================================================
+  useEffect(() => {
+    const handleCurrencyChange = (event) => {
+      const newCurrency =
+        event?.detail ||
+        localStorage.getItem("preferredCurrency") ||
+        localStorage.getItem("currency") ||
+        localStorage.getItem("activeCurrency") ||
+        "INR";
+
+      setCurrency(
+        String(newCurrency).toUpperCase()
+      );
     };
 
-    window.addEventListener("currencyChange", handleCurrencyChange);
+    window.addEventListener(
+      "currencyChange",
+      handleCurrencyChange
+    );
+
+    window.addEventListener(
+      "mintmatrix-currency-change",
+      handleCurrencyChange
+    );
+
     return () => {
-      window.removeEventListener("currencyChange", handleCurrencyChange);
+      window.removeEventListener(
+        "currencyChange",
+        handleCurrencyChange
+      );
+
+      window.removeEventListener(
+        "mintmatrix-currency-change",
+        handleCurrencyChange
+      );
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  }, []);
 
-  const symbol = getCurrencySymbol(currency);
+  // ==========================================================
+  // NORMALIZE RESPONSE
+  // ==========================================================
+  const normalizeList = (data) => {
+    if (Array.isArray(data)) {
+      return data;
+    }
 
+    if (Array.isArray(data?.content)) {
+      return data.content;
+    }
+
+    if (Array.isArray(data?.goals)) {
+      return data.goals;
+    }
+
+    if (Array.isArray(data?.users)) {
+      return data.users;
+    }
+
+    if (Array.isArray(data?.data)) {
+      return data.data;
+    }
+
+    return [];
+  };
+
+  // ==========================================================
+  // GET GOAL ID
+  // ==========================================================
+  const getGoalId = (goal) => {
+    return (
+      goal?.id ??
+      goal?.goalId ??
+      goal?._id
+    );
+  };
+
+  // ==========================================================
+  // GET SAVED AMOUNT
+  // ==========================================================
+  const getSavedAmount = (goal) => {
+    const amount =
+      goal?.currentAmount ??
+      goal?.savedAmount ??
+      goal?.amountSaved ??
+      0;
+
+    const value = Number(amount);
+
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  // ==========================================================
+  // GET TARGET AMOUNT
+  // ==========================================================
+  const getTargetAmount = (goal) => {
+    const amount =
+      goal?.targetAmount ??
+      goal?.target ??
+      0;
+
+    const value = Number(amount);
+
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  // ==========================================================
+  // GET DEADLINE
+  // ==========================================================
+  const getDeadline = (goal) => {
+    return (
+      goal?.deadline ??
+      goal?.targetDate ??
+      goal?.endDate ??
+      null
+    );
+  };
+
+  // ==========================================================
+  // GET USER NAME
+  // ==========================================================
+  const getGoalUserName = (goal) => {
+    return (
+      goal?.user?.username ||
+      goal?.user?.name ||
+      goal?.user?.email ||
+      goal?.username ||
+      goal?.userName ||
+      goal?.email ||
+      ""
+    );
+  };
+
+  // ==========================================================
+  // FETCH GOALS
+  // ==========================================================
   const fetchGoals = async () => {
     try {
       setLoading(true);
-      const url = isAdmin ? "/api/admin/goals" : "/api/goals";
-      const response = await axios.get(url);
-      const data = response?.data;
 
-      setGoals(
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data?.content)
-          ? data.content
-          : []
+      let response;
+
+      if (isAdmin) {
+        try {
+          response = await axios.get(
+            `${API_BASE_URL}/admin/goals`
+          );
+        } catch (adminError) {
+          response = await axios.get(
+            `${API_BASE_URL}/goals`
+          );
+        }
+      } else {
+        response = await axios.get(
+          `${API_BASE_URL}/goals`
+        );
+      }
+
+      const goalList = normalizeList(
+        response?.data
       );
+
+      setGoals(goalList);
     } catch (error) {
+      console.error(
+        "Fetch goals error:",
+        error
+      );
+
       setGoals([]);
+
+      message.error(
+        getErrorMessage(
+          error,
+          "Unable to load goals."
+        )
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // ==========================================================
+  // FETCH USERS FOR ADMIN
+  // ==========================================================
   const fetchUsers = async () => {
+    if (!isAdmin) {
+      return;
+    }
+
     try {
-      const response = await axios.get("/api/admin/users");
-      const data = response?.data;
-      const list = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.content)
-        ? data.content
-        : [];
+      const response = await axios.get(
+        `${API_BASE_URL}/admin/users`
+      );
+
+      const list = normalizeList(
+        response?.data
+      );
+
       setUsersList(list);
     } catch (error) {
+      console.error(
+        "Fetch users error:",
+        error
+      );
+
       setUsersList([]);
     }
   };
 
-  const getSavedAmount = (goal) =>
-    Number(
-      goal?.currentAmount ??
-        goal?.savedAmount ??
-        0
-    );
+  // ==========================================================
+  // INITIAL LOAD
+  // ==========================================================
+  useEffect(() => {
+    fetchGoals();
 
-  const getTargetAmount = (goal) =>
-    Number(goal?.targetAmount ?? 0);
+    if (isAdmin) {
+      fetchUsers();
+    }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  // ==========================================================
+  // PROGRESS
+  // ==========================================================
   const getProgress = (goal) => {
     const target = getTargetAmount(goal);
-    if (target <= 0) return 0;
-    return Math.round((getSavedAmount(goal) / target) * 100);
+    const saved = getSavedAmount(goal);
+
+    if (target <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round((saved / target) * 100)
+      )
+    );
   };
 
-  const openCreateModal = () => {
+  // ==========================================================
+  // FORMAT MONEY
+  // ==========================================================
+  const formatMoney = (amount) => {
+    const value = Number(amount || 0);
+
+    return `${getCurrencySymbol(
+      currency
+    )}${value.toLocaleString("en-IN", {
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  // ==========================================================
+  // SEARCH
+  // ==========================================================
+  const filteredGoals = useMemo(() => {
+    const query =
+      searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return goals;
+    }
+
+    return goals.filter((goal) => {
+      const title = String(
+        goal?.title ||
+          goal?.goalName ||
+          ""
+      ).toLowerCase();
+
+      const username = String(
+        getGoalUserName(goal)
+      ).toLowerCase();
+
+      return (
+        title.includes(query) ||
+        username.includes(query)
+      );
+    });
+  }, [goals, searchQuery]);
+
+  // ==========================================================
+  // OPEN ADD MODAL
+  // ==========================================================
+  const handleOpenAddModal = () => {
     setEditingGoal(null);
+
     setFormData({
-      title: "",
-      targetAmount: null,
-      currentAmount: null,
-      deadline: null,
-      userId: isAdmin && usersList.length > 0 ? usersList[0].id : null,
+      ...getInitialForm(),
+      userId: isAdmin
+        ? null
+        : currentUserId,
     });
-    setCreateModalOpen(true);
+
+    setGoalModalOpen(true);
   };
 
-  const openEditGoal = (goal) => {
+  // ==========================================================
+  // OPEN EDIT MODAL
+  // ==========================================================
+  const handleOpenEditModal = (goal) => {
+    const deadline = getDeadline(goal);
+
+    let parsedDeadline = null;
+
+    if (deadline) {
+      const parsed = dayjs(deadline);
+
+      if (parsed.isValid()) {
+        parsedDeadline = parsed;
+      }
+    }
+
     setEditingGoal(goal);
+
     setFormData({
-      title: goal.title || "",
-      targetAmount: goal.targetAmount != null ? Number(goal.targetAmount) : null,
-      currentAmount: getSavedAmount(goal),
-      deadline: goal.deadline ? dayjs(goal.deadline) : null,
-      userId: goal.user?.id || goal.userId || null,
+      title:
+        goal?.title ||
+        goal?.goalName ||
+        "",
+      targetAmount:
+        getTargetAmount(goal),
+      currentAmount:
+        getSavedAmount(goal),
+      deadline: parsedDeadline,
+      userId:
+        goal?.userId ||
+        goal?.user?.id ||
+        currentUserId ||
+        null,
     });
-    setCreateModalOpen(true);
+
+    setGoalModalOpen(true);
   };
 
-  const handleSave = async () => {
-    if (!formData.title.trim()) {
-      message.error("Goal title is required");
+  // ==========================================================
+  // CLOSE MODAL
+  // ==========================================================
+  const handleCloseGoalModal = () => {
+    if (saving) {
+      return;
+    }
+
+    setGoalModalOpen(false);
+    setEditingGoal(null);
+    setFormData(getInitialForm());
+  };
+
+  // ==========================================================
+  // FORM UPDATE
+  // ==========================================================
+  const updateForm = (field, value) => {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
+
+  // ==========================================================
+  // SAVE GOAL
+  // CREATE + UPDATE
+  // ==========================================================
+  const handleSaveGoal = async () => {
+    const title = String(
+      formData.title || ""
+    ).trim();
+
+    const targetAmount = Number(
+      formData.targetAmount
+    );
+
+    const currentAmount =
+      formData.currentAmount === null ||
+      formData.currentAmount === undefined ||
+      formData.currentAmount === ""
+        ? 0
+        : Number(formData.currentAmount);
+
+    if (!title) {
+      message.warning(
+        "Please enter a goal name."
+      );
       return;
     }
 
     if (
-      formData.targetAmount === null ||
-      Number(formData.targetAmount) <= 0
+      !Number.isFinite(targetAmount) ||
+      targetAmount <= 0
     ) {
-      message.error("Target amount must be greater than zero");
+      message.warning(
+        "Target amount must be greater than 0."
+      );
+      return;
+    }
+
+    if (
+      !Number.isFinite(currentAmount) ||
+      currentAmount < 0
+    ) {
+      message.warning(
+        "Current amount cannot be negative."
+      );
+      return;
+    }
+
+    if (currentAmount > targetAmount) {
+      message.warning(
+        "Current amount cannot be greater than target amount."
+      );
       return;
     }
 
     if (isAdmin && !formData.userId) {
-      message.error("Please select a user for this goal");
+      message.warning(
+        "Please select a user."
+      );
       return;
     }
 
     try {
       setSaving(true);
+
       const payload = {
-        title: formData.title.trim(),
-        targetAmount: Number(formData.targetAmount),
-        currentAmount:
-          formData.currentAmount !== null && formData.currentAmount !== undefined
-            ? Number(formData.currentAmount)
-            : 0.0,
+        title,
+        targetAmount,
+        currentAmount,
         deadline: formData.deadline
-          ? formData.deadline.format("YYYY-MM-DD")
+          ? formData.deadline.format(
+              "YYYY-MM-DD"
+            )
           : null,
       };
 
@@ -698,499 +720,988 @@ function GoalsPage() {
         payload.userId = formData.userId;
       }
 
-      if (editingGoal?.id) {
-        const url = isAdmin
-          ? `/api/admin/goals/${editingGoal.id}`
-          : `/api/goals/${editingGoal.id}`;
-        await axios.put(url, payload);
-        message.success("Financial goal updated successfully");
-      } else {
-        const url = isAdmin ? "/api/admin/goals" : "/api/goals";
-        await axios.post(url, payload);
-        message.success("Financial goal created successfully");
+      // ====================================================
+      // UPDATE EXISTING GOAL
+      // ====================================================
+      if (editingGoal) {
+        const goalId =
+          getGoalId(editingGoal);
+
+        if (!goalId) {
+          message.error(
+            "Goal ID not found."
+          );
+          return;
+        }
+
+        if (isAdmin) {
+          try {
+            await axios.put(
+              `${API_BASE_URL}/admin/goals/${goalId}`,
+              payload
+            );
+          } catch (adminError) {
+            await axios.put(
+              `${API_BASE_URL}/goals/${goalId}`,
+              payload
+            );
+          }
+        } else {
+          await axios.put(
+            `${API_BASE_URL}/goals/${goalId}`,
+            payload
+          );
+        }
+
+        message.success(
+          "Goal updated successfully."
+        );
       }
 
-      setCreateModalOpen(false);
+      // ====================================================
+      // CREATE NEW GOAL
+      // ====================================================
+      else {
+        if (isAdmin) {
+          try {
+            await axios.post(
+              `${API_BASE_URL}/admin/goals`,
+              payload
+            );
+          } catch (adminError) {
+            await axios.post(
+              `${API_BASE_URL}/goals`,
+              payload
+            );
+          }
+        } else {
+          await axios.post(
+            `${API_BASE_URL}/goals`,
+            payload
+          );
+        }
+
+        message.success(
+          "Goal added successfully."
+        );
+      }
+
+      setGoalModalOpen(false);
       setEditingGoal(null);
+      setFormData(getInitialForm());
+
       await fetchGoals();
     } catch (error) {
+      console.error(
+        "Save goal error:",
+        error
+      );
+
       message.error(
-        error?.response?.data?.message ||
-          (typeof error?.response?.data === "string"
-            ? error.response.data
-            : "Unable to save goal.")
+        getErrorMessage(
+          error,
+          editingGoal
+            ? "Failed to update goal."
+            : "Failed to add goal."
+        )
       );
     } finally {
       setSaving(false);
     }
   };
 
-  const openFundModal = (goal) => {
-    setSelectedGoal(goal);
-    setFundAmount(null);
-    setFundModalOpen(true);
-  };
+  // ==========================================================
+  // DELETE GOAL
+  // ==========================================================
+  const handleDeleteGoal = async (goal) => {
+    const goalId = getGoalId(goal);
 
-  const handleAddFunds = async () => {
-    if (!fundAmount || Number(fundAmount) <= 0) {
-      message.error("Please enter a valid deposit amount");
+    if (!goalId) {
+      message.error(
+        "Goal ID not found."
+      );
       return;
     }
 
     try {
       setSaving(true);
+
       if (isAdmin) {
-        const current = getSavedAmount(selectedGoal);
-        await axios.put(`/api/admin/goals/${selectedGoal.id}`, {
-          currentAmount: current + Number(fundAmount),
-        });
+        try {
+          await axios.delete(
+            `${API_BASE_URL}/admin/goals/${goalId}`
+          );
+        } catch (adminError) {
+          await axios.delete(
+            `${API_BASE_URL}/goals/${goalId}`
+          );
+        }
       } else {
-        await axios.put(
-          `/api/goals/${selectedGoal.id}/add-funds?amount=${Number(fundAmount)}`
+        await axios.delete(
+          `${API_BASE_URL}/goals/${goalId}`
         );
       }
 
-      message.success("Funds added successfully!");
-      setFundModalOpen(false);
+      message.success(
+        "Goal deleted successfully."
+      );
+
       await fetchGoals();
     } catch (error) {
+      console.error(
+        "Delete goal error:",
+        error
+      );
+
       message.error(
-        error?.response?.data?.message || "Unable to add funds."
+        getErrorMessage(
+          error,
+          "Failed to delete goal."
+        )
       );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  // ==========================================================
+  // OPEN DEPOSIT MODAL
+  // ==========================================================
+  const handleOpenFundModal = (goal) => {
+    setSelectedGoal(goal);
+    setFundAmount(null);
+    setFundModalOpen(true);
+  };
+
+  // ==========================================================
+  // CLOSE DEPOSIT MODAL
+  // ==========================================================
+  const handleCloseFundModal = () => {
+    if (saving) {
+      return;
+    }
+
+    setFundModalOpen(false);
+    setSelectedGoal(null);
+    setFundAmount(null);
+  };
+
+  // ==========================================================
+  // DEPOSIT FUNDS
+  // ==========================================================
+  const handleAddFunds = async () => {
+    const amount = Number(fundAmount);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      message.warning(
+        "Please enter a valid deposit amount."
+      );
+      return;
+    }
+
+    if (!selectedGoal) {
+      message.error(
+        "Goal not selected."
+      );
+      return;
+    }
+
+    const goalId =
+      getGoalId(selectedGoal);
+
+    if (!goalId) {
+      message.error(
+        "Goal ID not found."
+      );
+      return;
+    }
+
+    const current =
+      getSavedAmount(selectedGoal);
+
+    const target =
+      getTargetAmount(selectedGoal);
+
+    if (current + amount > target) {
+      message.warning(
+        "Deposit cannot make the saved amount greater than the target."
+      );
+      return;
+    }
+
     try {
-      const url = isAdmin ? `/api/admin/goals/${id}` : `/api/goals/${id}`;
-      await axios.delete(url);
-      message.success("Goal deleted successfully");
+      setSaving(true);
+
+      if (!isAdmin) {
+        await axios.put(
+          `${API_BASE_URL}/goals/${goalId}/add-funds?amount=${amount}`
+        );
+      } else {
+        const payload = {
+          title:
+            selectedGoal?.title ||
+            selectedGoal?.goalName ||
+            "",
+          targetAmount: target,
+          currentAmount:
+            current + amount,
+          deadline:
+            getDeadline(selectedGoal),
+        };
+
+        try {
+          await axios.put(
+            `${API_BASE_URL}/admin/goals/${goalId}`,
+            payload
+          );
+        } catch (adminError) {
+          await axios.put(
+            `${API_BASE_URL}/goals/${goalId}`,
+            payload
+          );
+        }
+      }
+
+      message.success(
+        "Funds added successfully."
+      );
+
+      setFundModalOpen(false);
+      setSelectedGoal(null);
+      setFundAmount(null);
+
       await fetchGoals();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message ||
-          (typeof error?.response?.data === "string"
-            ? error.response.data
-            : "Unable to delete goal.")
+      console.error(
+        "Add funds error:",
+        error
       );
+
+      message.error(
+        getErrorMessage(
+          error,
+          "Failed to add funds."
+        )
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Demo fallback goals matching Screen 7 if user has none
-  const defaultGoals = [
-    {
-      id: "g1",
-      title: "Trip to Europe",
-      targetAmount: 2000,
-      currentAmount: 1200,
-      deadline: "2026-12-31",
-    },
-    {
-      id: "g2",
-      title: "New Laptop",
-      targetAmount: 1000,
-      currentAmount: 600,
-      deadline: "2026-11-15",
-    },
-    {
-      id: "g3",
-      title: "Emergency Fund",
-      targetAmount: 1500,
-      currentAmount: 300,
-      deadline: "2026-12-31",
-    },
-  ];
+  // ==========================================================
+  // USER OPTIONS
+  // ==========================================================
+  const userOptions = usersList
+    .filter(Boolean)
+    .map((user) => ({
+      value: user.id,
+      label:
+        user.username ||
+        user.name ||
+        user.email ||
+        `User ${user.id}`,
+    }));
 
-  const filteredGoals = useMemo(() => {
-    if (!searchQuery.trim()) return goals;
-    const q = searchQuery.toLowerCase().trim();
-    return goals.filter(
-      (g) =>
-        g.title?.toLowerCase().includes(q) ||
-        g.user?.username?.toLowerCase().includes(q) ||
-        g.user?.email?.toLowerCase().includes(q)
-    );
-  }, [goals, searchQuery]);
-
-  const displayGoals = isAdmin
-    ? filteredGoals
-    : goals.length > 0
-    ? goals
-    : defaultGoals;
-
-  // Best goal for motivation banner
-  const bestGoal = displayGoals[0];
-  const bestGoalPct = bestGoal ? getProgress(bestGoal) || 56 : 56;
-
+  // ==========================================================
+  // RENDER
+  // ==========================================================
   return (
-    <div>
-      {/* Page Header */}
-      <div className="page-header" style={{ alignItems: "center" }}>
-        <div>
-          <Title level={2} style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>
-            {isAdmin ? "Goal Management" : "Financial Goals"}
+    <div
+      style={{
+        padding: 24,
+      }}
+    >
+      {/* PAGE HEADER */}
+      <Row
+        justify="space-between"
+        align="middle"
+        gutter={[16, 16]}
+        style={{
+          marginBottom: 24,
+        }}
+      >
+        <Col>
+          <Title
+            level={2}
+            style={{
+              margin: 0,
+            }}
+          >
+            Financial Goals
           </Title>
-          <Text style={{ color: "#64748b", fontSize: 14 }}>
-            {isAdmin
-              ? "System-wide financial goal administration across all user accounts"
-              : "Track milestone savings targets and celebrate your achievements"}
-          </Text>
-        </div>
 
-        <Space size="middle" wrap>
-          {isAdmin && (
-            <Input
-              placeholder="Search goals or user..."
-              prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              allowClear
-              style={{ width: 240, borderRadius: 8 }}
-            />
-          )}
-          {isAdmin && (
+          <Text type="secondary">
+            Track milestone savings targets
+            and celebrate your achievements
+          </Text>
+        </Col>
+
+        <Col>
+          <Space>
+            {isAdmin && (
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="Search goals..."
+                value={searchQuery}
+                onChange={(event) =>
+                  setSearchQuery(
+                    event.target.value
+                  )
+                }
+                style={{
+                  width: 220,
+                }}
+              />
+            )}
+
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              size="large"
-              onClick={openCreateModal}
-              style={{
-                borderRadius: 8,
-                fontWeight: 700,
-                background: "#10b981",
-                borderColor: "#10b981",
-              }}
+              onClick={handleOpenAddModal}
             >
               Add Goal
             </Button>
-          )}
+          </Space>
+        </Col>
+      </Row>
+
+      {/* CURRENCY */}
+      <Card
+        size="small"
+        style={{
+          marginBottom: 24,
+          borderRadius: 12,
+        }}
+      >
+        <Space>
+          <DollarCircleOutlined />
+
+          <Text strong>
+            Currency
+          </Text>
+
+          <Tag color="green">
+            {currency} (
+            {getCurrencySymbol(currency)})
+          </Tag>
         </Space>
-      </div>
+      </Card>
 
-      {/* Goal Cards Grid (Screen 7) */}
+      {/* LOADING */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 0" }}>
+        <div
+          style={{
+            minHeight: 300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Spin size="large" />
-          <div style={{ marginTop: 12, color: "#64748b" }}>Loading financial goals...</div>
         </div>
-      ) : (
-        <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
-          {displayGoals.map((goal) => {
-          const current = getSavedAmount(goal);
-          const target = getTargetAmount(goal);
-          const pct = getProgress(goal);
-          const deadlineText = goal.deadline
-            ? dayjs(goal.deadline).format("MMM YYYY")
-            : "No deadline";
+      ) : filteredGoals.length === 0 ? (
+        /* EMPTY */
+        <Card
+          style={{
+            borderRadius: 16,
+            textAlign: "center",
+            padding: 40,
+          }}
+        >
+          <Empty
+            description={
+              searchQuery
+                ? "No matching goals found"
+                : "No financial goals yet"
+            }
+          />
 
-          return (
-            <Col xs={24} md={12} lg={8} key={goal.id}>
-              <div className="goal-card">
-                <div className="goal-card-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div className="goal-icon-box">
-                      {getGoalIcon(goal.title)}
-                    </div>
-                    {isAdmin && goal.user?.username && (
-                      <Tag
-                        icon={<UserOutlined />}
-                        color="cyan"
-                        style={{ borderRadius: 6, fontWeight: 600, margin: 0 }}
-                        title={`Assigned to: ${goal.user.username}`}
+          {!searchQuery && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleOpenAddModal}
+            >
+              Add Your First Goal
+            </Button>
+          )}
+        </Card>
+      ) : (
+        /* GOALS */
+        <Row gutter={[20, 20]}>
+          {filteredGoals.map((goal) => {
+            const goalId =
+              getGoalId(goal);
+
+            const saved =
+              getSavedAmount(goal);
+
+            const target =
+              getTargetAmount(goal);
+
+            const progress =
+              getProgress(goal);
+
+            const achieved =
+              progress >= 100;
+
+            const deadline =
+              getDeadline(goal);
+
+            return (
+              <Col
+                xs={24}
+                sm={12}
+                lg={8}
+                key={goalId}
+              >
+                <Card
+                  hoverable
+                  style={{
+                    height: "100%",
+                    borderRadius: 18,
+                  }}
+                >
+                  {/* TITLE */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      alignItems:
+                        "flex-start",
+                      gap: 10,
+                      marginBottom: 18,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems:
+                          "center",
+                        gap: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: 14,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent:
+                            "center",
+                          background:
+                            "#eef9f1",
+                        }}
                       >
-                        {goal.user.username}
+                        {getGoalIcon(
+                          goal?.title ||
+                            goal?.goalName
+                        )}
+                      </div>
+
+                      <div>
+                        <Text
+                          strong
+                          style={{
+                            fontSize: 17,
+                            display:
+                              "block",
+                          }}
+                        >
+                          {goal?.title ||
+                            goal?.goalName ||
+                            "Untitled Goal"}
+                        </Text>
+
+                        {isAdmin &&
+                          getGoalUserName(
+                            goal
+                          ) && (
+                            <Tag
+                              icon={
+                                <UserOutlined />
+                              }
+                              style={{
+                                marginTop: 5,
+                              }}
+                            >
+                              {getGoalUserName(
+                                goal
+                              )}
+                            </Tag>
+                          )}
+                      </div>
+                    </div>
+
+                    {achieved && (
+                      <Tag color="green">
+                        Goal Achieved
                       </Tag>
                     )}
                   </div>
-                  {isAdmin && (
-                    <Space>
-                      <Button
-                        size="small"
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={() => openEditGoal(goal)}
-                        title="Edit Goal"
-                      />
-                      <Button
-                        size="small"
-                        type="dashed"
-                        icon={<DollarCircleOutlined />}
-                        onClick={() => openFundModal(goal)}
-                        style={{ borderRadius: 6, fontSize: 12, fontWeight: 600 }}
-                      >
-                        Deposit
-                      </Button>
-                      <Popconfirm
-                        title="Delete Goal"
-                        description="Are you sure you want to delete this goal?"
-                        onConfirm={() => handleDelete(goal.id)}
-                        okText="Delete"
-                        cancelText="Cancel"
-                        okButtonProps={{ danger: true }}
-                      >
-                        <Button
-                          size="small"
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                        />
-                      </Popconfirm>
-                    </Space>
-                  )}
-                </div>
 
-                <div className="goal-title">{goal.title}</div>
+                  {/* AMOUNT */}
+                  <div
+                    style={{
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      strong
+                      style={{
+                        fontSize: 20,
+                      }}
+                    >
+                      {formatMoney(saved)}
+                    </Text>
 
-                <div className="goal-amounts">
-                  <span className="goal-current">
-                    {symbol}{current.toLocaleString()}
-                  </span>
-                  <span className="goal-target">
-                    / {symbol}{target.toLocaleString()}
-                  </span>
-                </div>
-
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12 }}>
-                    <span style={{ color: "#64748b", fontWeight: 500 }}>Progress</span>
-                    <span style={{ fontWeight: 700, color: "#10b981" }}>{pct}%</span>
+                    <Text type="secondary">
+                      {" "}
+                      /{" "}
+                      {formatMoney(target)}
+                    </Text>
                   </div>
+
+                  {/* PROGRESS */}
+                  <Text
+                    type="secondary"
+                    style={{
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Progress
+                  </Text>
+
                   <Progress
-                    percent={Math.min(100, pct)}
-                    strokeColor="#10b981"
-                    trailColor="#f1f5f9"
-                    showInfo={false}
-                    strokeWidth={8}
-                    style={{ margin: 0 }}
+                    percent={progress}
+                    status={
+                      achieved
+                        ? "success"
+                        : "active"
+                    }
                   />
-                </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
-                  <CalendarOutlined />
-                  <span>Target Date: {deadlineText}</span>
-                </div>
-              </div>
-            </Col>
-          );
-        })}
-      </Row>
+                  {/* DATE */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      gap: 10,
+                      marginTop: 8,
+                      marginBottom: 18,
+                    }}
+                  >
+                    <Text type="secondary">
+                      {progress}%
+                    </Text>
+
+                    {deadline && (
+                      <Text type="secondary">
+                        <CalendarOutlined />{" "}
+                        Target Date:{" "}
+                        {dayjs(
+                          deadline
+                        ).isValid()
+                          ? dayjs(
+                              deadline
+                            ).format(
+                              "MMM YYYY"
+                            )
+                          : String(deadline)}
+                      </Text>
+                    )}
+                  </div>
+
+                  {/* CRUD BUTTONS */}
+                  <Space
+                    style={{
+                      width: "100%",
+                    }}
+                    size="small"
+                  >
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() =>
+                        handleOpenEditModal(
+                          goal
+                        )
+                      }
+                      disabled={saving}
+                    >
+                      Edit
+                    </Button>
+
+                    <Button
+                      type="primary"
+                      icon={
+                        <DollarCircleOutlined />
+                      }
+                      onClick={() =>
+                        handleOpenFundModal(
+                          goal
+                        )
+                      }
+                      disabled={
+                        saving || achieved
+                      }
+                    >
+                      Deposit
+                    </Button>
+
+                    <Popconfirm
+                      title="Delete this goal?"
+                      description="This action cannot be undone."
+                      okText="Delete"
+                      cancelText="Cancel"
+                      okButtonProps={{
+                        danger: true,
+                      }}
+                      onConfirm={() =>
+                        handleDeleteGoal(
+                          goal
+                        )
+                      }
+                    >
+                      <Button
+                        danger
+                        icon={
+                          <DeleteOutlined />
+                        }
+                        disabled={saving}
+                      />
+                    </Popconfirm>
+                  </Space>
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
       )}
 
-      {isAdmin && !loading && displayGoals.length === 0 && (
-        <Empty
-          description="No financial goals found matching your criteria"
-          style={{ padding: "40px 0" }}
-        />
-      )}
-
-      {/* Motivational Callout Banner (Screen 7 for standard users) */}
-      {!isAdmin && (
-        <div className="motivation-banner">
-          <div className="motivation-icon">
-            <BulbFilled />
-          </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "#92400e" }}>
-              Keep going!
-            </div>
-            <div style={{ fontSize: 13, color: "#b45309" }}>
-              You are {bestGoalPct}% closer to your {bestGoal?.title || "Trip to Europe"} goal. Every deposit builds long-term wealth.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create / Edit Goal Modal */}
-      <Modal
-        title={
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-              {editingGoal ? "Edit Financial Goal" : "Add Financial Goal"}
-            </h3>
-            <span style={{ fontSize: 13, color: "#64748b" }}>
-              {editingGoal
-                ? "Update your goal parameters and savings progress"
-                : "Define a savings milestone to track"}
-            </span>
-          </div>
-        }
-        open={createModalOpen}
-        onCancel={() => {
-          setCreateModalOpen(false);
-          setEditingGoal(null);
-        }}
-        footer={null}
-        destroyOnClose
-      >
-        <div style={{ padding: "16px 0" }}>
-          {isAdmin && (
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                Assigned User <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <Select
-                size="large"
-                showSearch
-                placeholder="Select a user"
-                style={{ width: "100%", height: 42 }}
-                value={formData.userId}
-                onChange={(val) => setFormData((p) => ({ ...p, userId: val }))}
-                filterOption={(input, option) =>
-                  (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                }
-                options={usersList.map((u) => ({
-                  value: u.id,
-                  label: `${u.username} (${u.email || u.role})`,
-                }))}
+      {/* MOTIVATIONAL BANNER */}
+      {!isAdmin &&
+        filteredGoals.length > 0 && (
+          <Card
+            style={{
+              marginTop: 24,
+              borderRadius: 16,
+              background: "#f1faf3",
+              border:
+                "1px solid #d8efdd",
+            }}
+          >
+            <Space align="start">
+              <BulbFilled
+                style={{
+                  fontSize: 24,
+                  color: "#3c8c58",
+                }}
               />
-            </div>
-          )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Goal Name <span style={{ color: "#ef4444" }}>*</span>
-            </label>
-            <Input
-              size="large"
-              placeholder="e.g., Trip to Europe, New Laptop"
-              value={formData.title}
-              onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-              style={{ borderRadius: 8, height: 42 }}
-            />
-          </div>
+              <div>
+                <Text
+                  strong
+                  style={{
+                    display: "block",
+                    fontSize: 16,
+                  }}
+                >
+                  Keep going!
+                </Text>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Target Amount ({symbol}) <span style={{ color: "#ef4444" }}>*</span>
-            </label>
-            <InputNumber
-              size="large"
-              style={{ width: "100%", height: 42 }}
-              min={1}
-              step={100}
-              placeholder="e.g., 2000"
-              value={formData.targetAmount}
-              onChange={(val) => setFormData((p) => ({ ...p, targetAmount: val }))}
-            />
-          </div>
+                <Text type="secondary">
+                  Every deposit brings you
+                  closer to your financial
+                  goals.
+                </Text>
+              </div>
+            </Space>
+          </Card>
+        )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Current Amount ({symbol})
-            </label>
-            <InputNumber
-              size="large"
-              style={{ width: "100%", height: 42 }}
-              min={0}
-              step={50}
-              placeholder="0.00"
-              value={formData.currentAmount}
-              onChange={(val) => setFormData((p) => ({ ...p, currentAmount: val }))}
-            />
-          </div>
+      {/* ======================================================
+          ADD / EDIT MODAL
+      ====================================================== */}
+      <Modal
+        open={goalModalOpen}
+        title={
+          editingGoal
+            ? "Edit Goal"
+            : "Add New Goal"
+        }
+        onCancel={handleCloseGoalModal}
+        onOk={handleSaveGoal}
+        okText={
+          editingGoal
+            ? "Update Goal"
+            : "Add Goal"
+        }
+        confirmLoading={saving}
+      >
+        {/* GOAL NAME */}
+        <div
+          style={{
+            marginBottom: 18,
+          }}
+        >
+          <Text
+            strong
+            style={{
+              display: "block",
+              marginBottom: 8,
+            }}
+          >
+            Goal Name
+          </Text>
 
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Target Date (Optional)
-            </label>
-            <DatePicker
-              size="large"
-              style={{ width: "100%", height: 42 }}
-              value={formData.deadline}
-              onChange={(date) => setFormData((p) => ({ ...p, deadline: date }))}
-            />
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button
-              size="large"
-              onClick={() => {
-                setCreateModalOpen(false);
-                setEditingGoal(null);
-              }}
-              style={{ borderRadius: 8 }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              loading={saving}
-              onClick={handleSave}
-              style={{
-                borderRadius: 8,
-                fontWeight: 700,
-                background: "#10b981",
-                borderColor: "#10b981",
-                minWidth: 120,
-              }}
-            >
-              {saving
-                ? "Saving..."
-                : editingGoal
-                ? "Update Goal"
-                : "Create Goal"}
-            </Button>
-          </div>
+          <Input
+            placeholder="Example: Trip to Europe"
+            value={formData.title}
+            onChange={(event) =>
+              updateForm(
+                "title",
+                event.target.value
+              )
+            }
+          />
         </div>
+
+        {/* TARGET AMOUNT */}
+        <div
+          style={{
+            marginBottom: 18,
+          }}
+        >
+          <Text
+            strong
+            style={{
+              display: "block",
+              marginBottom: 8,
+            }}
+          >
+            Target Amount
+          </Text>
+
+          <InputNumber
+            style={{
+              width: "100%",
+            }}
+            min={0}
+            precision={2}
+            placeholder="Enter target amount"
+            value={formData.targetAmount}
+            onChange={(value) =>
+              updateForm(
+                "targetAmount",
+                value
+              )
+            }
+            prefix={getCurrencySymbol(
+              currency
+            )}
+          />
+        </div>
+
+        {/* CURRENT AMOUNT */}
+        <div
+          style={{
+            marginBottom: 18,
+          }}
+        >
+          <Text
+            strong
+            style={{
+              display: "block",
+              marginBottom: 8,
+            }}
+          >
+            Current Saved Amount
+          </Text>
+
+          <InputNumber
+            style={{
+              width: "100%",
+            }}
+            min={0}
+            precision={2}
+            placeholder="Enter current amount"
+            value={formData.currentAmount}
+            onChange={(value) =>
+              updateForm(
+                "currentAmount",
+                value
+              )
+            }
+            prefix={getCurrencySymbol(
+              currency
+            )}
+          />
+        </div>
+
+        {/* TARGET DATE */}
+        <div
+          style={{
+            marginBottom: 18,
+          }}
+        >
+          <Text
+            strong
+            style={{
+              display: "block",
+              marginBottom: 8,
+            }}
+          >
+            Target Date
+          </Text>
+
+          <DatePicker
+            style={{
+              width: "100%",
+            }}
+            format="DD MMM YYYY"
+            value={formData.deadline}
+            onChange={(date) =>
+              updateForm(
+                "deadline",
+                date
+              )
+            }
+            placeholder="Select target date"
+          />
+        </div>
+
+        {/* ADMIN USER */}
+        {isAdmin && (
+          <div>
+            <Text
+              strong
+              style={{
+                display: "block",
+                marginBottom: 8,
+              }}
+            >
+              User
+            </Text>
+
+            <Select
+              showSearch
+              allowClear
+              style={{
+                width: "100%",
+              }}
+              placeholder="Select user"
+              optionFilterProp="label"
+              value={formData.userId}
+              options={userOptions}
+              onChange={(value) =>
+                updateForm(
+                  "userId",
+                  value
+                )
+              }
+            />
+          </div>
+        )}
       </Modal>
 
-      {/* Add Funds Modal */}
+      {/* ======================================================
+          DEPOSIT MODAL
+      ====================================================== */}
       <Modal
-        title={
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-              Add Funds to Goal
-            </h3>
-            <span style={{ fontSize: 13, color: "#64748b" }}>
-              Deposit towards: {selectedGoal?.title}
-            </span>
-          </div>
-        }
         open={fundModalOpen}
-        onCancel={() => setFundModalOpen(false)}
-        footer={null}
-        destroyOnClose
+        title="Add Funds"
+        onCancel={handleCloseFundModal}
+        onOk={handleAddFunds}
+        okText="Add Funds"
+        confirmLoading={saving}
       >
-        <div style={{ padding: "16px 0" }}>
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Deposit Amount ({symbol}) <span style={{ color: "#ef4444" }}>*</span>
-            </label>
-            <InputNumber
-              size="large"
-              style={{ width: "100%", height: 44 }}
-              min={1}
-              step={50}
-              placeholder="e.g., 200"
-              value={fundAmount}
-              onChange={(val) => setFundAmount(val)}
-            />
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button size="large" onClick={() => setFundModalOpen(false)} style={{ borderRadius: 8 }}>
-              Cancel
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              loading={saving}
-              onClick={handleAddFunds}
+        {selectedGoal && (
+          <div>
+            <div
               style={{
-                borderRadius: 8,
-                fontWeight: 700,
-                background: "#10b981",
-                borderColor: "#10b981",
-                minWidth: 110,
+                marginBottom: 18,
               }}
             >
-              Confirm Deposit
-            </Button>
+              <Text type="secondary">
+                Goal
+              </Text>
+
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  fontSize: 18,
+                }}
+              >
+                {selectedGoal?.title ||
+                  selectedGoal?.goalName ||
+                  "Goal"}
+              </Text>
+            </div>
+
+            <div
+              style={{
+                marginBottom: 18,
+              }}
+            >
+              <Text type="secondary">
+                Current Progress
+              </Text>
+
+              <Text
+                strong
+                style={{
+                  display: "block",
+                }}
+              >
+                {formatMoney(
+                  getSavedAmount(
+                    selectedGoal
+                  )
+                )}{" "}
+                /{" "}
+                {formatMoney(
+                  getTargetAmount(
+                    selectedGoal
+                  )
+                )}
+              </Text>
+            </div>
+
+            <Text
+              strong
+              style={{
+                display: "block",
+                marginBottom: 8,
+              }}
+            >
+              Deposit Amount
+            </Text>
+
+            <InputNumber
+              autoFocus
+              style={{
+                width: "100%",
+              }}
+              min={0}
+              precision={2}
+              placeholder="Enter deposit amount"
+              value={fundAmount}
+              onChange={setFundAmount}
+              prefix={getCurrencySymbol(
+                currency
+              )}
+            />
           </div>
-        </div>
+        )}
       </Modal>
     </div>
   );
