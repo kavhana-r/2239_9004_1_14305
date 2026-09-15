@@ -22,7 +22,6 @@ import {
   Input,
   Modal,
   Popconfirm,
-  DatePicker,
 } from "antd";
 
 import {
@@ -30,142 +29,124 @@ import {
   DeleteOutlined,
   PlusOutlined,
   SearchOutlined,
-  CloseOutlined,
-  CheckCircleFilled,
+  FilterOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 
-import { useDispatch } from "react-redux";
 import axios from "axios";
 import dayjs from "dayjs";
 
-import { logout } from "../store/slices/authSlice";
+import "../styles/TransactionsPage.css";
 
 const { Title, Text } = Typography;
 
+const API_BASE_URL = "http://localhost:8080/api";
+
+// ============================================================
+// DEFAULT EXCHANGE RATES
+// ============================================================
+
 const DEFAULT_EXCHANGE_RATES = {
-  USD: 1.0,
+  USD: 1,
+  INR: 83,
   EUR: 0.92,
   GBP: 0.79,
-  INR: 83.5,
-  JPY: 155.0,
-  CAD: 1.36,
-  AUD: 1.52,
 };
+
+// ============================================================
+// REQUIRED CURRENCIES
+// ============================================================
 
 const REQUIRED_CURRENCIES = [
-  {
-    code: "AUD",
-    country: "AU",
-    name: "Australian Dollar",
-    symbol: "A$",
-  },
-  {
-    code: "CAD",
-    country: "CA",
-    name: "Canadian Dollar",
-    symbol: "C$",
-  },
-  {
-    code: "EUR",
-    country: "EU",
-    name: "Euro",
-    symbol: "€",
-  },
-  {
-    code: "GBP",
-    country: "GB",
-    name: "British Pound",
-    symbol: "£",
-  },
-  {
-    code: "INR",
-    country: "IN",
-    name: "Indian Rupee",
-    symbol: "₹",
-  },
-  {
-    code: "JPY",
-    country: "JP",
-    name: "Japanese Yen",
-    symbol: "¥",
-  },
-  {
-    code: "USD",
-    country: "US",
-    name: "US Dollar",
-    symbol: "$",
-  },
+  "USD",
+  "INR",
+  "EUR",
+  "GBP",
 ];
 
-const getCurrencySymbol = (currency) => {
-  switch (String(currency || "").toUpperCase()) {
-    case "INR":
-      return "₹";
+// ============================================================
+// CURRENCY SYMBOL
+// ============================================================
 
-    case "EUR":
-      return "€";
+const getCurrencySymbol = (currencyCode) => {
+  const code = String(currencyCode || "USD").toUpperCase();
 
-    case "GBP":
-      return "£";
+  const symbols = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£",
+  };
 
-    case "JPY":
-      return "¥";
-
-    case "AUD":
-      return "A$";
-
-    case "CAD":
-      return "C$";
-
-    case "USD":
-    default:
-      return "$";
-  }
+  return symbols[code] || code;
 };
+
+// ============================================================
+// INITIAL FORM
+// ============================================================
 
 const getInitialForm = () => ({
   title: "",
   amount: "",
-  currencyCode:
-    localStorage.getItem("preferredCurrency") || "USD",
+  currencyCode: "USD",
   transactionType: "EXPENSE",
+  categoryId: "",
   transactionDate: dayjs().format("YYYY-MM-DD"),
   note: "",
-  categoryId: "",
 });
 
-const safeArray = (data) => {
-  if (Array.isArray(data)) {
-    return data;
+// ============================================================
+// SAFE ARRAY
+// ============================================================
+
+const safeArray = (value) => {
+  if (Array.isArray(value)) {
+    return value;
   }
 
-  if (Array.isArray(data?.content)) {
-    return data.content;
+  if (Array.isArray(value?.data)) {
+    return value.data;
+  }
+
+  if (Array.isArray(value?.content)) {
+    return value.content;
+  }
+
+  if (Array.isArray(value?.categories)) {
+    return value.categories;
+  }
+
+  if (Array.isArray(value?.transactions)) {
+    return value.transactions;
+  }
+
+  if (Array.isArray(value?.currencies)) {
+    return value.currencies;
   }
 
   return [];
 };
 
-export default function TransactionsPage() {
-  const [form] = Form.useForm();
+// ============================================================
+// COMPONENT
+// ============================================================
 
-  const dispatch = useDispatch();
+const TransactionsPage = () => {
+  // ==========================================================
+  // STATE
+  // ==========================================================
 
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [currencies, setCurrencies] = useState([]);
 
-  const [activeCurrency, setActiveCurrency] = useState(
-    () =>
-      localStorage.getItem("preferredCurrency") ||
-      "USD"
-  );
+  const [activeCurrency, setActiveCurrency] = useState("USD");
 
   const [exchangeRates, setExchangeRates] = useState(
     DEFAULT_EXCHANGE_RATES
   );
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -173,259 +154,351 @@ export default function TransactionsPage() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] =
-    useState(null);
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-  const [successAlert, setSuccessAlert] = useState(null);
-
-  const isMountedRef = useRef(true);
+  const [successAlert, setSuccessAlert] = useState("");
 
   const [formData, setFormData] = useState(
     getInitialForm()
   );
 
-  // =========================================================
+  const mountedRef = useRef(true);
+
+  // ==========================================================
   // MOUNT / UNMOUNT
-  // =========================================================
+  // ==========================================================
 
   useEffect(() => {
-    isMountedRef.current = true;
+    mountedRef.current = true;
 
     return () => {
-      isMountedRef.current = false;
+      mountedRef.current = false;
     };
   }, []);
 
-  // =========================================================
-  // UNAUTHORIZED
-  // =========================================================
+  // ==========================================================
+  // READ PREFERRED CURRENCY
+  // ==========================================================
 
-  const handleUnauthorized = useCallback(() => {
+  useEffect(() => {
     try {
-      dispatch(logout());
-    } catch (error) {
-      // Ignore logout errors
-    }
+      const savedCurrency =
+        localStorage.getItem("preferredCurrency") ||
+        localStorage.getItem("currency") ||
+        localStorage.getItem("activeCurrency");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("isAuthenticated");
-
-    if (axios.defaults?.headers?.common) {
-      delete axios.defaults.headers.common.Authorization;
-    }
-
-    message.error(
-      "Session expired. Please login again."
-    );
-
-    if (
-      typeof window !== "undefined" &&
-      window.location
-    ) {
-      if (window.location.pathname !== "/login") {
-        try {
-          window.location.href = "/login";
-        } catch (error) {
-          // Ignore redirect errors
-        }
+      if (
+        savedCurrency &&
+        REQUIRED_CURRENCIES.includes(
+          savedCurrency.toUpperCase()
+        )
+      ) {
+        setActiveCurrency(
+          savedCurrency.toUpperCase()
+        );
       }
+    } catch (error) {
+      console.error(
+        "Unable to read preferred currency:",
+        error
+      );
     }
-  }, [dispatch]);
+  }, []);
 
-  // =========================================================
+  // ==========================================================
   // CURRENCY CHANGE EVENT
-  // =========================================================
+  // ==========================================================
 
   useEffect(() => {
     const handleCurrencyChange = (event) => {
-      const newCurrency =
-        event.detail ||
-        localStorage.getItem("preferredCurrency") ||
-        "USD";
+      const currency =
+        event?.detail?.currency ||
+        event?.detail?.currencyCode ||
+        event?.detail;
 
-      setActiveCurrency(newCurrency);
+      if (
+        typeof currency === "string" &&
+        REQUIRED_CURRENCIES.includes(
+          currency.toUpperCase()
+        )
+      ) {
+        setActiveCurrency(
+          currency.toUpperCase()
+        );
+      }
     };
 
     window.addEventListener(
-      "currencyChange",
+      "mintmatrix-currency-change",
       handleCurrencyChange
     );
 
     return () => {
       window.removeEventListener(
-        "currencyChange",
+        "mintmatrix-currency-change",
         handleCurrencyChange
       );
     };
   }, []);
 
-  // =========================================================
+  // ==========================================================
   // FETCH TRANSACTIONS
-  // =========================================================
+  // ==========================================================
 
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
+  const fetchTransactions = useCallback(
+    async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/transactions`
+        );
 
-    try {
-      const response = await axios.get(
-        "/api/transactions"
-      );
+        if (!mountedRef.current) {
+          return;
+        }
 
-      if (isMountedRef.current) {
-        setTransactions(
-          safeArray(response.data)
+        const data = safeArray(response.data);
+
+        setTransactions(data);
+      } catch (error) {
+        console.error(
+          "Failed to fetch transactions:",
+          error
+        );
+
+        if (!mountedRef.current) {
+          return;
+        }
+
+        message.error(
+          error?.response?.data?.message ||
+            "Failed to load transactions."
         );
       }
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        handleUnauthorized();
-        return;
-      }
+    },
+    []
+  );
 
-      if (isMountedRef.current) {
-        setTransactions([]);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [handleUnauthorized]);
-
-  // =========================================================
+  // ==========================================================
   // FETCH CATEGORIES
-  // =========================================================
+  // ==========================================================
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await axios.get(
-        "/api/categories"
-      );
+  const fetchCategories = useCallback(
+    async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/categories`
+        );
 
-      const list = safeArray(response.data);
-
-      if (isMountedRef.current) {
-        setCategories(list);
-      }
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      if (isMountedRef.current) {
-        setCategories([]);
-      }
-    }
-  }, [handleUnauthorized]);
-
-  // =========================================================
-  // FETCH CURRENCIES
-  // =========================================================
-
-  const fetchCurrencies = useCallback(async () => {
-    try {
-      const response = await axios.get(
-        "/api/currencies"
-      );
-
-      const list = safeArray(response.data);
-
-      if (isMountedRef.current) {
-        setCurrencies(list);
-
-        if (list.length > 0) {
-          const ratesMap = {
-            ...DEFAULT_EXCHANGE_RATES,
-          };
-
-          list.forEach((currency) => {
-            if (
-              currency?.code &&
-              currency?.exchangeRate
-            ) {
-              ratesMap[currency.code] =
-                Number(currency.exchangeRate);
-            }
-          });
-
-          setExchangeRates(ratesMap);
+        if (!mountedRef.current) {
+          return;
         }
-      }
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        handleUnauthorized();
-        return;
-      }
 
-      if (isMountedRef.current) {
+        const data = safeArray(response.data);
+
+        console.log(
+          "Categories received from backend:",
+          data
+        );
+
+        setCategories(data);
+      } catch (error) {
+        console.error(
+          "Failed to fetch categories:",
+          error
+        );
+
+        if (!mountedRef.current) {
+          return;
+        }
+
+        setCategories([]);
+
+        message.error(
+          error?.response?.data?.message ||
+            "Failed to load categories."
+        );
+      }
+    },
+    []
+  );
+
+  // ==========================================================
+  // FETCH CURRENCIES
+  // ==========================================================
+
+  const fetchCurrencies = useCallback(
+    async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/currencies`
+        );
+
+        if (!mountedRef.current) {
+          return;
+        }
+
+        const data = safeArray(response.data);
+
+        setCurrencies(data);
+
+        const newRates = {
+          ...DEFAULT_EXCHANGE_RATES,
+        };
+
+        data.forEach((currency) => {
+          const code = String(
+            currency?.code ||
+              currency?.currencyCode ||
+              ""
+          ).toUpperCase();
+
+          const rate = Number(
+            currency?.exchangeRate ??
+              currency?.rate ??
+              currency?.conversionRate
+          );
+
+          if (
+            code &&
+            Number.isFinite(rate) &&
+            rate > 0
+          ) {
+            newRates[code] = rate;
+          }
+        });
+
+        setExchangeRates(newRates);
+      } catch (error) {
+        console.error(
+          "Failed to fetch currencies:",
+          error
+        );
+
+        if (!mountedRef.current) {
+          return;
+        }
+
         setCurrencies([]);
+        setExchangeRates(
+          DEFAULT_EXCHANGE_RATES
+        );
       }
-    }
-  }, [handleUnauthorized]);
+    },
+    []
+  );
 
-  // =========================================================
-  // INITIAL LOAD
-  // =========================================================
+  // ==========================================================
+  // LOAD ALL DATA
+  // ==========================================================
 
   useEffect(() => {
-    fetchTransactions();
-    fetchCategories();
-    fetchCurrencies();
+    const loadData = async () => {
+      setLoading(true);
+
+      await Promise.all([
+        fetchTransactions(),
+        fetchCategories(),
+        fetchCurrencies(),
+      ]);
+
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, [
     fetchTransactions,
     fetchCategories,
     fetchCurrencies,
   ]);
 
-  // =========================================================
-  // CURRENCY CONVERSION
-  // =========================================================
+  // ==========================================================
+  // REFRESH
+  // ==========================================================
+
+  const handleRefresh = async () => {
+    setLoading(true);
+
+    await Promise.all([
+      fetchTransactions(),
+      fetchCategories(),
+      fetchCurrencies(),
+    ]);
+
+    if (mountedRef.current) {
+      setLoading(false);
+    }
+
+    message.success(
+      "Transactions refreshed."
+    );
+  };
+
+  // ==========================================================
+  // CONVERT CURRENCY
+  // ==========================================================
 
   const convertValue = useCallback(
-    (amount, fromCurr = "USD") => {
-      const numericAmount = Number(amount || 0);
+    (
+      amount,
+      fromCurrency,
+      toCurrency = activeCurrency
+    ) => {
+      const numericAmount = Number(amount);
 
-      const from = fromCurr || "USD";
-      const to = activeCurrency || "USD";
+      if (!Number.isFinite(numericAmount)) {
+        return 0;
+      }
+
+      const from = String(
+        fromCurrency || "USD"
+      ).toUpperCase();
+
+      const to = String(
+        toCurrency || "USD"
+      ).toUpperCase();
 
       if (from === to) {
         return numericAmount;
       }
 
       const fromRate =
-        exchangeRates[from] ||
-        DEFAULT_EXCHANGE_RATES[from] ||
-        1;
+        Number(exchangeRates[from]) || 1;
 
       const toRate =
-        exchangeRates[to] ||
-        DEFAULT_EXCHANGE_RATES[to] ||
-        1;
+        Number(exchangeRates[to]) || 1;
 
       return (
         (numericAmount / fromRate) *
         toRate
       );
     },
-    [activeCurrency, exchangeRates]
+    [
+      activeCurrency,
+      exchangeRates,
+    ]
   );
 
-  // =========================================================
-  // FORM CHANGE
-  // =========================================================
+  // ==========================================================
+  // HANDLE FORM CHANGE
+  // ==========================================================
 
-  const handleChange = (field, value) => {
+  const handleChange = (
+    field,
+    value
+  ) => {
     setFormData((previous) => {
       const updated = {
         ...previous,
         [field]: value,
       };
 
-      // When Income/Expense changes,
-      // remove the previously selected category.
-      if (field === "transactionType") {
+      // When Income / Expense changes,
+      // clear the old category.
+      if (
+        field === "transactionType"
+      ) {
         updated.categoryId = "";
       }
 
@@ -433,441 +506,993 @@ export default function TransactionsPage() {
     });
   };
 
-  // =========================================================
+  // ==========================================================
   // OPEN ADD MODAL
-  // =========================================================
+  // ==========================================================
 
   const openAddModal = () => {
     setEditingTransaction(null);
 
-    const initial = {
+    setFormData({
       ...getInitialForm(),
-      currencyCode: activeCurrency,
-    };
+      currencyCode:
+        REQUIRED_CURRENCIES.includes(
+          activeCurrency
+        )
+          ? activeCurrency
+          : "USD",
+    });
 
-    setFormData(initial);
-
-    form.resetFields();
+    setSuccessAlert("");
 
     setModalOpen(true);
   };
 
-  // =========================================================
+  // ==========================================================
   // OPEN EDIT MODAL
-  // =========================================================
+  // ==========================================================
 
-  const openEditModal = (transaction) => {
-    setEditingTransaction(transaction);
+  const openEditModal = (
+    transaction
+  ) => {
+    setEditingTransaction(
+      transaction
+    );
 
-    const values = {
-      title: transaction?.title || "",
+    const transactionCategoryId =
+      transaction?.categoryId ??
+      transaction?.category?.id ??
+      "";
+
+    setFormData({
+      title:
+        transaction?.title || "",
 
       amount:
-        transaction?.amount ??
-        "",
+        transaction?.amount !==
+          undefined &&
+        transaction?.amount !== null
+          ? String(
+              transaction.amount
+            )
+          : "",
 
       currencyCode:
-        transaction?.currency?.code ||
         transaction?.currencyCode ||
+        transaction?.currency?.code ||
         "USD",
 
       transactionType:
         transaction?.transactionType ||
+        transaction?.type ||
         "EXPENSE",
 
+      categoryId:
+        transactionCategoryId,
+
       transactionDate:
-        transaction?.transactionDate ||
-        dayjs().format("YYYY-MM-DD"),
+        transaction?.transactionDate
+          ? dayjs(
+              transaction.transactionDate
+            ).format("YYYY-MM-DD")
+          : dayjs().format(
+              "YYYY-MM-DD"
+            ),
 
       note:
-        transaction?.note ||
-        "",
+        transaction?.note || "",
+    });
 
-      categoryId:
-        transaction?.category?.id ||
-        transaction?.categoryId ||
-        "",
-    };
-
-    setFormData(values);
-
-    form.setFieldsValue(values);
+    setSuccessAlert("");
 
     setModalOpen(true);
   };
 
-  // =========================================================
+  // ==========================================================
   // CLOSE MODAL
-  // =========================================================
+  // ==========================================================
 
   const closeModal = () => {
+    if (saving) {
+      return;
+    }
+
     setModalOpen(false);
     setEditingTransaction(null);
-    form.resetFields();
+    setFormData(
+      getInitialForm()
+    );
+    setSuccessAlert("");
   };
 
-  // =========================================================
+  // ==========================================================
   // SUBMIT TRANSACTION
-  // =========================================================
+  // ==========================================================
 
   const handleSubmit = async () => {
+    // --------------------------------------------------------
+    // TITLE
+    // --------------------------------------------------------
+
+    if (!formData.title.trim()) {
+      message.error(
+        "Please enter a transaction title."
+      );
+      return;
+    }
+
+    // --------------------------------------------------------
+    // AMOUNT
+    // --------------------------------------------------------
+
+    const amount = Number(
+      formData.amount
+    );
+
+    if (
+      !formData.amount ||
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      message.error(
+        "Please enter a valid amount greater than 0."
+      );
+      return;
+    }
+
+    // --------------------------------------------------------
+    // CATEGORY
+    // --------------------------------------------------------
+
+    if (!formData.categoryId) {
+      message.error(
+        "Please select a category."
+      );
+      return;
+    }
+
+    // --------------------------------------------------------
+    // DATE
+    // --------------------------------------------------------
+
+    if (
+      !formData.transactionDate
+    ) {
+      message.error(
+        "Please select a transaction date."
+      );
+      return;
+    }
+
+    // --------------------------------------------------------
+    // REQUEST BODY
+    // --------------------------------------------------------
+
+    const payload = {
+      title:
+        formData.title.trim(),
+
+      amount: amount,
+
+      currencyCode:
+        formData.currencyCode,
+
+      transactionType:
+        formData.transactionType,
+
+      transactionDate:
+        formData.transactionDate,
+
+      note: formData.note
+        ? formData.note.trim()
+        : null,
+
+      categoryId: Number(
+        formData.categoryId
+      ),
+    };
+
+    console.log(
+      "Transaction payload:",
+      payload
+    );
+
     try {
       setSaving(true);
 
-      if (!formData.title?.trim()) {
-        message.warning(
-          "Please enter transaction title."
-        );
-        return;
-      }
+      // ======================================================
+      // EDIT
+      // ======================================================
 
       if (
-        !formData.amount ||
-        Number(formData.amount) <= 0
+        editingTransaction?.id
       ) {
-        message.warning(
-          "Please enter a valid amount."
-        );
-        return;
-      }
-
-      if (!formData.categoryId) {
-        message.warning(
-          "Please select a category."
-        );
-        return;
-      }
-
-      const payload = {
-        title: formData.title.trim(),
-
-        amount: Number(formData.amount),
-
-        currencyCode:
-          formData.currencyCode,
-
-        transactionType:
-          formData.transactionType,
-
-        transactionDate:
-          formData.transactionDate,
-
-        note:
-          formData.note
-            ? formData.note.trim()
-            : null,
-
-        // Use the REAL database category ID.
-        categoryId:
-          Number(formData.categoryId),
-      };
-
-      if (editingTransaction) {
         await axios.put(
-          `/api/transactions/${editingTransaction.id}`,
+          `${API_BASE_URL}/transactions/${editingTransaction.id}`,
           payload
         );
 
         message.success(
-          "Transaction updated successfully"
-        );
-      } else {
-        await axios.post(
-          "/api/transactions",
-          payload
-        );
-
-        setSuccessAlert(
-          "Transaction added successfully!"
+          "Transaction updated successfully."
         );
       }
 
-      closeModal();
+      // ======================================================
+      // ADD
+      // ======================================================
+
+      else {
+        await axios.post(
+          `${API_BASE_URL}/transactions`,
+          payload
+        );
+
+        message.success(
+          "Transaction added successfully."
+        );
+      }
+
+      // ======================================================
+      // REFRESH LIST
+      // ======================================================
 
       await fetchTransactions();
+
+      if (mountedRef.current) {
+        setSuccessAlert(
+          editingTransaction
+            ? "Transaction updated successfully."
+            : "Transaction added successfully."
+        );
+
+        setModalOpen(false);
+        setEditingTransaction(null);
+        setFormData(
+          getInitialForm()
+        );
+      }
     } catch (error) {
-      if (error?.response?.status === 401) {
-        handleUnauthorized();
+      console.error(
+        "Failed to save transaction:",
+        error
+      );
+
+      if (!mountedRef.current) {
         return;
       }
 
       message.error(
         error?.response?.data?.message ||
           error?.response?.data ||
-          "Something went wrong"
+          "Failed to save transaction."
       );
     } finally {
-      if (isMountedRef.current) {
+      if (mountedRef.current) {
         setSaving(false);
       }
     }
   };
 
-  // =========================================================
+  // ==========================================================
   // DELETE TRANSACTION
-  // =========================================================
+  // ==========================================================
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (
+    transactionId
+  ) => {
+    if (!transactionId) {
+      return;
+    }
+
     try {
       await axios.delete(
-        `/api/transactions/${id}`
+        `${API_BASE_URL}/transactions/${transactionId}`
       );
 
       message.success(
-        "Transaction deleted successfully"
+        "Transaction deleted successfully."
       );
 
       await fetchTransactions();
     } catch (error) {
-      if (error?.response?.status === 401) {
-        handleUnauthorized();
-        return;
-      }
+      console.error(
+        "Failed to delete transaction:",
+        error
+      );
 
       message.error(
-        "Unable to delete transaction"
+        error?.response?.data?.message ||
+          error?.response?.data ||
+          "Failed to delete transaction."
       );
     }
   };
 
-  // =========================================================
+  // ==========================================================
   // CATEGORY OPTIONS
-  // =========================================================
-  //
-  // IMPORTANT:
-  // We use categories returned from the backend.
-  //
-  // When transactionType = INCOME:
-  // only INCOME categories are shown.
-  //
-  // Therefore, if the database contains:
-  // Salary | INCOME
-  //
-  // Salary will automatically appear here.
-  //
-  // =========================================================
+  // ==========================================================
 
-  const formCategoryOptions = useMemo(() => {
-    const selectedType =
+  const formCategoryOptions =
+    useMemo(() => {
+      const selectedType =
+        String(
+          formData.transactionType ||
+            ""
+        ).toUpperCase();
+
+      const validCategories =
+        categories.filter(
+          (category) =>
+            category &&
+            category.id !==
+              undefined &&
+            category.id !== null
+        );
+
+      // ------------------------------------------------------
+      // First try categories matching transaction type
+      // ------------------------------------------------------
+
+      const matchingCategories =
+        validCategories.filter(
+          (category) => {
+            const categoryType =
+              String(
+                category?.type ||
+                  category?.transactionType ||
+                  category?.categoryType ||
+                  ""
+              ).toUpperCase();
+
+            return (
+              categoryType &&
+              categoryType ===
+                selectedType
+            );
+          }
+        );
+
+      // ------------------------------------------------------
+      // If backend has type information and matching
+      // categories exist, show matching categories.
+      // ------------------------------------------------------
+
+      if (
+        matchingCategories.length > 0
+      ) {
+        return matchingCategories.map(
+          (category) => ({
+            value: category.id,
+            label:
+              category.name ||
+              category.categoryName ||
+              `Category ${category.id}`,
+          })
+        );
+      }
+
+      // ------------------------------------------------------
+      // If backend categories don't have a type field,
+      // show all categories.
+      // ------------------------------------------------------
+
+      const categoriesWithoutType =
+        validCategories.filter(
+          (category) => {
+            const categoryType =
+              String(
+                category?.type ||
+                  category?.transactionType ||
+                  category?.categoryType ||
+                  ""
+              ).trim();
+
+            return !categoryType;
+          }
+        );
+
+      if (
+        categoriesWithoutType.length > 0
+      ) {
+        return categoriesWithoutType.map(
+          (category) => ({
+            value: category.id,
+            label:
+              category.name ||
+              category.categoryName ||
+              `Category ${category.id}`,
+          })
+        );
+      }
+
+      // ------------------------------------------------------
+      // No matching categories
+      // ------------------------------------------------------
+
+      return [];
+    }, [
+      categories,
+      formData.transactionType,
+    ]);
+
+  // ==========================================================
+  // CATEGORY FILTER OPTIONS
+  // ==========================================================
+
+  const categoryFilterOptions =
+    useMemo(() => {
+      const uniqueCategories =
+        new Map();
+
+      categories.forEach(
+        (category) => {
+          if (
+            category?.id !==
+              undefined &&
+            category?.id !== null
+          ) {
+            uniqueCategories.set(
+              String(category.id),
+              {
+                value: String(
+                  category.id
+                ),
+                label:
+                  category.name ||
+                  category.categoryName ||
+                  `Category ${category.id}`,
+              }
+            );
+          }
+        }
+      );
+
+      return Array.from(
+        uniqueCategories.values()
+      );
+    }, [categories]);
+
+  // ==========================================================
+  // CURRENCY OPTIONS
+  // ==========================================================
+
+  const currencyOptions =
+    useMemo(() => {
+      return [
+        {
+          value: "USD",
+          label: "$ USD",
+        },
+        {
+          value: "INR",
+          label: "₹ INR",
+        },
+        {
+          value: "EUR",
+          label: "€ EUR",
+        },
+        {
+          value: "GBP",
+          label: "£ GBP",
+        },
+      ];
+    }, []);
+
+  // ==========================================================
+  // FILTER TRANSACTIONS
+  // ==========================================================
+
+  const filteredTransactions =
+    useMemo(() => {
+      const normalizedSearch =
+        search
+          .trim()
+          .toLowerCase();
+
+      return transactions.filter(
+        (transaction) => {
+          // --------------------------------------------------
+          // SEARCH
+          // --------------------------------------------------
+
+          const title =
+            String(
+              transaction?.title ||
+                ""
+            ).toLowerCase();
+
+          const note =
+            String(
+              transaction?.note ||
+                ""
+            ).toLowerCase();
+
+          const categoryName =
+            String(
+              transaction
+                ?.category?.name ||
+                transaction?.categoryName ||
+                ""
+            ).toLowerCase();
+
+          const matchesSearch =
+            !normalizedSearch ||
+            title.includes(
+              normalizedSearch
+            ) ||
+            note.includes(
+              normalizedSearch
+            ) ||
+            categoryName.includes(
+              normalizedSearch
+            );
+
+          // --------------------------------------------------
+          // TYPE
+          // --------------------------------------------------
+
+          const transactionType =
+            String(
+              transaction?.transactionType ||
+                transaction?.type ||
+                ""
+            ).toUpperCase();
+
+          const matchesType =
+            typeFilter === "ALL" ||
+            transactionType ===
+              typeFilter;
+
+          // --------------------------------------------------
+          // CATEGORY
+          // --------------------------------------------------
+
+          const transactionCategoryId =
+            transaction?.categoryId ??
+            transaction?.category?.id;
+
+          const matchesCategory =
+            categoryFilter ===
+              "ALL" ||
+            String(
+              transactionCategoryId
+            ) ===
+              String(
+                categoryFilter
+              );
+
+          return (
+            matchesSearch &&
+            matchesType &&
+            matchesCategory
+          );
+        }
+      );
+    }, [
+      transactions,
+      search,
+      typeFilter,
+      categoryFilter,
+    ]);
+
+  // ==========================================================
+  // TOTAL INCOME
+  // ==========================================================
+
+  const totalIncome =
+    useMemo(() => {
+      return transactions
+        .filter((transaction) => {
+          const type =
+            String(
+              transaction?.transactionType ||
+                transaction?.type ||
+                ""
+            ).toUpperCase();
+
+          return type === "INCOME";
+        })
+        .reduce(
+          (
+            total,
+            transaction
+          ) => {
+            const amount =
+              convertValue(
+                transaction?.amount,
+                transaction?.currencyCode ||
+                  transaction
+                    ?.currency?.code ||
+                  "USD"
+              );
+
+            return (
+              total + amount
+            );
+          },
+          0
+        );
+    }, [
+      transactions,
+      convertValue,
+    ]);
+
+  // ==========================================================
+  // TOTAL EXPENSE
+  // ==========================================================
+
+  const totalExpense =
+    useMemo(() => {
+      return transactions
+        .filter((transaction) => {
+          const type =
+            String(
+              transaction?.transactionType ||
+                transaction?.type ||
+                ""
+            ).toUpperCase();
+
+          return type === "EXPENSE";
+        })
+        .reduce(
+          (
+            total,
+            transaction
+          ) => {
+            const amount =
+              convertValue(
+                transaction?.amount,
+                transaction?.currencyCode ||
+                  transaction
+                    ?.currency?.code ||
+                  "USD"
+              );
+
+            return (
+              total + amount
+            );
+          },
+          0
+        );
+    }, [
+      transactions,
+      convertValue,
+    ]);
+
+  // ==========================================================
+  // BALANCE
+  // ==========================================================
+
+  const balance =
+    totalIncome - totalExpense;
+
+  // ==========================================================
+  // FORMAT CURRENCY
+  // ==========================================================
+
+  const formatCurrency = (
+    amount,
+    currency = activeCurrency
+  ) => {
+    const code =
       String(
-        formData.transactionType || ""
+        currency || "USD"
       ).toUpperCase();
 
-    return categories
-      .filter((category) => {
-        if (!category) {
-          return false;
-        }
+    const symbol =
+      getCurrencySymbol(code);
 
-        if (!category.id) {
-          return false;
-        }
+    const numericAmount =
+      Number(amount) || 0;
 
-        return (
-          String(
-            category.type || ""
-          ).toUpperCase() ===
-          selectedType
-        );
-      })
-      .sort((a, b) =>
-        String(a.name || "").localeCompare(
-          String(b.name || "")
-        )
-      );
-  }, [
-    categories,
-    formData.transactionType,
-  ]);
-
-  // =========================================================
-  // FILTERED TRANSACTIONS
-  // =========================================================
-
-  const filteredTransactions = useMemo(() => {
-    let list = [...transactions];
-
-    if (typeFilter !== "ALL") {
-      list = list.filter(
-        (transaction) =>
-          String(
-            transaction?.transactionType || ""
-          ).toUpperCase() ===
-          String(typeFilter).toUpperCase()
-      );
-    }
-
-    if (categoryFilter !== "ALL") {
-      list = list.filter((transaction) => {
-        const categoryId =
-          transaction?.category?.id ||
-          transaction?.categoryId;
-
-        return (
-          String(categoryId) ===
-          String(categoryFilter)
-        );
-      });
-    }
-
-    if (search.trim()) {
-      const term =
-        search.trim().toLowerCase();
-
-      list = list.filter((transaction) =>
-        String(
-          transaction?.title || ""
-        )
-          .toLowerCase()
-          .includes(term)
-      );
-    }
-
-    return list;
-  }, [
-    transactions,
-    typeFilter,
-    categoryFilter,
-    search,
-  ]);
-
-  // =========================================================
-  // CATEGORY FILTER OPTIONS
-  // =========================================================
-
-  const categoryFilterOptions = useMemo(() => {
-    return categories
-      .filter((category) => category?.id)
-      .map((category) => ({
-        value: String(category.id),
-        label: category.name,
-      }));
-  }, [categories]);
-
-  // =========================================================
-  // CURRENCY OPTIONS
-  // =========================================================
-
-  const currencyOptions = useMemo(() => {
-    const apiCurrencies =
-      currencies.length > 0
-        ? currencies
-        : REQUIRED_CURRENCIES;
-
-    return apiCurrencies.map(
-      (currency) => ({
-        value: currency.code,
-        label: `${getCurrencySymbol(
-          currency.code
-        )} ${currency.code}`,
-      })
-    );
-  }, [currencies]);
-
-  // =========================================================
-  // STYLES
-  // =========================================================
-
-  const inputStyle = {
-    width: "100%",
-    height: 42,
-    borderRadius: 8,
+    return `${symbol}${numericAmount.toLocaleString(
+      "en-IN",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    )}`;
   };
 
-  const sectionCardStyle = {
-    borderRadius: 16,
-    border: "1px solid #e5e7eb",
-    boxShadow:
-      "0 4px 16px rgba(15, 23, 42, 0.05)",
+  // ==========================================================
+  // GET CATEGORY NAME
+  // ==========================================================
+
+  const getCategoryName = (
+    transaction
+  ) => {
+    if (
+      transaction?.category
+        ?.name
+    ) {
+      return transaction.category.name;
+    }
+
+    if (
+      transaction?.categoryName
+    ) {
+      return transaction.categoryName;
+    }
+
+    const categoryId =
+      transaction?.categoryId;
+
+    if (
+      categoryId !==
+        undefined &&
+      categoryId !== null
+    ) {
+      const category =
+        categories.find(
+          (item) =>
+            String(item?.id) ===
+            String(categoryId)
+        );
+
+      if (category?.name) {
+        return category.name;
+      }
+
+      if (
+        category?.categoryName
+      ) {
+        return category.categoryName;
+      }
+    }
+
+    return "Uncategorized";
   };
 
-  // =========================================================
-  // RENDER
-  // =========================================================
+  // ==========================================================
+  // GET TRANSACTION TYPE
+  // ==========================================================
 
-  return (
-    <div
-      style={{
-        padding: 24,
-        background: "#f8fafc",
-        minHeight: "100vh",
-      }}
-    >
-      {/* SUCCESS ALERT */}
-      {successAlert && (
-        <Tag
-          icon={<CheckCircleFilled />}
-          color="success"
-          closable
-          onClose={() =>
-            setSuccessAlert(null)
-          }
-          style={{
-            marginBottom: 16,
-            width: "100%",
-            padding: "10px 14px",
-            fontSize: 14,
-          }}
-        >
-          {successAlert}
-        </Tag>
-      )}
+  const getTransactionType = (
+    transaction
+  ) => {
+    return String(
+      transaction?.transactionType ||
+        transaction?.type ||
+        "EXPENSE"
+    ).toUpperCase();
+  };
 
-      {/* HEADER */}
-      <Row
-        justify="space-between"
-        align="middle"
+  // ==========================================================
+  // GET TRANSACTION CURRENCY
+  // ==========================================================
+
+  const getTransactionCurrency = (
+    transaction
+  ) => {
+    return String(
+      transaction?.currencyCode ||
+        transaction?.currency?.code ||
+        "USD"
+    ).toUpperCase();
+  };
+
+  // ==========================================================
+  // LOADING
+  // ==========================================================
+
+  if (loading) {
+    return (
+      <div
         style={{
-          marginBottom: 24,
+          minHeight: "60vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Col>
+        <Space
+          direction="vertical"
+          align="center"
+        >
+          <Spin size="large" />
+
+          <Text>
+            Loading transactions...
+          </Text>
+        </Space>
+      </div>
+    );
+  }
+
+  // ==========================================================
+  // PAGE
+  // ==========================================================
+
+  return (
+    <div className="transactions-page">
+
+      {/* ================================================== */}
+      {/* HEADER */}
+      {/* ================================================== */}
+
+      <div
+        className="transactions-header"
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          alignItems: "center",
+          gap: 16,
+          marginBottom: 24,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
           <Title
             level={2}
             style={{
-              margin: 0,
-              color: "#0f172a",
+              marginBottom: 4,
             }}
           >
             Transactions
           </Title>
 
           <Text type="secondary">
-            Track and manage your income
-            and expenses.
+            Track and manage your
+            income and expenses.
           </Text>
-        </Col>
+        </div>
 
-        <Col>
+        <Space>
+          <Button
+            icon={
+              <ReloadOutlined />
+            }
+            onClick={
+              handleRefresh
+            }
+          >
+            Refresh
+          </Button>
+
           <Button
             type="primary"
-            icon={<PlusOutlined />}
-            onClick={openAddModal}
-            size="large"
+            icon={
+              <PlusOutlined />
+            }
+            onClick={
+              openAddModal
+            }
           >
             Add Transaction
           </Button>
+        </Space>
+      </div>
+
+      {/* ================================================== */}
+      {/* SUCCESS MESSAGE */}
+      {/* ================================================== */}
+
+      {successAlert && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding:
+              "10px 14px",
+            borderRadius: 8,
+            background:
+              "#f6ffed",
+            border:
+              "1px solid #b7eb8f",
+          }}
+        >
+          <Text type="success">
+            {successAlert}
+          </Text>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* SUMMARY */}
+      {/* ================================================== */}
+
+      <Row
+        gutter={[
+          16,
+          16,
+        ]}
+        style={{
+          marginBottom: 24,
+        }}
+      >
+        <Col
+          xs={24}
+          sm={8}
+        >
+          <Card>
+            <Text type="secondary">
+              Total Income
+            </Text>
+
+            <Title
+              level={3}
+              style={{
+                marginTop: 8,
+                marginBottom: 0,
+              }}
+            >
+              {formatCurrency(
+                totalIncome
+              )}
+            </Title>
+          </Card>
+        </Col>
+
+        <Col
+          xs={24}
+          sm={8}
+        >
+          <Card>
+            <Text type="secondary">
+              Total Expense
+            </Text>
+
+            <Title
+              level={3}
+              style={{
+                marginTop: 8,
+                marginBottom: 0,
+              }}
+            >
+              {formatCurrency(
+                totalExpense
+              )}
+            </Title>
+          </Card>
+        </Col>
+
+        <Col
+          xs={24}
+          sm={8}
+        >
+          <Card>
+            <Text type="secondary">
+              Balance
+            </Text>
+
+            <Title
+              level={3}
+              style={{
+                marginTop: 8,
+                marginBottom: 0,
+              }}
+            >
+              {formatCurrency(
+                balance
+              )}
+            </Title>
+          </Card>
         </Col>
       </Row>
 
+      {/* ================================================== */}
       {/* FILTERS */}
+      {/* ================================================== */}
+
       <Card
         style={{
-          ...sectionCardStyle,
-          marginBottom: 20,
+          marginBottom: 24,
         }}
       >
         <Row
-          gutter={[12, 12]}
-          align="middle"
+          gutter={[
+            12,
+            12,
+          ]}
         >
+          {/* SEARCH */}
+
           <Col
             xs={24}
-            sm={12}
             md={8}
-            lg={7}
           >
             <Input
+              allowClear
               prefix={
                 <SearchOutlined />
               }
@@ -878,73 +1503,95 @@ export default function TransactionsPage() {
                   event.target.value
                 )
               }
-              allowClear
             />
           </Col>
 
-          <Col
-            xs={24}
-            sm={12}
-            md={5}
-            lg={4}
-          >
-            <Select
-              value={typeFilter}
-              onChange={setTypeFilter}
-              style={{
-                width: "100%",
-              }}
-              options={[
-                {
-                  value: "ALL",
-                  label: "All Types",
-                },
-                {
-                  value: "INCOME",
-                  label: "Income",
-                },
-                {
-                  value: "EXPENSE",
-                  label: "Expense",
-                },
-              ]}
-            />
-          </Col>
+          {/* TYPE FILTER */}
 
           <Col
             xs={24}
             sm={12}
             md={6}
-            lg={5}
           >
             <Select
-              value={categoryFilter}
-              onChange={setCategoryFilter}
               style={{
                 width: "100%",
               }}
-              placeholder="Category"
+              value={
+                typeFilter
+              }
+              onChange={
+                setTypeFilter
+              }
+              suffixIcon={
+                <FilterOutlined />
+              }
               options={[
                 {
                   value: "ALL",
-                  label: "All Categories",
+                  label:
+                    "All Types",
                 },
-                ...categoryFilterOptions,
+                {
+                  value:
+                    "INCOME",
+                  label:
+                    "Income",
+                },
+                {
+                  value:
+                    "EXPENSE",
+                  label:
+                    "Expense",
+                },
               ]}
             />
           </Col>
 
+          {/* CATEGORY FILTER */}
+
           <Col
             xs={24}
             sm={12}
-            md={5}
-            lg={4}
+            md={6}
+          >
+            <Select
+              style={{
+                width: "100%",
+              }}
+              value={
+                categoryFilter
+              }
+              onChange={
+                setCategoryFilter
+              }
+              placeholder="Filter by category"
+              options={[
+                {
+                  value: "ALL",
+                  label:
+                    "All Categories",
+                },
+                ...categoryFilterOptions,
+              ]}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Col>
+
+          {/* CLEAR */}
+
+          <Col
+            xs={24}
+            md={4}
           >
             <Button
-              icon={<CloseOutlined />}
+              block
               onClick={() => {
                 setSearch("");
-                setTypeFilter("ALL");
+                setTypeFilter(
+                  "ALL"
+                );
                 setCategoryFilter(
                   "ALL"
                 );
@@ -956,236 +1603,258 @@ export default function TransactionsPage() {
         </Row>
       </Card>
 
-      {/* TRANSACTION LIST */}
-      <Card
-        style={sectionCardStyle}
-        loading={loading}
-      >
-        {loading ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: 60,
-            }}
-          >
-            <Spin size="large" />
-          </div>
-        ) : filteredTransactions.length ===
-          0 ? (
+      {/* ================================================== */}
+      {/* TRANSACTIONS */}
+      {/* ================================================== */}
+
+      {filteredTransactions.length ===
+      0 ? (
+        <Card>
           <Empty
             description={
-              transactions.length === 0
+              transactions.length ===
+              0
                 ? "No transactions found"
                 : "No transactions match your filters"
             }
-          >
-            {transactions.length === 0 && (
+          />
+
+          {transactions.length ===
+            0 && (
+            <div
+              style={{
+                textAlign:
+                  "center",
+                marginTop: 16,
+              }}
+            >
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
-                onClick={openAddModal}
+                icon={
+                  <PlusOutlined />
+                }
+                onClick={
+                  openAddModal
+                }
               >
-                Add Transaction
+                Add Your First
+                Transaction
               </Button>
-            )}
-          </Empty>
-        ) : (
-          <div>
-            {filteredTransactions.map(
-              (transaction) => {
-                const transactionType =
-                  String(
-                    transaction?.transactionType ||
-                      "EXPENSE"
-                  ).toUpperCase();
+            </div>
+          )}
+        </Card>
+      ) : (
+        <Space
+          direction="vertical"
+          size={16}
+          style={{
+            width: "100%",
+          }}
+        >
+          {filteredTransactions.map(
+            (transaction) => {
+              const type =
+                getTransactionType(
+                  transaction
+                );
 
-                const currencyCode =
-                  transaction?.currency?.code ||
-                  transaction?.currencyCode ||
-                  "USD";
+              const transactionCurrency =
+                getTransactionCurrency(
+                  transaction
+                );
 
-                const amount =
-                  Number(
-                    transaction?.amount || 0
-                  );
+              const categoryName =
+                getCategoryName(
+                  transaction
+                );
 
-                const convertedAmount =
-                  convertValue(
-                    amount,
-                    currencyCode
-                  );
+              const originalAmount =
+                Number(
+                  transaction?.amount
+                ) || 0;
 
-                const categoryName =
-                  transaction?.category
-                    ?.name ||
-                  "Uncategorized";
+              const convertedAmount =
+                convertValue(
+                  originalAmount,
+                  transactionCurrency
+                );
 
-                return (
-                  <Card
-                    key={transaction.id}
-                    size="small"
-                    style={{
-                      marginBottom: 12,
-                      borderRadius: 12,
-                    }}
+              const isIncome =
+                type === "INCOME";
+
+              return (
+                <Card
+                  key={
+                    transaction.id
+                  }
+                  className="transaction-card"
+                >
+                  <Row
+                    gutter={[
+                      16,
+                      16,
+                    ]}
+                    align="middle"
                   >
-                    <Row
-                      align="middle"
-                      gutter={[
-                        16,
-                        12,
-                      ]}
+                    {/* TITLE */}
+
+                    <Col
+                      xs={24}
+                      md={10}
                     >
-                      <Col
-                        xs={24}
-                        md={8}
+                      <Space
+                        direction="vertical"
+                        size={6}
                       >
                         <Text
                           strong
                           style={{
-                            fontSize: 16,
+                            fontSize: 17,
                           }}
                         >
-                          {
-                            transaction.title
-                          }
+                          {transaction.title ||
+                            "Untitled Transaction"}
                         </Text>
 
-                        <div>
-                          <Text type="secondary">
-                            {transaction.transactionDate ||
-                              "-"}
-                          </Text>
-                        </div>
-                      </Col>
-
-                      <Col
-                        xs={12}
-                        md={4}
-                      >
-                        <Tag
-                          color={
-                            transactionType ===
-                            "INCOME"
-                              ? "green"
-                              : "red"
-                          }
-                        >
-                          {
-                            transactionType
-                          }
-                        </Tag>
-                      </Col>
-
-                      <Col
-                        xs={12}
-                        md={4}
-                      >
-                        <Tag>
-                          {categoryName}
-                        </Tag>
-                      </Col>
-
-                      <Col
-                        xs={24}
-                        md={4}
-                        style={{
-                          textAlign:
-                            "right",
-                        }}
-                      >
-                        <Text
-                          strong
-                          style={{
-                            color:
-                              transactionType ===
-                              "INCOME"
-                                ? "#059669"
-                                : "#dc2626",
-                            fontSize: 16,
-                          }}
-                        >
-                          {getCurrencySymbol(
-                            activeCurrency
-                          )}
-                          {convertedAmount.toFixed(
-                            2
-                          )}
-                        </Text>
-
-                        {currencyCode !==
-                          activeCurrency && (
-                          <div>
-                            <Text
-                              type="secondary"
-                              style={{
-                                fontSize: 12,
-                              }}
-                            >
-                              {getCurrencySymbol(
-                                currencyCode
-                              )}
-                              {amount.toFixed(
-                                2
-                              )}{" "}
-                              {
-                                currencyCode
-                              }
-                            </Text>
-                          </div>
-                        )}
-                      </Col>
-
-                      <Col
-                        xs={24}
-                        md={4}
-                        style={{
-                          textAlign:
-                            "right",
-                        }}
-                      >
-                        <Space>
-                          <Button
-                            icon={
-                              <EditOutlined />
-                            }
-                            onClick={() =>
-                              openEditModal(
-                                transaction
-                              )
-                            }
-                          />
-
-                          <Popconfirm
-                            title="Delete transaction?"
-                            description="This action cannot be undone."
-                            okText="Delete"
-                            cancelText="Cancel"
-                            onConfirm={() =>
-                              handleDelete(
-                                transaction.id
-                              )
+                        <Space wrap>
+                          <Tag
+                            color={
+                              isIncome
+                                ? "green"
+                                : "red"
                             }
                           >
-                            <Button
-                              danger
-                              icon={
-                                <DeleteOutlined />
-                              }
-                            />
-                          </Popconfirm>
-                        </Space>
-                      </Col>
-                    </Row>
-                  </Card>
-                );
-              }
-            )}
-          </div>
-        )}
-      </Card>
+                            {isIncome
+                              ? "INCOME"
+                              : "EXPENSE"}
+                          </Tag>
 
+                          <Tag>
+                            {
+                              categoryName
+                            }
+                          </Tag>
+                        </Space>
+
+                        {transaction.note && (
+                          <Text
+                            type="secondary"
+                          >
+                            {
+                              transaction.note
+                            }
+                          </Text>
+                        )}
+
+                        {transaction.transactionDate && (
+                          <Text type="secondary">
+                            {dayjs(
+                              transaction.transactionDate
+                            ).format(
+                              "DD MMM YYYY"
+                            )}
+                          </Text>
+                        )}
+                      </Space>
+                    </Col>
+
+                    {/* AMOUNT */}
+
+                    <Col
+                      xs={24}
+                      md={6}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={2}
+                      >
+                        <Text
+                          strong
+                          style={{
+                            fontSize: 18,
+                          }}
+                        >
+                          {formatCurrency(
+                            originalAmount,
+                            transactionCurrency
+                          )}
+                        </Text>
+
+                        {transactionCurrency !==
+                          activeCurrency && (
+                          <Text type="secondary">
+                            ≈{" "}
+                            {formatCurrency(
+                              convertedAmount,
+                              activeCurrency
+                            )}
+                          </Text>
+                        )}
+                      </Space>
+                    </Col>
+
+                    {/* ACTIONS */}
+
+                    <Col
+                      xs={24}
+                      md={8}
+                      style={{
+                        textAlign:
+                          "right",
+                      }}
+                    >
+                      <Space>
+                        <Button
+                          icon={
+                            <EditOutlined />
+                          }
+                          onClick={() =>
+                            openEditModal(
+                              transaction
+                            )
+                          }
+                        >
+                          Edit
+                        </Button>
+
+                        <Popconfirm
+                          title="Delete transaction?"
+                          description="This transaction will be permanently deleted."
+                          okText="Delete"
+                          cancelText="Cancel"
+                          okButtonProps={{
+                            danger:
+                              true,
+                          }}
+                          onConfirm={() =>
+                            handleDelete(
+                              transaction.id
+                            )
+                          }
+                        >
+                          <Button
+                            danger
+                            icon={
+                              <DeleteOutlined />
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </Popconfirm>
+                      </Space>
+                    </Col>
+                  </Row>
+                </Card>
+              );
+            }
+          )}
+        </Space>
+      )}
+
+      {/* ================================================== */}
       {/* ADD / EDIT MODAL */}
+      {/* ================================================== */}
+
       <Modal
         open={modalOpen}
         title={
@@ -1193,81 +1862,104 @@ export default function TransactionsPage() {
             ? "Edit Transaction"
             : "Add Transaction"
         }
-        onCancel={closeModal}
+        onCancel={
+          closeModal
+        }
         footer={null}
         destroyOnClose
-        width={650}
       >
         <Form
-          form={form}
           layout="vertical"
-          onFinish={handleSubmit}
+          onFinish={
+            handleSubmit
+          }
           style={{
             marginTop: 20,
           }}
         >
           {/* TITLE */}
-          <Form.Item label="Title">
+
+          <Form.Item
+            label="Title"
+            required
+          >
             <Input
-              value={formData.title}
               placeholder="Example: Salary"
-              style={inputStyle}
+              value={
+                formData.title
+              }
               onChange={(event) =>
                 handleChange(
                   "title",
-                  event.target.value
+                  event.target
+                    .value
+                )
+              }
+              maxLength={100}
+            />
+          </Form.Item>
+
+          {/* AMOUNT */}
+
+          <Form.Item
+            label="Amount"
+            required
+          >
+            <Input
+              type="number"
+              placeholder="30000"
+              min={0}
+              step="0.01"
+              value={
+                formData.amount
+              }
+              onChange={(event) =>
+                handleChange(
+                  "amount",
+                  event.target
+                    .value
                 )
               }
             />
           </Form.Item>
 
-          {/* AMOUNT + CURRENCY */}
-          <Row gutter={12}>
-            <Col span={14}>
-              <Form.Item label="Amount">
-                <Input
-                  type="number"
-                  min={0}
-                  value={formData.amount}
-                  placeholder="30000"
-                  style={inputStyle}
-                  onChange={(event) =>
-                    handleChange(
-                      "amount",
-                      event.target.value
-                    )
-                  }
-                />
-              </Form.Item>
-            </Col>
+          {/* CURRENCY */}
 
-            <Col span={10}>
-              <Form.Item label="Currency">
-                <Select
-                  value={
-                    formData.currencyCode
-                  }
-                  onChange={(value) =>
-                    handleChange(
-                      "currencyCode",
-                      value
-                    )
-                  }
-                  options={
-                    currencyOptions
-                  }
-                  style={{
-                    width: "100%",
-                    height: 42,
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* TYPE */}
-          <Form.Item label="Transaction Type">
+          <Form.Item
+            label="Currency"
+            required
+          >
             <Select
+              style={{
+                width: "100%",
+              }}
+              value={
+                formData.currencyCode
+              }
+              onChange={(value) =>
+                handleChange(
+                  "currencyCode",
+                  value
+                )
+              }
+              options={
+                currencyOptions
+              }
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+
+          {/* TRANSACTION TYPE */}
+
+          <Form.Item
+            label="Transaction Type"
+            required
+          >
+            <Select
+              style={{
+                width: "100%",
+              }}
               value={
                 formData.transactionType
               }
@@ -1277,110 +1969,102 @@ export default function TransactionsPage() {
                   value
                 )
               }
-              style={{
-                width: "100%",
-                height: 42,
-              }}
               options={[
                 {
-                  value: "INCOME",
-                  label: "Income",
+                  value:
+                    "INCOME",
+                  label:
+                    "Income",
                 },
                 {
-                  value: "EXPENSE",
-                  label: "Expense",
+                  value:
+                    "EXPENSE",
+                  label:
+                    "Expense",
                 },
               ]}
             />
           </Form.Item>
 
           {/* CATEGORY */}
+
           <Form.Item
             label="Category"
             required
           >
             <Select
+              style={{
+                width: "100%",
+              }}
+              placeholder="Select category..."
               value={
                 formData.categoryId ||
                 undefined
               }
-              placeholder="Select category..."
               onChange={(value) =>
                 handleChange(
                   "categoryId",
                   value
                 )
               }
-              style={{
-                width: "100%",
-                height: 42,
-              }}
-              options={formCategoryOptions.map(
-                (category) => ({
-                  value: String(
-                    category.id
-                  ),
-                  label: category.name,
-                })
-              )}
+              options={
+                formCategoryOptions
+              }
+              showSearch
+              optionFilterProp="label"
               notFoundContent={
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={`No ${
-                    formData.transactionType ===
-                    "INCOME"
-                      ? "income"
-                      : "expense"
-                  } categories found`}
-                />
+                categories.length ===
+                0
+                  ? "No categories found"
+                  : "No matching categories"
               }
             />
           </Form.Item>
 
           {/* DATE */}
-          <Form.Item label="Date">
-            <DatePicker
+
+          <Form.Item
+            label="Date"
+            required
+          >
+            <Input
+              type="date"
               value={
                 formData.transactionDate
-                  ? dayjs(
-                      formData.transactionDate
-                    )
-                  : null
               }
-              onChange={(date) =>
+              onChange={(event) =>
                 handleChange(
                   "transactionDate",
-                  date
-                    ? date.format(
-                        "YYYY-MM-DD"
-                      )
-                    : ""
+                  event.target
+                    .value
                 )
               }
-              format="DD-MM-YYYY"
-              style={{
-                width: "100%",
-                height: 42,
-              }}
             />
           </Form.Item>
 
-          {/* NOTE */}
+          {/* NOTES */}
+
           <Form.Item label="Notes">
             <Input.TextArea
-              value={formData.note}
+              rows={4}
               placeholder="Optional notes..."
-              rows={3}
+              value={
+                formData.note
+              }
               onChange={(event) =>
                 handleChange(
                   "note",
-                  event.target.value
+                  event.target
+                    .value
                 )
               }
+              maxLength={500}
+              showCount
             />
           </Form.Item>
 
           {/* BUTTONS */}
+
           <Form.Item
             style={{
               marginBottom: 0,
@@ -1389,13 +2073,19 @@ export default function TransactionsPage() {
           >
             <Space
               style={{
-                width: "100%",
+                width:
+                  "100%",
                 justifyContent:
                   "flex-end",
               }}
             >
               <Button
-                onClick={closeModal}
+                onClick={
+                  closeModal
+                }
+                disabled={
+                  saving
+                }
               >
                 Cancel
               </Button>
@@ -1403,11 +2093,8 @@ export default function TransactionsPage() {
               <Button
                 type="primary"
                 htmlType="submit"
-                loading={saving}
-                icon={
-                  !saving ? (
-                    <CheckCircleFilled />
-                  ) : null
+                loading={
+                  saving
                 }
               >
                 {editingTransaction
@@ -1420,5 +2107,6 @@ export default function TransactionsPage() {
       </Modal>
     </div>
   );
-}
+};
 
+export default TransactionsPage;
