@@ -1167,6 +1167,16 @@ import axios from "axios";
 
 const { Title, Text } = Typography;
 
+// =====================================================
+// BACKEND API
+// =====================================================
+
+const API_URL = "http://localhost:8080";
+
+// =====================================================
+// MONTHS
+// =====================================================
+
 const months = [
   "January",
   "February",
@@ -1181,6 +1191,10 @@ const months = [
   "November",
   "December",
 ];
+
+// =====================================================
+// CATEGORY ICONS
+// =====================================================
 
 const CATEGORY_ICONS = {
   Food: "🍔",
@@ -1199,27 +1213,17 @@ const CATEGORY_ICONS = {
   Others: "📦",
 };
 
-const DEFAULT_CATEGORIES = [
-  { id: "c1", name: "Food", icon: "🍔" },
-  { id: "c2", name: "Groceries", icon: "🛒" },
-  { id: "c3", name: "Transport", icon: "🚗" },
-  { id: "c4", name: "Shopping", icon: "🛍️" },
-  { id: "c5", name: "Bills", icon: "⚡" },
-  { id: "c6", name: "Utilities", icon: "💡" },
-  { id: "c7", name: "Entertainment", icon: "🎬" },
-  { id: "c8", name: "Housing", icon: "🏠" },
-  { id: "c9", name: "Health", icon: "💊" },
-  { id: "c10", name: "Travel", icon: "✈️" },
-  { id: "c11", name: "Others", icon: "📦" },
-];
+// =====================================================
+// EMPTY FALLBACK CATEGORIES
+// IMPORTANT:
+// These do NOT contain fake database IDs.
+// =====================================================
 
-const DEFAULT_BUDGET_ITEMS = [
-  { id: "b1", name: "Food", icon: "🍔", limit: 800, spent: 620, remaining: 180, pct: 78 },
-  { id: "b2", name: "Transport", icon: "🚗", limit: 400, spent: 310.25, remaining: 89.75, pct: 78 },
-  { id: "b3", name: "Shopping", icon: "🛍️", limit: 500, spent: 420, remaining: 80, pct: 84 },
-  { id: "b4", name: "Bills", icon: "⚡", limit: 600, spent: 480, remaining: 120, pct: 80 },
-  { id: "b5", name: "Others", icon: "📦", limit: 200, spent: 109, remaining: 91, pct: 55 },
-];
+const DEFAULT_CATEGORIES = [];
+
+// =====================================================
+// CURRENCY SYMBOL
+// =====================================================
 
 const getCurrencySymbol = (currency) => {
   switch (currency) {
@@ -1241,69 +1245,167 @@ const getCurrencySymbol = (currency) => {
   }
 };
 
+// =====================================================
+// COMPONENT
+// =====================================================
+
 function BudgetsPage() {
   const authUser = useSelector((state) => state?.auth?.user);
 
+  // ===================================================
+  // CURRENCY
+  // ===================================================
+
   const [currency, setCurrency] = useState(() => {
-    return localStorage.getItem("preferredCurrency") || authUser?.preferredCurrency || "USD";
+    return (
+      localStorage.getItem("preferredCurrency") ||
+      authUser?.preferredCurrency ||
+      authUser?.user?.preferredCurrency ||
+      "USD"
+    );
   });
 
+  // ===================================================
+  // STATE
+  // ===================================================
+
   const [budgets, setBudgets] = useState([]);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState(
+    DEFAULT_CATEGORIES
+  );
+
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
 
-  const currentMonthName = months[new Date().getMonth()];
+  // ===================================================
+  // CURRENT DATE
+  // ===================================================
+
+  const currentDate = new Date();
+
+  const currentMonthName =
+    months[currentDate.getMonth()];
+
+  const currentYear = currentDate.getFullYear();
+
+  // ===================================================
+  // FORM
+  // ===================================================
 
   const [formData, setFormData] = useState({
-    categoryName: "Food",
+    categoryName: "",
     categoryId: null,
     month: currentMonthName,
-    year: new Date().getFullYear(),
+    year: currentYear,
     limitAmount: null,
   });
 
+  // ===================================================
+  // CURRENCY CHANGE LISTENER
+  // ===================================================
+
   useEffect(() => {
-    const handleCurrencyChange = (e) => {
-      const newCurr = e.detail || localStorage.getItem("preferredCurrency") || "USD";
-      setCurrency(newCurr);
+    const handleCurrencyChange = (event) => {
+      const newCurrency =
+        event.detail ||
+        localStorage.getItem("preferredCurrency") ||
+        "USD";
+
+      setCurrency(newCurrency);
     };
 
-    window.addEventListener("currencyChange", handleCurrencyChange);
+    window.addEventListener(
+      "currencyChange",
+      handleCurrencyChange
+    );
+
     return () => {
-      window.removeEventListener("currencyChange", handleCurrencyChange);
+      window.removeEventListener(
+        "currencyChange",
+        handleCurrencyChange
+      );
     };
   }, []);
 
+  // ===================================================
+  // USER CURRENCY
+  // ===================================================
+
   useEffect(() => {
-    if (!localStorage.getItem("preferredCurrency")) {
-      const userCurrency = authUser?.preferredCurrency || authUser?.user?.preferredCurrency;
-      if (userCurrency) {
-        setCurrency(userCurrency);
-      }
+    const userCurrency =
+      authUser?.preferredCurrency ||
+      authUser?.user?.preferredCurrency;
+
+    if (
+      !localStorage.getItem("preferredCurrency") &&
+      userCurrency
+    ) {
+      setCurrency(userCurrency);
     }
   }, [authUser]);
+
+  // ===================================================
+  // INITIAL LOAD
+  // ===================================================
 
   useEffect(() => {
     fetchBudgets();
   }, []);
 
+  // ===================================================
+  // FETCH BUDGETS + CATEGORIES + TRANSACTIONS
+  // ===================================================
+
   const fetchBudgets = async () => {
     try {
       setLoading(true);
-      const [budgetRes, catRes, summaryRes, txRes] = await Promise.allSettled([
-        axios.get("/api/budgets"),
-        axios.get("/api/categories"),
-        axios.get("/api/dashboard/summary"),
-        axios.get("/api/transactions"),
+
+      const token = localStorage.getItem("token");
+
+      const config = token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : {};
+
+      const results = await Promise.allSettled([
+        axios.get(
+          `${API_URL}/api/budgets`,
+          config
+        ),
+
+        axios.get(
+          `${API_URL}/api/categories`,
+          config
+        ),
+
+        axios.get(
+          `${API_URL}/api/dashboard/summary`,
+          config
+        ),
+
+        axios.get(
+          `${API_URL}/api/transactions`,
+          config
+        ),
       ]);
 
+      // =================================================
+      // TRANSACTIONS
+      // =================================================
+
       let txList = [];
-      if (txRes.status === "fulfilled") {
-        const txData = txRes.value?.data;
+
+      const txResult = results[3];
+
+      if (txResult.status === "fulfilled") {
+        const txData = txResult.value?.data;
+
         txList = Array.isArray(txData)
           ? txData
           : Array.isArray(txData?.content)
@@ -1311,281 +1413,811 @@ function BudgetsPage() {
           : [];
       }
 
-      if (catRes.status === "fulfilled") {
-        const catData = catRes.value?.data;
-        const catList = Array.isArray(catData)
-          ? catData
-          : Array.isArray(catData?.content)
-          ? catData.content
+      // =================================================
+      // CATEGORIES
+      // =================================================
+
+      const categoryResult = results[1];
+
+      if (categoryResult.status === "fulfilled") {
+        const categoryData =
+          categoryResult.value?.data;
+
+        const categoryList = Array.isArray(
+          categoryData
+        )
+          ? categoryData
+          : Array.isArray(categoryData?.content)
+          ? categoryData.content
           : [];
-        if (catList.length > 0) {
-          setCategories(catList);
+
+        if (categoryList.length > 0) {
+          setCategories(categoryList);
         }
+      } else {
+        console.error(
+          "Unable to load categories:",
+          categoryResult.reason
+        );
       }
 
-      if (budgetRes.status === "fulfilled") {
-        const data = budgetRes.value?.data;
-        const list = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.content)
-            ? data.content
-            : [];
-        
-        const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-        const filteredList = list.filter((b) => !deletedIds.includes(String(b.id)));
-        
-        const calculatedList = filteredList.map((b) => {
-          const bMonth = typeof b.month === "number" ? b.month : months.indexOf(b.month) + 1;
-          const bYear = Number(b.year) || new Date().getFullYear();
-          const bCatId = b.category?.id;
-          const bCatName = b.category?.name || b.name;
+      // =================================================
+      // BUDGETS
+      // =================================================
 
-          let txSpent = 0;
-          txList.forEach((tx) => {
-            const isExpense = tx.transactionType === "EXPENSE" || tx.type === "EXPENSE";
-            if (!isExpense) return;
+      const budgetResult = results[0];
 
-            const txDate = tx.transactionDate ? new Date(tx.transactionDate) : null;
-            if (txDate && !isNaN(txDate.getTime())) {
-              const txMonth = txDate.getMonth() + 1;
-              const txYear = txDate.getFullYear();
-              if (txMonth !== bMonth || txYear !== bYear) return;
-            }
+      if (budgetResult.status === "fulfilled") {
+        const budgetData =
+          budgetResult.value?.data;
 
-            const txCatId = tx.category?.id;
-            const txCatName = tx.category?.name;
-            const catMatches =
-              (bCatId && txCatId && Number(bCatId) === Number(txCatId)) ||
-              (bCatName && txCatName && String(bCatName).toLowerCase() === String(txCatName).toLowerCase());
+        const budgetList = Array.isArray(
+          budgetData
+        )
+          ? budgetData
+          : Array.isArray(budgetData?.content)
+          ? budgetData.content
+          : [];
 
-            if (catMatches || !bCatId) {
-              txSpent += Number(tx.amount != null ? tx.amount : (tx.convertedAmount || 0));
-            }
+        // -----------------------------------------------
+        // Deleted IDs
+        // -----------------------------------------------
+
+        let deletedIds = [];
+
+        try {
+          deletedIds = JSON.parse(
+            localStorage.getItem(
+              "deleted_budget_ids"
+            ) || "[]"
+          );
+        } catch {
+          deletedIds = [];
+        }
+
+        const filteredList = budgetList.filter(
+          (budget) =>
+            !deletedIds.includes(
+              String(budget.id)
+            )
+        );
+
+        // -----------------------------------------------
+        // Calculate spending
+        // -----------------------------------------------
+
+        const calculatedList =
+          filteredList.map((budget) => {
+            const budgetMonth =
+              typeof budget.month === "number"
+                ? budget.month
+                : months.indexOf(
+                    budget.month
+                  ) + 1;
+
+            const budgetYear =
+              Number(budget.year) ||
+              currentYear;
+
+            const budgetCategoryId =
+              budget.category?.id ??
+              budget.categoryId ??
+              null;
+
+            const budgetCategoryName =
+              budget.category?.name ||
+              budget.name ||
+              "";
+
+            let transactionSpent = 0;
+
+            txList.forEach((transaction) => {
+              const transactionType =
+                transaction.transactionType ||
+                transaction.type;
+
+              if (
+                transactionType !== "EXPENSE"
+              ) {
+                return;
+              }
+
+              // -----------------------------------------
+              // Date
+              // -----------------------------------------
+
+              if (
+                transaction.transactionDate
+              ) {
+                const txDate = new Date(
+                  transaction.transactionDate
+                );
+
+                if (
+                  !isNaN(txDate.getTime())
+                ) {
+                  const txMonth =
+                    txDate.getMonth() + 1;
+
+                  const txYear =
+                    txDate.getFullYear();
+
+                  if (
+                    txMonth !== budgetMonth ||
+                    txYear !== budgetYear
+                  ) {
+                    return;
+                  }
+                }
+              }
+
+              // -----------------------------------------
+              // Category
+              // -----------------------------------------
+
+              const transactionCategoryId =
+                transaction.category?.id ??
+                transaction.categoryId ??
+                null;
+
+              const transactionCategoryName =
+                transaction.category?.name ||
+                "";
+
+              const idMatches =
+                budgetCategoryId != null &&
+                transactionCategoryId != null &&
+                Number(
+                  budgetCategoryId
+                ) ===
+                  Number(
+                    transactionCategoryId
+                  );
+
+              const nameMatches =
+                budgetCategoryName &&
+                transactionCategoryName &&
+                String(
+                  budgetCategoryName
+                ).toLowerCase() ===
+                  String(
+                    transactionCategoryName
+                  ).toLowerCase();
+
+              if (
+                idMatches ||
+                nameMatches
+              ) {
+                transactionSpent += Number(
+                  transaction.amount ??
+                    transaction.convertedAmount ??
+                    0
+                );
+              }
+            });
+
+            const backendSpent =
+              Number(
+                budget.spentAmount ??
+                  budget.spent ??
+                  0
+              );
+
+            return {
+              ...budget,
+              spentAmount:
+                transactionSpent > 0
+                  ? transactionSpent
+                  : backendSpent,
+            };
           });
-
-          return {
-            ...b,
-            spentAmount: txSpent > 0 ? txSpent : (b.spentAmount != null ? Number(b.spentAmount) : 0),
-          };
-        });
 
         setBudgets(calculatedList);
 
-        const foundCurrency = list.find((b) => b?.user?.preferredCurrency)?.user?.preferredCurrency;
+        // -----------------------------------------------
+        // Currency
+        // -----------------------------------------------
+
+        const foundCurrency =
+          budgetList.find(
+            (budget) =>
+              budget?.user
+                ?.preferredCurrency
+          )?.user?.preferredCurrency;
+
         if (foundCurrency) {
           setCurrency(foundCurrency);
         }
       } else {
+        console.error(
+          "Unable to load budgets:",
+          budgetResult.reason
+        );
+
         setBudgets([]);
       }
 
-      if (summaryRes.status === "fulfilled" && summaryRes.value?.data?.currency) {
-        setCurrency(summaryRes.value.data.currency);
+      // =================================================
+      // SUMMARY CURRENCY
+      // =================================================
+
+      const summaryResult = results[2];
+
+      if (
+        summaryResult.status ===
+          "fulfilled" &&
+        summaryResult.value?.data?.currency
+      ) {
+        setCurrency(
+          summaryResult.value.data.currency
+        );
       }
     } catch (error) {
+      console.error(
+        "Budget loading error:",
+        error
+      );
+
       setBudgets([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // ===================================================
+  // OPEN ADD
+  // ===================================================
+
   const openAdd = () => {
     setEditingBudget(null);
-    const firstCat = categories.length > 0 ? categories[0] : DEFAULT_CATEGORIES[0];
+
+    const firstCategory =
+      categories.length > 0
+        ? categories[0]
+        : null;
+
     setFormData({
-      categoryName: firstCat.name,
-      categoryId: firstCat.id,
+      categoryName:
+        firstCategory?.name || "",
+      categoryId:
+        firstCategory?.id || null,
       month: currentMonthName,
-      year: new Date().getFullYear(),
+      year: currentYear,
       limitAmount: null,
     });
+
     setModalOpen(true);
   };
+
+  // ===================================================
+  // OPEN EDIT
+  // ===================================================
 
   const openEdit = (budget) => {
     setEditingBudget(budget);
-    const monthNum = typeof budget.month === "number" ? budget.month : months.indexOf(budget.month) + 1;
-    const monthName = months[monthNum - 1] || budget.month || currentMonthName;
-    const catName = budget.category?.name || budget.name || "Food";
-    const catObj = categories.find((c) => c.name === catName);
+
+    const monthNumber =
+      typeof budget.month === "number"
+        ? budget.month
+        : months.indexOf(
+            budget.month
+          ) + 1;
+
+    const monthName =
+      months[monthNumber - 1] ||
+      currentMonthName;
+
+    const categoryName =
+      budget.category?.name ||
+      budget.name ||
+      "";
+
+    const categoryObject =
+      categories.find(
+        (category) =>
+          String(category.name)
+            .toLowerCase() ===
+          String(categoryName)
+            .toLowerCase()
+      );
+
+    const categoryId =
+      categoryObject?.id ??
+      budget.category?.id ??
+      budget.categoryId ??
+      null;
 
     setFormData({
-      categoryName: catName,
-      categoryId: catObj?.id || budget.category?.id || null,
+      categoryName,
+      categoryId,
       month: monthName,
-      year: budget.year || new Date().getFullYear(),
+      year:
+        Number(budget.year) ||
+        currentYear,
       limitAmount: getLimit(budget),
     });
+
     setModalOpen(true);
   };
 
+  // ===================================================
+  // DELETE
+  // ===================================================
+
   const handleDelete = async (budget) => {
     try {
-      if (budget.id && typeof budget.id === "number") {
-        try {
-          await axios.delete(`/api/budgets/${budget.id}`);
-        } catch (apiErr) {
-          console.warn("Backend DELETE API warning:", apiErr);
+      const token =
+        localStorage.getItem("token");
+
+      const config = token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : {};
+
+      if (budget.id != null) {
+        await axios.delete(
+          `${API_URL}/api/budgets/${budget.id}`,
+          config
+        );
+      }
+
+      // -----------------------------------------------
+      // Local deleted tracking
+      // -----------------------------------------------
+
+      let deletedIds = [];
+
+      try {
+        deletedIds = JSON.parse(
+          localStorage.getItem(
+            "deleted_budget_ids"
+          ) || "[]"
+        );
+      } catch {
+        deletedIds = [];
+      }
+
+      if (budget.id != null) {
+        const id = String(budget.id);
+
+        if (!deletedIds.includes(id)) {
+          deletedIds.push(id);
         }
       }
 
-      // Track deleted budget locally so it persists
-      const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-      if (budget.id) deletedIds.push(String(budget.id));
-      if (budget.name) deletedIds.push(String(budget.name));
-      localStorage.setItem("deleted_budget_ids", JSON.stringify(deletedIds));
+      localStorage.setItem(
+        "deleted_budget_ids",
+        JSON.stringify(deletedIds)
+      );
 
-      setBudgets((prev) => prev.filter((b) => b.id !== budget.id && b.name !== budget.name));
-      message.success("Budget deleted successfully");
+      setBudgets((previous) =>
+        previous.filter(
+          (item) =>
+            String(item.id) !==
+            String(budget.id)
+        )
+      );
+
+      message.success(
+        "Budget deleted successfully"
+      );
     } catch (error) {
-      message.error("Unable to delete budget.");
+      console.error(
+        "Delete budget error:",
+        error
+      );
+
+      message.error(
+        error?.response?.data?.message ||
+          "Unable to delete budget."
+      );
     }
   };
 
+  // ===================================================
+  // SAVE / UPDATE
+  // ===================================================
+
   const handleSubmit = async () => {
+    // -----------------------------------------------
+    // Validation
+    // -----------------------------------------------
+
+    if (!formData.categoryId) {
+      message.error(
+        "Please select a valid category."
+      );
+      return;
+    }
+
     if (!formData.month) {
-      message.error("Month is required");
+      message.error("Month is required.");
       return;
     }
 
     if (!formData.year) {
-      message.error("Year is required");
+      message.error("Year is required.");
       return;
     }
 
     if (
       formData.limitAmount === null ||
+      formData.limitAmount === undefined ||
       Number(formData.limitAmount) < 1
     ) {
-      message.error("Limit amount must be at least 1");
+      message.error(
+        "Budget limit must be at least 1."
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const monthIdx = months.indexOf(formData.month);
-      const monthVal = monthIdx !== -1 ? monthIdx + 1 : Number(formData.month) || 1;
+      const token =
+        localStorage.getItem("token");
+
+      if (!token) {
+        message.error(
+          "Please login again before creating a budget."
+        );
+        return;
+      }
+
+      // -----------------------------------------------
+      // Month number
+      // -----------------------------------------------
+
+      const monthIndex =
+        months.indexOf(formData.month);
+
+      const monthValue =
+        monthIndex >= 0
+          ? monthIndex + 1
+          : Number(formData.month);
+
+      // -----------------------------------------------
+      // Category ID
+      // -----------------------------------------------
+
+      const categoryId = Number(
+        formData.categoryId
+      );
+
+      if (
+        !Number.isInteger(categoryId) ||
+        categoryId <= 0
+      ) {
+        message.error(
+          "Invalid category. Please select a category from the database."
+        );
+        return;
+      }
+
+      // -----------------------------------------------
+      // Backend payload
+      // -----------------------------------------------
 
       const payload = {
-        month: monthVal,
+        month: monthValue,
         year: Number(formData.year),
-        limitAmount: Number(formData.limitAmount),
+        limitAmount: Number(
+          formData.limitAmount
+        ),
+        category: {
+          id: categoryId,
+        },
       };
 
-      if (formData.categoryId && typeof formData.categoryId === "number") {
-        payload.category = { id: formData.categoryId, name: formData.categoryName };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type":
+            "application/json",
+        },
+      };
+
+      console.log(
+        "========== SAVE BUDGET =========="
+      );
+
+      console.log(
+        "URL:",
+        `${API_URL}/api/budgets`
+      );
+
+      console.log(
+        "Payload:",
+        payload
+      );
+
+      console.log(
+        "================================"
+      );
+
+      // -----------------------------------------------
+      // UPDATE
+      // -----------------------------------------------
+
+      if (
+        editingBudget &&
+        editingBudget.id != null
+      ) {
+        const budgetId = Number(
+          editingBudget.id
+        );
+
+        await axios.put(
+          `${API_URL}/api/budgets/${budgetId}`,
+          payload,
+          config
+        );
+
+        message.success(
+          "Budget updated successfully."
+        );
       }
 
-      if (editingBudget && editingBudget.id && typeof editingBudget.id === "number") {
-        try {
-          await axios.put(`/api/budgets/${editingBudget.id}`, payload);
-        } catch (err) {
-          // Fallback to POST /api/budgets which creates or updates by month & year
-          await axios.post("/api/budgets", payload);
-        }
-        message.success("Budget set successfully.");
-      } else {
-        await axios.post("/api/budgets", payload);
-        message.success("Budget set successfully.");
+      // -----------------------------------------------
+      // CREATE
+      // -----------------------------------------------
+
+      else {
+        await axios.post(
+          `${API_URL}/api/budgets`,
+          payload,
+          config
+        );
+
+        message.success(
+          "Budget created successfully."
+        );
       }
 
-      // Save category association in local storage
+      // -----------------------------------------------
+      // Save UI category mapping
+      // -----------------------------------------------
+
       try {
-        const catMap = JSON.parse(localStorage.getItem("budget_category_map") || "{}");
-        const key = `${monthVal}_${formData.year}`;
-        catMap[key] = {
+        const categoryMap =
+          JSON.parse(
+            localStorage.getItem(
+              "budget_category_map"
+            ) || "{}"
+          );
+
+        const key = `${monthValue}_${Number(
+          formData.year
+        )}`;
+
+        categoryMap[key] = {
           name: formData.categoryName,
-          icon: CATEGORY_ICONS[formData.categoryName] || "🏷️",
+          icon:
+            CATEGORY_ICONS[
+              formData.categoryName
+            ] || "🏷️",
         };
-        localStorage.setItem("budget_category_map", JSON.stringify(catMap));
-      } catch (e) {}
+
+        localStorage.setItem(
+          "budget_category_map",
+          JSON.stringify(categoryMap)
+        );
+      } catch (storageError) {
+        console.warn(
+          "Category map storage warning:",
+          storageError
+        );
+      }
+
+      // -----------------------------------------------
+      // Close modal
+      // -----------------------------------------------
 
       setModalOpen(false);
+
+      setEditingBudget(null);
+
+      // -----------------------------------------------
+      // Reload budgets
+      // -----------------------------------------------
+
       await fetchBudgets();
     } catch (error) {
-      message.error(
-        error?.response?.data?.message || "Unable to save budget."
+      console.error(
+        "========== BUDGET SAVE ERROR =========="
       );
+
+      console.error(
+        "HTTP Status:",
+        error?.response?.status
+      );
+
+      console.error(
+        "Backend Response:",
+        error?.response?.data
+      );
+
+      console.error(
+        "Error:",
+        error
+      );
+
+      console.error(
+        "======================================="
+      );
+
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.response?.data;
+
+      if (
+        typeof backendMessage ===
+        "string"
+      ) {
+        message.error(
+          backendMessage
+        );
+      } else if (
+        error?.response?.status === 401
+      ) {
+        message.error(
+          "Your session has expired. Please login again."
+        );
+      } else if (
+        error?.response?.status === 403
+      ) {
+        message.error(
+          "You do not have permission to create a budget."
+        );
+      } else if (
+        error?.response?.status === 400
+      ) {
+        message.error(
+          "Invalid budget data. Please check the category, month, year and amount."
+        );
+      } else {
+        message.error(
+          "Unable to save budget."
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
+  // ===================================================
+  // HELPERS
+  // ===================================================
+
   const getSpent = (budget) =>
     Number(
       budget?.spentAmount ??
-      budget?.spent ??
-      budget?.totalSpent ??
-      0
+        budget?.spent ??
+        budget?.totalSpent ??
+        0
     );
 
   const getLimit = (budget) =>
     Number(
       budget?.limitAmount ??
-      budget?.amount ??
-      budget?.limit ??
-      0
+        budget?.amount ??
+        budget?.limit ??
+        0
     );
 
   const getPercent = (budget) => {
     const limit = getLimit(budget);
-    if (limit <= 0) return 0;
-    return Math.round((getSpent(budget) / limit) * 100);
-  };
 
-  const formatMonthTitle = (month, year) => {
-    if (typeof month === "number") {
-      const name = months[month - 1] || month;
-      return `${name} ${year || ""}`;
+    if (limit <= 0) {
+      return 0;
     }
-    return `${month || ""} ${year || ""}`;
+
+    return Math.round(
+      (getSpent(budget) / limit) * 100
+    );
   };
 
-  const symbol = getCurrencySymbol(currency);
+  const symbol =
+    getCurrencySymbol(currency);
+
+  // ===================================================
+  // DISPLAY ITEMS
+  // ===================================================
 
   const displayItems = useMemo(() => {
-    const deletedIds = JSON.parse(localStorage.getItem("deleted_budget_ids") || "[]");
-    if (budgets.length > 0) {
-      return budgets.filter((b) => !deletedIds.includes(String(b.id)));
+    let deletedIds = [];
+
+    try {
+      deletedIds = JSON.parse(
+        localStorage.getItem(
+          "deleted_budget_ids"
+        ) || "[]"
+      );
+    } catch {
+      deletedIds = [];
     }
-    return DEFAULT_BUDGET_ITEMS.filter(
-      (b) => !deletedIds.includes(String(b.id)) && !deletedIds.includes(String(b.name))
+
+    return budgets.filter(
+      (budget) =>
+        !deletedIds.includes(
+          String(budget.id)
+        )
     );
   }, [budgets]);
 
-  // Overall totals calculation
+  // ===================================================
+  // OVERALL TOTALS
+  // ===================================================
+
   const overallTotals = useMemo(() => {
     let totalLimit = 0;
     let totalSpent = 0;
 
-    displayItems.forEach((b) => {
-      totalLimit += getLimit(b);
-      totalSpent += getSpent(b);
+    displayItems.forEach((budget) => {
+      totalLimit += getLimit(budget);
+      totalSpent += getSpent(budget);
     });
 
-    const displayRemaining = Math.max(0, totalLimit - totalSpent);
-    const overallPct = totalLimit > 0 ? Math.min(100, Math.round((totalSpent / totalLimit) * 100)) : 0;
+    const remaining = Math.max(
+      0,
+      totalLimit - totalSpent
+    );
+
+    const percentage =
+      totalLimit > 0
+        ? Math.min(
+            100,
+            Math.round(
+              (totalSpent /
+                totalLimit) *
+                100
+            )
+          )
+        : 0;
 
     return {
       limit: totalLimit,
       spent: totalSpent,
-      remaining: displayRemaining,
-      pct: overallPct,
-      hasRealData: totalLimit > 0,
+      remaining,
+      pct: percentage,
     };
   }, [displayItems]);
 
+  // ===================================================
+  // RENDER
+  // ===================================================
+
   return (
     <div>
-      {/* Top Page Header */}
+      {/* =================================================
+          PAGE HEADER
+      ================================================= */}
+
       <div className="page-header">
         <div>
-          <Title level={2} style={{ margin: 0, fontSize: 26, fontWeight: 800 }}>
+          <Title
+            level={2}
+            style={{
+              margin: 0,
+              fontSize: 26,
+              fontWeight: 800,
+            }}
+          >
             Budgets
           </Title>
-          <Text style={{ color: "#64748b", fontSize: 14 }}>
-            Set monthly spending limits and monitor budget utilization
+
+          <Text
+            style={{
+              color: "#64748b",
+              fontSize: 14,
+            }}
+          >
+            Set monthly spending limits and
+            monitor budget utilization
           </Text>
         </div>
 
@@ -1605,112 +2237,265 @@ function BudgetsPage() {
         </Button>
       </div>
 
-      {/* 4 Summary Metric Cards (Screen 6) */}
-      <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
-        {/* Total Budget */}
+      {/* =================================================
+          KPI CARDS
+      ================================================= */}
+
+      <Row
+        gutter={[20, 20]}
+        style={{
+          marginBottom: 24,
+        }}
+      >
+        {/* TOTAL BUDGET */}
+
         <Col xs={24} sm={12} lg={6}>
-          <div className="kpi-card" style={{ padding: "18px 22px" }}>
+          <div
+            className="kpi-card"
+            style={{
+              padding: "18px 22px",
+            }}
+          >
             <div className="kpi-card-header">
-              <span className="kpi-card-label">Total Budget</span>
+              <span className="kpi-card-label">
+                Total Budget
+              </span>
+
               <div className="kpi-card-icon budget">
                 <WalletOutlined />
               </div>
             </div>
+
             <div className="kpi-card-value">
               {symbol}
-              {overallTotals.limit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {overallTotals.limit.toLocaleString(
+                undefined,
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }
+              )}
             </div>
           </div>
         </Col>
 
-        {/* Spent */}
+        {/* SPENT */}
+
         <Col xs={24} sm={12} lg={6}>
-          <div className="kpi-card" style={{ padding: "18px 22px" }}>
+          <div
+            className="kpi-card"
+            style={{
+              padding: "18px 22px",
+            }}
+          >
             <div className="kpi-card-header">
-              <span className="kpi-card-label">Spent</span>
+              <span className="kpi-card-label">
+                Spent
+              </span>
+
               <div className="kpi-card-icon expense">
                 <ExclamationCircleOutlined />
               </div>
             </div>
-            <div className="kpi-card-value" style={{ color: "#ef4444" }}>
+
+            <div
+              className="kpi-card-value"
+              style={{
+                color: "#ef4444",
+              }}
+            >
               {symbol}
-              {overallTotals.spent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {overallTotals.spent.toLocaleString(
+                undefined,
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }
+              )}
             </div>
           </div>
         </Col>
 
-        {/* Remaining */}
+        {/* REMAINING */}
+
         <Col xs={24} sm={12} lg={6}>
-          <div className="kpi-card" style={{ padding: "18px 22px" }}>
+          <div
+            className="kpi-card"
+            style={{
+              padding: "18px 22px",
+            }}
+          >
             <div className="kpi-card-header">
-              <span className="kpi-card-label">Remaining</span>
+              <span className="kpi-card-label">
+                Remaining
+              </span>
+
               <div className="kpi-card-icon balance">
                 <CheckCircleOutlined />
               </div>
             </div>
-            <div className="kpi-card-value" style={{ color: "#10b981" }}>
+
+            <div
+              className="kpi-card-value"
+              style={{
+                color: "#10b981",
+              }}
+            >
               {symbol}
-              {overallTotals.remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {overallTotals.remaining.toLocaleString(
+                undefined,
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }
+              )}
             </div>
           </div>
         </Col>
 
-        {/* Overall Progress */}
+        {/* PROGRESS */}
+
         <Col xs={24} sm={12} lg={6}>
-          <div className="kpi-card" style={{ padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div
+            className="kpi-card"
+            style={{
+              padding: "18px 22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent:
+                "space-between",
+            }}
+          >
             <div>
-              <span className="kpi-card-label">Overall Progress</span>
-              <div className="kpi-card-value" style={{ margin: "4px 0 0 0" }}>
+              <span className="kpi-card-label">
+                Overall Progress
+              </span>
+
+              <div
+                className="kpi-card-value"
+                style={{
+                  margin: "4px 0 0 0",
+                }}
+              >
                 {overallTotals.pct}%
               </div>
-              <span style={{ fontSize: 12, color: "#64748b" }}>of total cap</span>
+
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#64748b",
+                }}
+              >
+                of total cap
+              </span>
             </div>
+
             <Progress
               type="circle"
-              percent={overallTotals.pct}
+              percent={
+                overallTotals.pct
+              }
               width={56}
               strokeColor="#10b981"
               strokeWidth={10}
-              format={() => `${overallTotals.pct}%`}
+              format={() =>
+                `${overallTotals.pct}%`
+              }
             />
           </div>
         </Col>
       </Row>
 
-      {/* Budget List Card */}
+      {/* =================================================
+          BUDGET LIST
+      ================================================= */}
+
       <Card className="modern-card">
-        <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            marginBottom: 20,
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
-            <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#0f172a" }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 17,
+                fontWeight: 800,
+                color: "#0f172a",
+              }}
+            >
               Active Category Budgets
             </h3>
-            <span style={{ fontSize: 13, color: "#64748b" }}>
-              Real-time expenditure progress bars
+
+            <span
+              style={{
+                fontSize: 13,
+                color: "#64748b",
+              }}
+            >
+              Real-time expenditure progress
+              bars
             </span>
           </div>
-          <Tag color="success" style={{ borderRadius: 20, fontWeight: 600 }}>
-            {currentMonthName} {new Date().getFullYear()}
+
+          <Tag
+            color="success"
+            style={{
+              borderRadius: 20,
+              fontWeight: 600,
+            }}
+          >
+            {currentMonthName}{" "}
+            {currentYear}
           </Tag>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40 }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: 40,
+            }}
+          >
             <Spin size="large" />
           </div>
         ) : displayItems.length === 0 ? (
-          <div style={{ padding: "40px 0", textAlign: "center" }}>
-            <Empty description="No budgets found. Create one to monitor your spending limits!" />
+          <div
+            style={{
+              padding: "40px 0",
+              textAlign: "center",
+            }}
+          >
+            <Empty
+              description="No budgets found. Create one to monitor your spending limits!"
+            />
+
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={openAdd}
-              style={{ marginTop: 16, borderRadius: 8, background: "#10b981", borderColor: "#10b981" }}
+              style={{
+                marginTop: 16,
+                borderRadius: 8,
+                background: "#10b981",
+                borderColor: "#10b981",
+              }}
             >
               Add Budget
             </Button>
           </div>
         ) : (
-          <div className="custom-table" style={{ overflowX: "auto" }}>
+          <div
+            className="custom-table"
+            style={{
+              overflowX: "auto",
+            }}
+          >
             <table>
               <thead>
                 <tr>
@@ -1718,199 +2503,574 @@ function BudgetsPage() {
                   <th>Budgeted</th>
                   <th>Spent</th>
                   <th>Remaining</th>
-                  <th style={{ minWidth: 160 }}>Progress</th>
-                  <th style={{ textAlign: "center", width: 120 }}>Actions</th>
+                  <th
+                    style={{
+                      minWidth: 160,
+                    }}
+                  >
+                    Progress
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "center",
+                      width: 120,
+                    }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
-                {displayItems.map((b, idx) => {
-                  let name = b.category?.name || b.name;
-                  if (!name && b.month) {
-                    try {
-                      const catMap = JSON.parse(localStorage.getItem("budget_category_map") || "{}");
-                      const monthVal = typeof b.month === "number" ? b.month : months.indexOf(b.month) + 1;
-                      const saved = catMap[`${monthVal}_${b.year}`];
-                      if (saved?.name) name = saved.name;
-                    } catch (e) {}
-                  }
-                  if (!name) name = formatMonthTitle(b.month, b.year);
+                {displayItems.map(
+                  (budget, index) => {
+                    const name =
+                      budget.category
+                        ?.name ||
+                      budget.name ||
+                      "Category";
 
-                  const icon = b.icon || CATEGORY_ICONS[name] || "🏷️";
-                  const limitVal = b.limit || getLimit(b);
-                  const spentVal = b.spent || getSpent(b);
-                  const remainingVal = b.remaining !== undefined ? b.remaining : Math.max(0, limitVal - spentVal);
-                  const pct = b.pct !== undefined ? b.pct : getPercent(b);
-                  const isOver = pct >= 100;
+                    const icon =
+                      budget.category
+                        ?.icon ||
+                      budget.icon ||
+                      CATEGORY_ICONS[
+                        name
+                      ] ||
+                      "🏷️";
 
-                  return (
-                    <tr key={b.id || idx}>
-                      <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                        <Space size="middle">
-                          <span style={{ fontSize: 20 }}>{icon}</span>
-                          <span>{name}</span>
-                        </Space>
-                      </td>
-                      <td style={{ fontWeight: 600, color: "#334155" }}>
-                        {symbol}{limitVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ fontWeight: 700, color: isOver ? "#ef4444" : "#0f172a" }}>
-                        {symbol}{spentVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ fontWeight: 600, color: isOver ? "#ef4444" : "#10b981" }}>
-                        {symbol}{remainingVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <Progress
-                            percent={Math.min(100, pct)}
-                            strokeColor={isOver ? "#ef4444" : "#10b981"}
-                            trailColor="#f1f5f9"
-                            showInfo={false}
-                            style={{ flex: 1, margin: 0 }}
-                          />
-                          <span
+                    const limit =
+                      getLimit(
+                        budget
+                      );
+
+                    const spent =
+                      getSpent(
+                        budget
+                      );
+
+                    const remaining =
+                      Math.max(
+                        0,
+                        limit - spent
+                      );
+
+                    const percentage =
+                      getPercent(
+                        budget
+                      );
+
+                    const isOver =
+                      percentage >=
+                      100;
+
+                    return (
+                      <tr
+                        key={
+                          budget.id ||
+                          index
+                        }
+                      >
+                        <td
+                          style={{
+                            fontWeight: 600,
+                            color:
+                              "#0f172a",
+                          }}
+                        >
+                          <Space size="middle">
+                            <span
+                              style={{
+                                fontSize: 20,
+                              }}
+                            >
+                              {icon}
+                            </span>
+
+                            <span>
+                              {name}
+                            </span>
+                          </Space>
+                        </td>
+
+                        <td
+                          style={{
+                            fontWeight: 600,
+                            color:
+                              "#334155",
+                          }}
+                        >
+                          {symbol}
+                          {limit.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </td>
+
+                        <td
+                          style={{
+                            fontWeight: 700,
+                            color:
+                              isOver
+                                ? "#ef4444"
+                                : "#0f172a",
+                          }}
+                        >
+                          {symbol}
+                          {spent.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </td>
+
+                        <td
+                          style={{
+                            fontWeight: 600,
+                            color:
+                              isOver
+                                ? "#ef4444"
+                                : "#10b981",
+                          }}
+                        >
+                          {symbol}
+                          {remaining.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </td>
+
+                        <td>
+                          <div
                             style={{
-                              fontWeight: 700,
-                              fontSize: 13,
-                              color: isOver ? "#ef4444" : "#0f172a",
-                              minWidth: 40,
-                              textAlign: "right",
+                              display:
+                                "flex",
+                              alignItems:
+                                "center",
+                              gap: 12,
                             }}
                           >
-                            {pct}%
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <Space size="small">
-                          <button
-                            type="button"
-                            className="action-btn-circle"
-                            onClick={() => openEdit(b)}
-                            title="Edit Budget"
-                          >
-                            <EditOutlined />
-                          </button>
-                          <Popconfirm
-                            title="Delete budget"
-                            description="Are you sure you want to delete this budget?"
-                            onConfirm={() => handleDelete(b)}
-                            okText="Delete"
-                            cancelText="Cancel"
-                            okButtonProps={{ danger: true }}
-                          >
+                            <Progress
+                              percent={Math.min(
+                                100,
+                                percentage
+                              )}
+                              strokeColor={
+                                isOver
+                                  ? "#ef4444"
+                                  : "#10b981"
+                              }
+                              trailColor="#f1f5f9"
+                              showInfo={false}
+                              style={{
+                                flex: 1,
+                                margin: 0,
+                              }}
+                            />
+
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                fontSize: 13,
+                                color:
+                                  isOver
+                                    ? "#ef4444"
+                                    : "#0f172a",
+                                minWidth: 40,
+                                textAlign:
+                                  "right",
+                              }}
+                            >
+                              {percentage}%
+                            </span>
+                          </div>
+                        </td>
+
+                        <td
+                          style={{
+                            textAlign:
+                              "center",
+                          }}
+                        >
+                          <Space size="small">
                             <button
                               type="button"
-                              className="action-btn-circle danger"
-                              title="Delete Budget"
+                              className="action-btn-circle"
+                              onClick={() =>
+                                openEdit(
+                                  budget
+                                )
+                              }
+                              title="Edit Budget"
                             >
-                              <DeleteOutlined />
+                              <EditOutlined />
                             </button>
-                          </Popconfirm>
-                        </Space>
-                      </td>
-                    </tr>
-                  );
-                })}
+
+                            <Popconfirm
+                              title="Delete budget"
+                              description="Are you sure you want to delete this budget?"
+                              onConfirm={() =>
+                                handleDelete(
+                                  budget
+                                )
+                              }
+                              okText="Delete"
+                              cancelText="Cancel"
+                              okButtonProps={{
+                                danger: true,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                className="action-btn-circle danger"
+                                title="Delete Budget"
+                              >
+                                <DeleteOutlined />
+                              </button>
+                            </Popconfirm>
+                          </Space>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
               </tbody>
             </table>
           </div>
         )}
       </Card>
 
-      {/* Add / Edit Budget Modal */}
+      {/* =================================================
+          CREATE / EDIT MODAL
+      ================================================= */}
+
       <Modal
         title={
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
-              {editingBudget ? "Edit Budget" : "Create Monthly Budget"}
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 800,
+                color: "#0f172a",
+              }}
+            >
+              {editingBudget
+                ? "Edit Budget"
+                : "Create Monthly Budget"}
             </h3>
-            <span style={{ fontSize: 13, color: "#64748b" }}>
-              Set spending limits to keep expenditures in check
+
+            <span
+              style={{
+                fontSize: 13,
+                color: "#64748b",
+              }}
+            >
+              Set spending limits to keep
+              expenditures in check
             </span>
           </div>
         }
         open={modalOpen}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          if (!saving) {
+            setModalOpen(false);
+          }
+        }}
         footer={null}
         destroyOnClose
       >
-        <div style={{ padding: "16px 0" }}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Category <span style={{ color: "#ef4444" }}>*</span>
+        <div
+          style={{
+            padding: "16px 0",
+          }}
+        >
+          {/* CATEGORY */}
+
+          <div
+            style={{
+              marginBottom: 16,
+            }}
+          >
+            <label
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#334155",
+                marginBottom: 6,
+              }}
+            >
+              Category{" "}
+              <span
+                style={{
+                  color: "#ef4444",
+                }}
+              >
+                *
+              </span>
             </label>
+
             <Select
               size="large"
-              style={{ width: "100%", height: 42 }}
-              value={formData.categoryName}
-              onChange={(name) => {
-                const found = categories.find((c) => c.name === name);
-                setFormData((p) => ({
-                  ...p,
-                  categoryName: name,
-                  categoryId: found?.id || null,
-                }));
+              style={{
+                width: "100%",
               }}
-              options={categories.map((c) => ({
-                value: c.name,
-                label: `${c.icon || CATEGORY_ICONS[c.name] || "🏷️"} ${c.name}`,
-              }))}
+              value={
+                formData.categoryId
+                  ? String(
+                      formData.categoryId
+                    )
+                  : undefined
+              }
+              placeholder={
+                categories.length === 0
+                  ? "No categories available"
+                  : "Select category"
+              }
+              disabled={
+                categories.length === 0
+              }
+              onChange={(value) => {
+                const selectedCategory =
+                  categories.find(
+                    (category) =>
+                      String(
+                        category.id
+                      ) ===
+                      String(value)
+                  );
+
+                setFormData(
+                  (previous) => ({
+                    ...previous,
+                    categoryId:
+                      selectedCategory?.id ??
+                      null,
+                    categoryName:
+                      selectedCategory?.name ||
+                      "",
+                  })
+                );
+              }}
+              options={categories.map(
+                (category) => ({
+                  value: String(
+                    category.id
+                  ),
+                  label: `${
+                    category.icon ||
+                    CATEGORY_ICONS[
+                      category.name
+                    ] ||
+                    "🏷️"
+                  } ${
+                    category.name
+                  }`,
+                })
+              )}
             />
+
+            {categories.length ===
+              0 && (
+              <Text
+                type="danger"
+                style={{
+                  display: "block",
+                  marginTop: 6,
+                  fontSize: 12,
+                }}
+              >
+                No categories were
+                returned by the backend.
+                Please create a category
+                first.
+              </Text>
+            )}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 14, marginBottom: 16 }}>
+          {/* MONTH + YEAR */}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "1.4fr 1fr",
+              gap: 14,
+              marginBottom: 16,
+            }}
+          >
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                Month <span style={{ color: "#ef4444" }}>*</span>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#334155",
+                  marginBottom: 6,
+                }}
+              >
+                Month{" "}
+                <span
+                  style={{
+                    color: "#ef4444",
+                  }}
+                >
+                  *
+                </span>
               </label>
+
               <Select
                 size="large"
-                style={{ width: "100%", height: 42 }}
+                style={{
+                  width: "100%",
+                }}
                 value={formData.month}
-                onChange={(value) => setFormData((p) => ({ ...p, month: value }))}
-                options={months.map((m) => ({ value: m, label: m }))}
+                onChange={(value) =>
+                  setFormData(
+                    (previous) => ({
+                      ...previous,
+                      month: value,
+                    })
+                  )
+                }
+                options={months.map(
+                  (month) => ({
+                    value: month,
+                    label: month,
+                  })
+                )}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                Year <span style={{ color: "#ef4444" }}>*</span>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#334155",
+                  marginBottom: 6,
+                }}
+              >
+                Year{" "}
+                <span
+                  style={{
+                    color: "#ef4444",
+                  }}
+                >
+                  *
+                </span>
               </label>
+
               <InputNumber
                 size="large"
-                style={{ width: "100%", height: 42 }}
+                style={{
+                  width: "100%",
+                }}
                 min={2020}
                 max={2035}
                 value={formData.year}
-                onChange={(val) => setFormData((p) => ({ ...p, year: val }))}
+                onChange={(value) =>
+                  setFormData(
+                    (previous) => ({
+                      ...previous,
+                      year: value,
+                    })
+                  )
+                }
               />
             </div>
           </div>
 
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-              Budget Limit Amount ({symbol}) <span style={{ color: "#ef4444" }}>*</span>
+          {/* LIMIT */}
+
+          <div
+            style={{
+              marginBottom: 24,
+            }}
+          >
+            <label
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#334155",
+                marginBottom: 6,
+              }}
+            >
+              Budget Limit Amount (
+              {symbol}){" "}
+              <span
+                style={{
+                  color: "#ef4444",
+                }}
+              >
+                *
+              </span>
             </label>
+
             <InputNumber
               size="large"
-              style={{ width: "100%", height: 42 }}
+              style={{
+                width: "100%",
+              }}
               min={1}
               step={50}
-              placeholder="e.g., 2500"
-              value={formData.limitAmount}
-              onChange={(val) => setFormData((p) => ({ ...p, limitAmount: val }))}
+              placeholder="e.g., 5000"
+              value={
+                formData.limitAmount
+              }
+              onChange={(value) =>
+                setFormData(
+                  (previous) => ({
+                    ...previous,
+                    limitAmount: value,
+                  })
+                )
+              }
             />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button size="large" onClick={() => setModalOpen(false)} style={{ borderRadius: 8 }}>
+          {/* BUTTONS */}
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent:
+                "flex-end",
+              gap: 12,
+            }}
+          >
+            <Button
+              size="large"
+              disabled={saving}
+              onClick={() =>
+                setModalOpen(false)
+              }
+              style={{
+                borderRadius: 8,
+              }}
+            >
               Cancel
             </Button>
+
             <Button
               type="primary"
               size="large"
               loading={saving}
+              disabled={
+                !formData.categoryId ||
+                categories.length === 0
+              }
               onClick={handleSubmit}
               style={{
                 borderRadius: 8,
@@ -1920,7 +3080,9 @@ function BudgetsPage() {
                 minWidth: 120,
               }}
             >
-              {editingBudget ? "Update Budget" : "Save Budget"}
+              {editingBudget
+                ? "Update Budget"
+                : "Save Budget"}
             </Button>
           </div>
         </div>
