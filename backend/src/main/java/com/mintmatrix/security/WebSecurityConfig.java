@@ -59,9 +59,7 @@ public class WebSecurityConfig {
 
     // =========================================================
     // SECURITY FILTER CHAIN
-    //
-    // IMPORTANT:
-    // Keep this method name and parameter for the testcase.
+    // Keep method name and parameter for testcase
     // =========================================================
 
     @Bean
@@ -70,16 +68,32 @@ public class WebSecurityConfig {
     ) throws Exception {
 
         http
+                // =====================================================
+                // CSRF
+                // =====================================================
+
                 .csrf(csrf -> csrf.disable())
+
+                // =====================================================
+                // CORS
+                // =====================================================
 
                 .cors(cors -> {
                 })
+
+                // =====================================================
+                // SESSION
+                // =====================================================
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+
+                // =====================================================
+                // AUTHORIZATION
+                // =====================================================
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -147,8 +161,6 @@ public class WebSecurityConfig {
                         // GET    -> PUBLIC
                         // POST   -> ADMIN ONLY
                         // DELETE -> ADMIN ONLY
-                        //
-                        // This matches the testcase requirement.
                         // =================================================
 
                         .requestMatchers(
@@ -208,6 +220,10 @@ public class WebSecurityConfig {
 
                 .exceptionHandling(exception -> exception
 
+                        // -------------------------------------------------
+                        // 401 UNAUTHORIZED
+                        // -------------------------------------------------
+
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
 
@@ -226,6 +242,10 @@ public class WebSecurityConfig {
                                     );
                                 }
                         )
+
+                        // -------------------------------------------------
+                        // 403 FORBIDDEN
+                        // -------------------------------------------------
 
                         .accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
