@@ -37,17 +37,21 @@ import {
 } from "@ant-design/icons";
 
 import { useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
+
+// ============================================================
+// API BASE URL
+// ============================================================
 
 const API_BASE_URL = "http://localhost:8080/api";
 
 // ============================================================
 // CURRENCY SYMBOL
 // ============================================================
+
 const getCurrencySymbol = (currency) => {
   switch (String(currency || "INR").toUpperCase()) {
     case "INR":
@@ -72,6 +76,7 @@ const getCurrencySymbol = (currency) => {
 // ============================================================
 // INITIAL FORM
 // ============================================================
+
 const getInitialForm = () => ({
   title: "",
   targetAmount: null,
@@ -83,6 +88,7 @@ const getInitialForm = () => ({
 // ============================================================
 // GOAL ICON
 // ============================================================
+
 const getGoalIcon = (title = "") => {
   const text = String(title).toLowerCase();
 
@@ -178,66 +184,103 @@ const getGoalIcon = (title = "") => {
 // ============================================================
 // GOALS PAGE
 // ============================================================
+
 function GoalsPage() {
-  const location = useLocation();
+  // ==========================================================
+  // AUTH USER
+  // ==========================================================
 
   const authUser = useSelector(
-    (state) => state.auth?.user
+    (state) => state?.auth?.user
   );
 
   // ==========================================================
-  // ROLE
+  // GET ROLE
+  // IMPORTANT:
+  // URL IS NOT USED TO DETERMINE ADMIN ACCESS
   // ==========================================================
+
+  const getStoredUser = () => {
+    try {
+      const storedUser =
+        localStorage.getItem("user");
+
+      if (!storedUser) {
+        return null;
+      }
+
+      return JSON.parse(storedUser);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const storedUser = getStoredUser();
+
   const role =
     authUser?.role ||
     authUser?.user?.role ||
+    storedUser?.role ||
+    storedUser?.user?.role ||
     localStorage.getItem("role") ||
     "";
 
-  const normalizedRole = String(role).toUpperCase();
+  const normalizedRole = String(role)
+    .trim()
+    .toUpperCase();
 
   const isAdmin =
     normalizedRole === "ROLE_ADMIN" ||
-    normalizedRole === "ADMIN" ||
-    location.pathname.toLowerCase().startsWith("/admin");
+    normalizedRole === "ADMIN";
 
   // ==========================================================
   // USER ID
   // ==========================================================
+
   const currentUserId =
     authUser?.id ||
     authUser?.user?.id ||
+    storedUser?.id ||
+    storedUser?.user?.id ||
     localStorage.getItem("userId") ||
     null;
 
   // ==========================================================
   // CURRENCY
   // ==========================================================
+
   const getStoredCurrency = () => {
     const stored =
-      localStorage.getItem("preferredCurrency") ||
+      localStorage.getItem(
+        "preferredCurrency"
+      ) ||
       localStorage.getItem("currency") ||
-      localStorage.getItem("activeCurrency") ||
+      localStorage.getItem(
+        "activeCurrency"
+      ) ||
       authUser?.preferredCurrency ||
+      authUser?.user?.preferredCurrency ||
+      storedUser?.preferredCurrency ||
       "INR";
 
     return String(stored).toUpperCase();
   };
 
-  const [currency, setCurrency] = useState(
-    getStoredCurrency()
-  );
+  const [currency, setCurrency] =
+    useState(getStoredCurrency());
 
   // ==========================================================
   // STATE
   // ==========================================================
+
   const [goals, setGoals] = useState([]);
   const [usersList, setUsersList] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] =
+    useState("");
 
   const [goalModalOpen, setGoalModalOpen] =
     useState(false);
@@ -258,10 +301,36 @@ function GoalsPage() {
     useState(getInitialForm());
 
   // ==========================================================
+  // AUTH CONFIG
+  // ==========================================================
+
+  const getAuthConfig = () => {
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      return {};
+    }
+
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type":
+          "application/json",
+      },
+    };
+  };
+
+  // ==========================================================
   // ERROR MESSAGE
   // ==========================================================
-  const getErrorMessage = (error, fallback) => {
-    const responseData = error?.response?.data;
+
+  const getErrorMessage = (
+    error,
+    fallback
+  ) => {
+    const responseData =
+      error?.response?.data;
 
     if (responseData?.message) {
       return responseData.message;
@@ -271,8 +340,22 @@ function GoalsPage() {
       return responseData.error;
     }
 
-    if (typeof responseData === "string") {
+    if (
+      typeof responseData === "string"
+    ) {
       return responseData;
+    }
+
+    if (
+      error?.response?.status === 401
+    ) {
+      return "Session expired. Please login again.";
+    }
+
+    if (
+      error?.response?.status === 403
+    ) {
+      return "Access denied. Only administrators can perform this action.";
     }
 
     return fallback;
@@ -281,17 +364,28 @@ function GoalsPage() {
   // ==========================================================
   // CURRENCY EVENT
   // ==========================================================
+
   useEffect(() => {
-    const handleCurrencyChange = (event) => {
+    const handleCurrencyChange = (
+      event
+    ) => {
       const newCurrency =
         event?.detail ||
-        localStorage.getItem("preferredCurrency") ||
-        localStorage.getItem("currency") ||
-        localStorage.getItem("activeCurrency") ||
+        localStorage.getItem(
+          "preferredCurrency"
+        ) ||
+        localStorage.getItem(
+          "currency"
+        ) ||
+        localStorage.getItem(
+          "activeCurrency"
+        ) ||
         "INR";
 
       setCurrency(
-        String(newCurrency).toUpperCase()
+        String(
+          newCurrency
+        ).toUpperCase()
       );
     };
 
@@ -321,24 +415,33 @@ function GoalsPage() {
   // ==========================================================
   // NORMALIZE RESPONSE
   // ==========================================================
+
   const normalizeList = (data) => {
     if (Array.isArray(data)) {
       return data;
     }
 
-    if (Array.isArray(data?.content)) {
+    if (
+      Array.isArray(data?.content)
+    ) {
       return data.content;
     }
 
-    if (Array.isArray(data?.goals)) {
+    if (
+      Array.isArray(data?.goals)
+    ) {
       return data.goals;
     }
 
-    if (Array.isArray(data?.users)) {
+    if (
+      Array.isArray(data?.users)
+    ) {
       return data.users;
     }
 
-    if (Array.isArray(data?.data)) {
+    if (
+      Array.isArray(data?.data)
+    ) {
       return data.data;
     }
 
@@ -348,6 +451,7 @@ function GoalsPage() {
   // ==========================================================
   // GET GOAL ID
   // ==========================================================
+
   const getGoalId = (goal) => {
     return (
       goal?.id ??
@@ -359,6 +463,7 @@ function GoalsPage() {
   // ==========================================================
   // GET SAVED AMOUNT
   // ==========================================================
+
   const getSavedAmount = (goal) => {
     const amount =
       goal?.currentAmount ??
@@ -368,12 +473,15 @@ function GoalsPage() {
 
     const value = Number(amount);
 
-    return Number.isFinite(value) ? value : 0;
+    return Number.isFinite(value)
+      ? value
+      : 0;
   };
 
   // ==========================================================
   // GET TARGET AMOUNT
   // ==========================================================
+
   const getTargetAmount = (goal) => {
     const amount =
       goal?.targetAmount ??
@@ -382,12 +490,15 @@ function GoalsPage() {
 
     const value = Number(amount);
 
-    return Number.isFinite(value) ? value : 0;
+    return Number.isFinite(value)
+      ? value
+      : 0;
   };
 
   // ==========================================================
   // GET DEADLINE
   // ==========================================================
+
   const getDeadline = (goal) => {
     return (
       goal?.deadline ??
@@ -400,6 +511,7 @@ function GoalsPage() {
   // ==========================================================
   // GET USER NAME
   // ==========================================================
+
   const getGoalUserName = (goal) => {
     return (
       goal?.user?.username ||
@@ -414,32 +526,24 @@ function GoalsPage() {
 
   // ==========================================================
   // FETCH GOALS
+  // USER + ADMIN BOTH USE GET /api/goals
+  // BACKEND CONTROLS ACCESS
   // ==========================================================
+
   const fetchGoals = async () => {
     try {
       setLoading(true);
 
-      let response;
-
-      if (isAdmin) {
-        try {
-          response = await axios.get(
-            `${API_BASE_URL}/admin/goals`
-          );
-        } catch (adminError) {
-          response = await axios.get(
-            `${API_BASE_URL}/goals`
-          );
-        }
-      } else {
-        response = await axios.get(
-          `${API_BASE_URL}/goals`
+      const response =
+        await axios.get(
+          `${API_BASE_URL}/goals`,
+          getAuthConfig()
         );
-      }
 
-      const goalList = normalizeList(
-        response?.data
-      );
+      const goalList =
+        normalizeList(
+          response?.data
+        );
 
       setGoals(goalList);
     } catch (error) {
@@ -462,21 +566,26 @@ function GoalsPage() {
   };
 
   // ==========================================================
-  // FETCH USERS FOR ADMIN
+  // FETCH USERS
+  // ONLY ADMIN
   // ==========================================================
+
   const fetchUsers = async () => {
     if (!isAdmin) {
       return;
     }
 
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/admin/users`
-      );
+      const response =
+        await axios.get(
+          `${API_BASE_URL}/admin/users`,
+          getAuthConfig()
+        );
 
-      const list = normalizeList(
-        response?.data
-      );
+      const list =
+        normalizeList(
+          response?.data
+        );
 
       setUsersList(list);
     } catch (error) {
@@ -492,22 +601,25 @@ function GoalsPage() {
   // ==========================================================
   // INITIAL LOAD
   // ==========================================================
+
   useEffect(() => {
     fetchGoals();
 
     if (isAdmin) {
       fetchUsers();
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
   // ==========================================================
   // PROGRESS
   // ==========================================================
+
   const getProgress = (goal) => {
-    const target = getTargetAmount(goal);
-    const saved = getSavedAmount(goal);
+    const target =
+      getTargetAmount(goal);
+
+    const saved =
+      getSavedAmount(goal);
 
     if (target <= 0) {
       return 0;
@@ -517,7 +629,9 @@ function GoalsPage() {
       100,
       Math.max(
         0,
-        Math.round((saved / target) * 100)
+        Math.round(
+          (saved / target) * 100
+        )
       )
     );
   };
@@ -525,56 +639,76 @@ function GoalsPage() {
   // ==========================================================
   // FORMAT MONEY
   // ==========================================================
+
   const formatMoney = (amount) => {
-    const value = Number(amount || 0);
+    const value = Number(
+      amount || 0
+    );
 
     return `${getCurrencySymbol(
       currency
-    )}${value.toLocaleString("en-IN", {
-      maximumFractionDigits: 2,
-    })}`;
+    )}${value.toLocaleString(
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
+    )}`;
   };
 
   // ==========================================================
-  // SEARCH
+  // FILTER GOALS
   // ==========================================================
+
   const filteredGoals = useMemo(() => {
     const query =
-      searchQuery.trim().toLowerCase();
+      searchQuery
+        .trim()
+        .toLowerCase();
 
     if (!query) {
       return goals;
     }
 
-    return goals.filter((goal) => {
-      const title = String(
-        goal?.title ||
-          goal?.goalName ||
-          ""
-      ).toLowerCase();
+    return goals.filter(
+      (goal) => {
+        const title =
+          String(
+            goal?.title ||
+              goal?.goalName ||
+              ""
+          ).toLowerCase();
 
-      const username = String(
-        getGoalUserName(goal)
-      ).toLowerCase();
+        const username =
+          String(
+            getGoalUserName(goal)
+          ).toLowerCase();
 
-      return (
-        title.includes(query) ||
-        username.includes(query)
-      );
-    });
+        return (
+          title.includes(query) ||
+          username.includes(query)
+        );
+      }
+    );
   }, [goals, searchQuery]);
 
   // ==========================================================
   // OPEN ADD MODAL
+  // ADMIN ONLY
   // ==========================================================
+
   const handleOpenAddModal = () => {
+    if (!isAdmin) {
+      message.error(
+        "Only administrators can create goals."
+      );
+      return;
+    }
+
     setEditingGoal(null);
 
     setFormData({
       ...getInitialForm(),
-      userId: isAdmin
-        ? null
-        : currentUserId,
+      userId: null,
     });
 
     setGoalModalOpen(true);
@@ -582,14 +716,27 @@ function GoalsPage() {
 
   // ==========================================================
   // OPEN EDIT MODAL
+  // ADMIN ONLY
   // ==========================================================
-  const handleOpenEditModal = (goal) => {
-    const deadline = getDeadline(goal);
+
+  const handleOpenEditModal = (
+    goal
+  ) => {
+    if (!isAdmin) {
+      message.error(
+        "Only administrators can edit goals."
+      );
+      return;
+    }
+
+    const deadline =
+      getDeadline(goal);
 
     let parsedDeadline = null;
 
     if (deadline) {
-      const parsed = dayjs(deadline);
+      const parsed =
+        dayjs(deadline);
 
       if (parsed.isValid()) {
         parsedDeadline = parsed;
@@ -607,11 +754,11 @@ function GoalsPage() {
         getTargetAmount(goal),
       currentAmount:
         getSavedAmount(goal),
-      deadline: parsedDeadline,
+      deadline:
+        parsedDeadline,
       userId:
         goal?.userId ||
         goal?.user?.id ||
-        currentUserId ||
         null,
     });
 
@@ -619,402 +766,498 @@ function GoalsPage() {
   };
 
   // ==========================================================
-  // CLOSE MODAL
+  // CLOSE GOAL MODAL
   // ==========================================================
-  const handleCloseGoalModal = () => {
-    if (saving) {
-      return;
-    }
 
-    setGoalModalOpen(false);
-    setEditingGoal(null);
-    setFormData(getInitialForm());
-  };
-
-  // ==========================================================
-  // FORM UPDATE
-  // ==========================================================
-  const updateForm = (field, value) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
-
-  // ==========================================================
-  // SAVE GOAL
-  // CREATE + UPDATE
-  // ==========================================================
-  const handleSaveGoal = async () => {
-    const title = String(
-      formData.title || ""
-    ).trim();
-
-    const targetAmount = Number(
-      formData.targetAmount
-    );
-
-    const currentAmount =
-      formData.currentAmount === null ||
-      formData.currentAmount === undefined ||
-      formData.currentAmount === ""
-        ? 0
-        : Number(formData.currentAmount);
-
-    if (!title) {
-      message.warning(
-        "Please enter a goal name."
-      );
-      return;
-    }
-
-    if (
-      !Number.isFinite(targetAmount) ||
-      targetAmount <= 0
-    ) {
-      message.warning(
-        "Target amount must be greater than 0."
-      );
-      return;
-    }
-
-    if (
-      !Number.isFinite(currentAmount) ||
-      currentAmount < 0
-    ) {
-      message.warning(
-        "Current amount cannot be negative."
-      );
-      return;
-    }
-
-    if (currentAmount > targetAmount) {
-      message.warning(
-        "Current amount cannot be greater than target amount."
-      );
-      return;
-    }
-
-    if (isAdmin && !formData.userId) {
-      message.warning(
-        "Please select a user."
-      );
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const payload = {
-        title,
-        targetAmount,
-        currentAmount,
-        deadline: formData.deadline
-          ? formData.deadline.format(
-              "YYYY-MM-DD"
-            )
-          : null,
-      };
-
-      if (isAdmin && formData.userId) {
-        payload.userId = formData.userId;
-      }
-
-      // ====================================================
-      // UPDATE EXISTING GOAL
-      // ====================================================
-      if (editingGoal) {
-        const goalId =
-          getGoalId(editingGoal);
-
-        if (!goalId) {
-          message.error(
-            "Goal ID not found."
-          );
-          return;
-        }
-
-        if (isAdmin) {
-          try {
-            await axios.put(
-              `${API_BASE_URL}/admin/goals/${goalId}`,
-              payload
-            );
-          } catch (adminError) {
-            await axios.put(
-              `${API_BASE_URL}/goals/${goalId}`,
-              payload
-            );
-          }
-        } else {
-          await axios.put(
-            `${API_BASE_URL}/goals/${goalId}`,
-            payload
-          );
-        }
-
-        message.success(
-          "Goal updated successfully."
-        );
-      }
-
-      // ====================================================
-      // CREATE NEW GOAL
-      // ====================================================
-      else {
-        if (isAdmin) {
-          try {
-            await axios.post(
-              `${API_BASE_URL}/admin/goals`,
-              payload
-            );
-          } catch (adminError) {
-            await axios.post(
-              `${API_BASE_URL}/goals`,
-              payload
-            );
-          }
-        } else {
-          await axios.post(
-            `${API_BASE_URL}/goals`,
-            payload
-          );
-        }
-
-        message.success(
-          "Goal added successfully."
-        );
+  const handleCloseGoalModal =
+    () => {
+      if (saving) {
+        return;
       }
 
       setGoalModalOpen(false);
       setEditingGoal(null);
-      setFormData(getInitialForm());
-
-      await fetchGoals();
-    } catch (error) {
-      console.error(
-        "Save goal error:",
-        error
+      setFormData(
+        getInitialForm()
       );
+    };
 
-      message.error(
-        getErrorMessage(
-          error,
-          editingGoal
-            ? "Failed to update goal."
-            : "Failed to add goal."
-        )
-      );
-    } finally {
-      setSaving(false);
-    }
+  // ==========================================================
+  // UPDATE FORM
+  // ==========================================================
+
+  const updateForm = (
+    field,
+    value
+  ) => {
+    setFormData(
+      (previous) => ({
+        ...previous,
+        [field]: value,
+      })
+    );
   };
+
+  // ==========================================================
+  // SAVE GOAL
+  // ADMIN ONLY
+  // ==========================================================
+
+  const handleSaveGoal =
+    async () => {
+      if (!isAdmin) {
+        message.error(
+          "Only administrators can create or update goals."
+        );
+        return;
+      }
+
+      const title = String(
+        formData.title || ""
+      ).trim();
+
+      const targetAmount =
+        Number(
+          formData.targetAmount
+        );
+
+      const currentAmount =
+        formData.currentAmount ===
+          null ||
+        formData.currentAmount ===
+          undefined ||
+        formData.currentAmount ===
+          ""
+          ? 0
+          : Number(
+              formData.currentAmount
+            );
+
+      // ------------------------------------------------------
+      // VALIDATION
+      // ------------------------------------------------------
+
+      if (!title) {
+        message.warning(
+          "Please enter a goal name."
+        );
+        return;
+      }
+
+      if (
+        !Number.isFinite(
+          targetAmount
+        ) ||
+        targetAmount <= 0
+      ) {
+        message.warning(
+          "Target amount must be greater than 0."
+        );
+        return;
+      }
+
+      if (
+        !Number.isFinite(
+          currentAmount
+        ) ||
+        currentAmount < 0
+      ) {
+        message.warning(
+          "Current amount cannot be negative."
+        );
+        return;
+      }
+
+      if (
+        currentAmount >
+        targetAmount
+      ) {
+        message.warning(
+          "Current amount cannot be greater than target amount."
+        );
+        return;
+      }
+
+      if (
+        !editingGoal &&
+        !formData.userId
+      ) {
+        message.warning(
+          "Please select a user."
+        );
+        return;
+      }
+
+      try {
+        setSaving(true);
+
+        const payload = {
+          title,
+          targetAmount,
+          currentAmount,
+          deadline:
+            formData.deadline
+              ? formData.deadline.format(
+                  "YYYY-MM-DD"
+                )
+              : null,
+        };
+
+        // ----------------------------------------------------
+        // USER ID
+        // ----------------------------------------------------
+
+        if (formData.userId) {
+          payload.userId =
+            Number(
+              formData.userId
+            );
+        }
+
+        console.log(
+          "========== GOAL REQUEST =========="
+        );
+
+        console.log(
+          "Admin:",
+          isAdmin
+        );
+
+        console.log(
+          "Payload:",
+          payload
+        );
+
+        // ----------------------------------------------------
+        // UPDATE
+        // ----------------------------------------------------
+
+        if (editingGoal) {
+          const goalId =
+            getGoalId(
+              editingGoal
+            );
+
+          if (!goalId) {
+            message.error(
+              "Goal ID not found."
+            );
+            return;
+          }
+
+          await axios.put(
+            `${API_BASE_URL}/goals/${goalId}`,
+            payload,
+            getAuthConfig()
+          );
+
+          message.success(
+            "Goal updated successfully."
+          );
+        }
+
+        // ----------------------------------------------------
+        // CREATE
+        // ----------------------------------------------------
+
+        else {
+          await axios.post(
+            `${API_BASE_URL}/goals`,
+            payload,
+            getAuthConfig()
+          );
+
+          message.success(
+            "Goal added successfully."
+          );
+        }
+
+        console.log(
+          "================================="
+        );
+
+        setGoalModalOpen(false);
+        setEditingGoal(null);
+        setFormData(
+          getInitialForm()
+        );
+
+        await fetchGoals();
+      } catch (error) {
+        console.error(
+          "Save goal error:",
+          error
+        );
+
+        console.error(
+          "Status:",
+          error?.response?.status
+        );
+
+        console.error(
+          "Response:",
+          error?.response?.data
+        );
+
+        message.error(
+          getErrorMessage(
+            error,
+            editingGoal
+              ? "Failed to update goal."
+              : "Failed to add goal."
+          )
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
 
   // ==========================================================
   // DELETE GOAL
+  // ADMIN ONLY
   // ==========================================================
-  const handleDeleteGoal = async (goal) => {
-    const goalId = getGoalId(goal);
 
-    if (!goalId) {
-      message.error(
-        "Goal ID not found."
-      );
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      if (isAdmin) {
-        try {
-          await axios.delete(
-            `${API_BASE_URL}/admin/goals/${goalId}`
-          );
-        } catch (adminError) {
-          await axios.delete(
-            `${API_BASE_URL}/goals/${goalId}`
-          );
-        }
-      } else {
-        await axios.delete(
-          `${API_BASE_URL}/goals/${goalId}`
-        );
-      }
-
-      message.success(
-        "Goal deleted successfully."
-      );
-
-      await fetchGoals();
-    } catch (error) {
-      console.error(
-        "Delete goal error:",
-        error
-      );
-
-      message.error(
-        getErrorMessage(
-          error,
-          "Failed to delete goal."
-        )
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ==========================================================
-  // OPEN DEPOSIT MODAL
-  // ==========================================================
-  const handleOpenFundModal = (goal) => {
-    setSelectedGoal(goal);
-    setFundAmount(null);
-    setFundModalOpen(true);
-  };
-
-  // ==========================================================
-  // CLOSE DEPOSIT MODAL
-  // ==========================================================
-  const handleCloseFundModal = () => {
-    if (saving) {
-      return;
-    }
-
-    setFundModalOpen(false);
-    setSelectedGoal(null);
-    setFundAmount(null);
-  };
-
-  // ==========================================================
-  // DEPOSIT FUNDS
-  // ==========================================================
-  const handleAddFunds = async () => {
-    const amount = Number(fundAmount);
-
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
-      message.warning(
-        "Please enter a valid deposit amount."
-      );
-      return;
-    }
-
-    if (!selectedGoal) {
-      message.error(
-        "Goal not selected."
-      );
-      return;
-    }
-
-    const goalId =
-      getGoalId(selectedGoal);
-
-    if (!goalId) {
-      message.error(
-        "Goal ID not found."
-      );
-      return;
-    }
-
-    const current =
-      getSavedAmount(selectedGoal);
-
-    const target =
-      getTargetAmount(selectedGoal);
-
-    if (current + amount > target) {
-      message.warning(
-        "Deposit cannot make the saved amount greater than the target."
-      );
-      return;
-    }
-
-    try {
-      setSaving(true);
-
+  const handleDeleteGoal =
+    async (goal) => {
       if (!isAdmin) {
-        await axios.put(
-          `${API_BASE_URL}/goals/${goalId}/add-funds?amount=${amount}`
+        message.error(
+          "Only administrators can delete goals."
         );
-      } else {
-        const payload = {
-          title:
-            selectedGoal?.title ||
-            selectedGoal?.goalName ||
-            "",
-          targetAmount: target,
-          currentAmount:
-            current + amount,
-          deadline:
-            getDeadline(selectedGoal),
-        };
-
-        try {
-          await axios.put(
-            `${API_BASE_URL}/admin/goals/${goalId}`,
-            payload
-          );
-        } catch (adminError) {
-          await axios.put(
-            `${API_BASE_URL}/goals/${goalId}`,
-            payload
-          );
-        }
+        return;
       }
 
-      message.success(
-        "Funds added successfully."
-      );
+      const goalId =
+        getGoalId(goal);
+
+      if (!goalId) {
+        message.error(
+          "Goal ID not found."
+        );
+        return;
+      }
+
+      try {
+        setSaving(true);
+
+        await axios.delete(
+          `${API_BASE_URL}/goals/${goalId}`,
+          getAuthConfig()
+        );
+
+        message.success(
+          "Goal deleted successfully."
+        );
+
+        await fetchGoals();
+      } catch (error) {
+        console.error(
+          "Delete goal error:",
+          error
+        );
+
+        console.error(
+          "Status:",
+          error?.response?.status
+        );
+
+        console.error(
+          "Response:",
+          error?.response?.data
+        );
+
+        message.error(
+          getErrorMessage(
+            error,
+            "Failed to delete goal."
+          )
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
+
+  // ==========================================================
+  // OPEN FUND MODAL
+  // ADMIN ONLY
+  // ==========================================================
+
+  const handleOpenFundModal =
+    (goal) => {
+      if (!isAdmin) {
+        message.error(
+          "Only administrators can add funds."
+        );
+        return;
+      }
+
+      setSelectedGoal(goal);
+      setFundAmount(null);
+      setFundModalOpen(true);
+    };
+
+  // ==========================================================
+  // CLOSE FUND MODAL
+  // ==========================================================
+
+  const handleCloseFundModal =
+    () => {
+      if (saving) {
+        return;
+      }
 
       setFundModalOpen(false);
       setSelectedGoal(null);
       setFundAmount(null);
+    };
 
-      await fetchGoals();
-    } catch (error) {
-      console.error(
-        "Add funds error:",
-        error
-      );
+  // ==========================================================
+  // ADD FUNDS
+  // ADMIN ONLY
+  // ==========================================================
 
-      message.error(
-        getErrorMessage(
-          error,
-          "Failed to add funds."
-        )
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  const handleAddFunds =
+    async () => {
+      if (!isAdmin) {
+        message.error(
+          "Only administrators can add funds."
+        );
+        return;
+      }
+
+      const amount =
+        Number(fundAmount);
+
+      if (
+        !Number.isFinite(
+          amount
+        ) ||
+        amount <= 0
+      ) {
+        message.warning(
+          "Please enter a valid deposit amount."
+        );
+        return;
+      }
+
+      if (!selectedGoal) {
+        message.error(
+          "Goal not selected."
+        );
+        return;
+      }
+
+      const goalId =
+        getGoalId(
+          selectedGoal
+        );
+
+      if (!goalId) {
+        message.error(
+          "Goal ID not found."
+        );
+        return;
+      }
+
+      const current =
+        getSavedAmount(
+          selectedGoal
+        );
+
+      const target =
+        getTargetAmount(
+          selectedGoal
+        );
+
+      if (
+        current + amount >
+        target
+      ) {
+        message.warning(
+          "Deposit cannot make the saved amount greater than the target."
+        );
+        return;
+      }
+
+      try {
+        setSaving(true);
+
+        // ====================================================
+        // Existing backend endpoint
+        // PUT /api/goals/{id}/add-funds?amount=...
+        // ====================================================
+
+        await axios.put(
+          `${API_BASE_URL}/goals/${goalId}/add-funds?amount=${amount}`,
+          null,
+          getAuthConfig()
+        );
+
+        message.success(
+          "Funds added successfully."
+        );
+
+        setFundModalOpen(false);
+        setSelectedGoal(null);
+        setFundAmount(null);
+
+        await fetchGoals();
+      } catch (error) {
+        console.error(
+          "Add funds error:",
+          error
+        );
+
+        console.error(
+          "Status:",
+          error?.response?.status
+        );
+
+        console.error(
+          "Response:",
+          error?.response?.data
+        );
+
+        message.error(
+          getErrorMessage(
+            error,
+            "Failed to add funds."
+          )
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
 
   // ==========================================================
   // USER OPTIONS
   // ==========================================================
-  const userOptions = usersList
-    .filter(Boolean)
-    .map((user) => ({
-      value: user.id,
-      label:
-        user.username ||
-        user.name ||
-        user.email ||
-        `User ${user.id}`,
-    }));
+
+  const userOptions =
+    usersList
+      .filter(Boolean)
+      .map((user) => ({
+        value: user.id,
+        label:
+          user.username ||
+          user.name ||
+          user.email ||
+          `User ${user.id}`,
+      }));
 
   // ==========================================================
   // RENDER
   // ==========================================================
+
   return (
     <div
       style={{
         padding: 24,
       }}
     >
-      {/* PAGE HEADER */}
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
       <Row
         justify="space-between"
         align="middle"
@@ -1044,12 +1287,19 @@ function GoalsPage() {
             {isAdmin && (
               <Input
                 allowClear
-                prefix={<SearchOutlined />}
+                prefix={
+                  <SearchOutlined />
+                }
                 placeholder="Search goals..."
-                value={searchQuery}
-                onChange={(event) =>
+                value={
+                  searchQuery
+                }
+                onChange={(
+                  event
+                ) =>
                   setSearchQuery(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 style={{
@@ -1058,18 +1308,32 @@ function GoalsPage() {
               />
             )}
 
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleOpenAddModal}
-            >
-              Add Goal
-            </Button>
+            {/* ============================================
+                ADD GOAL
+                ADMIN ONLY
+            ============================================ */}
+
+            {isAdmin && (
+              <Button
+                type="primary"
+                icon={
+                  <PlusOutlined />
+                }
+                onClick={
+                  handleOpenAddModal
+                }
+              >
+                Add Goal
+              </Button>
+            )}
           </Space>
         </Col>
       </Row>
 
-      {/* CURRENCY */}
+      {/* =====================================================
+          CURRENCY
+      ===================================================== */}
+
       <Card
         size="small"
         style={{
@@ -1086,25 +1350,37 @@ function GoalsPage() {
 
           <Tag color="green">
             {currency} (
-            {getCurrencySymbol(currency)})
+            {getCurrencySymbol(
+              currency
+            )}
+            )
           </Tag>
         </Space>
       </Card>
 
-      {/* LOADING */}
+      {/* =====================================================
+          LOADING
+      ===================================================== */}
+
       {loading ? (
         <div
           style={{
             minHeight: 300,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
           }}
         >
           <Spin size="large" />
         </div>
-      ) : filteredGoals.length === 0 ? (
-        /* EMPTY */
+      ) : filteredGoals.length ===
+        0 ? (
+        /* =================================================
+           EMPTY
+        ================================================= */
+
         <Card
           style={{
             borderRadius: 16,
@@ -1120,280 +1396,374 @@ function GoalsPage() {
             }
           />
 
-          {!searchQuery && (
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleOpenAddModal}
-            >
-              Add Your First Goal
-            </Button>
-          )}
+          {/* USER DOES NOT GET CREATE BUTTON */}
+
+          {isAdmin &&
+            !searchQuery && (
+              <Button
+                type="primary"
+                icon={
+                  <PlusOutlined />
+                }
+                onClick={
+                  handleOpenAddModal
+                }
+              >
+                Add Your First Goal
+              </Button>
+            )}
         </Card>
       ) : (
-        /* GOALS */
+        /* =================================================
+           GOALS
+        ================================================= */
+
         <Row gutter={[20, 20]}>
-          {filteredGoals.map((goal) => {
-            const goalId =
-              getGoalId(goal);
+          {filteredGoals.map(
+            (goal) => {
+              const goalId =
+                getGoalId(goal);
 
-            const saved =
-              getSavedAmount(goal);
+              const saved =
+                getSavedAmount(
+                  goal
+                );
 
-            const target =
-              getTargetAmount(goal);
+              const target =
+                getTargetAmount(
+                  goal
+                );
 
-            const progress =
-              getProgress(goal);
+              const progress =
+                getProgress(
+                  goal
+                );
 
-            const achieved =
-              progress >= 100;
+              const achieved =
+                progress >= 100;
 
-            const deadline =
-              getDeadline(goal);
+              const deadline =
+                getDeadline(
+                  goal
+                );
 
-            return (
-              <Col
-                xs={24}
-                sm={12}
-                lg={8}
-                key={goalId}
-              >
-                <Card
-                  hoverable
-                  style={{
-                    height: "100%",
-                    borderRadius: 18,
-                  }}
+              return (
+                <Col
+                  xs={24}
+                  sm={12}
+                  lg={8}
+                  key={goalId}
                 >
-                  {/* TITLE */}
-                  <div
+                  <Card
+                    hoverable
                     style={{
-                      display: "flex",
-                      justifyContent:
-                        "space-between",
-                      alignItems:
-                        "flex-start",
-                      gap: 10,
-                      marginBottom: 18,
+                      height:
+                        "100%",
+                      borderRadius:
+                        18,
                     }}
                   >
+                    {/* =====================================
+                        TITLE
+                    ===================================== */}
+
                     <div
                       style={{
-                        display: "flex",
+                        display:
+                          "flex",
+                        justifyContent:
+                          "space-between",
                         alignItems:
-                          "center",
-                        gap: 12,
+                          "flex-start",
+                        gap: 10,
+                        marginBottom:
+                          18,
                       }}
                     >
                       <div
                         style={{
-                          width: 54,
-                          height: 54,
-                          borderRadius: 14,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent:
+                          display:
+                            "flex",
+                          alignItems:
                             "center",
-                          background:
-                            "#eef9f1",
+                          gap: 12,
                         }}
                       >
-                        {getGoalIcon(
-                          goal?.title ||
-                            goal?.goalName
-                        )}
-                      </div>
-
-                      <div>
-                        <Text
-                          strong
+                        <div
                           style={{
-                            fontSize: 17,
+                            width: 54,
+                            height: 54,
+                            borderRadius:
+                              14,
                             display:
-                              "block",
+                              "flex",
+                            alignItems:
+                              "center",
+                            justifyContent:
+                              "center",
+                            background:
+                              "#eef9f1",
                           }}
                         >
-                          {goal?.title ||
-                            goal?.goalName ||
-                            "Untitled Goal"}
-                        </Text>
-
-                        {isAdmin &&
-                          getGoalUserName(
-                            goal
-                          ) && (
-                            <Tag
-                              icon={
-                                <UserOutlined />
-                              }
-                              style={{
-                                marginTop: 5,
-                              }}
-                            >
-                              {getGoalUserName(
-                                goal
-                              )}
-                            </Tag>
+                          {getGoalIcon(
+                            goal?.title ||
+                              goal?.goalName
                           )}
+                        </div>
+
+                        <div>
+                          <Text
+                            strong
+                            style={{
+                              fontSize:
+                                17,
+                              display:
+                                "block",
+                            }}
+                          >
+                            {goal?.title ||
+                              goal?.goalName ||
+                              "Untitled Goal"}
+                          </Text>
+
+                          {/* ADMIN CAN SEE USER */}
+
+                          {isAdmin &&
+                            getGoalUserName(
+                              goal
+                            ) && (
+                              <Tag
+                                icon={
+                                  <UserOutlined />
+                                }
+                                style={{
+                                  marginTop:
+                                    5,
+                                }}
+                              >
+                                {getGoalUserName(
+                                  goal
+                                )}
+                              </Tag>
+                            )}
+                        </div>
                       </div>
+
+                      {achieved && (
+                        <Tag color="green">
+                          Goal Achieved
+                        </Tag>
+                      )}
                     </div>
 
-                    {achieved && (
-                      <Tag color="green">
-                        Goal Achieved
-                      </Tag>
-                    )}
-                  </div>
+                    {/* =====================================
+                        AMOUNT
+                    ===================================== */}
 
-                  {/* AMOUNT */}
-                  <div
-                    style={{
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Text
-                      strong
+                    <div
                       style={{
-                        fontSize: 20,
+                        marginBottom:
+                          12,
                       }}
                     >
-                      {formatMoney(saved)}
-                    </Text>
-
-                    <Text type="secondary">
-                      {" "}
-                      /{" "}
-                      {formatMoney(target)}
-                    </Text>
-                  </div>
-
-                  {/* PROGRESS */}
-                  <Text
-                    type="secondary"
-                    style={{
-                      display: "block",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Progress
-                  </Text>
-
-                  <Progress
-                    percent={progress}
-                    status={
-                      achieved
-                        ? "success"
-                        : "active"
-                    }
-                  />
-
-                  {/* DATE */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent:
-                        "space-between",
-                      gap: 10,
-                      marginTop: 8,
-                      marginBottom: 18,
-                    }}
-                  >
-                    <Text type="secondary">
-                      {progress}%
-                    </Text>
-
-                    {deadline && (
-                      <Text type="secondary">
-                        <CalendarOutlined />{" "}
-                        Target Date:{" "}
-                        {dayjs(
-                          deadline
-                        ).isValid()
-                          ? dayjs(
-                              deadline
-                            ).format(
-                              "MMM YYYY"
-                            )
-                          : String(deadline)}
+                      <Text
+                        strong
+                        style={{
+                          fontSize:
+                            20,
+                        }}
+                      >
+                        {formatMoney(
+                          saved
+                        )}
                       </Text>
-                    )}
-                  </div>
 
-                  {/* CRUD BUTTONS */}
-                  <Space
-                    style={{
-                      width: "100%",
-                    }}
-                    size="small"
-                  >
-                    <Button
-                      icon={<EditOutlined />}
-                      onClick={() =>
-                        handleOpenEditModal(
-                          goal
-                        )
-                      }
-                      disabled={saving}
-                    >
-                      Edit
-                    </Button>
+                      <Text type="secondary">
+                        {" "}
+                        /{" "}
+                        {formatMoney(
+                          target
+                        )}
+                      </Text>
+                    </div>
 
-                    <Button
-                      type="primary"
-                      icon={
-                        <DollarCircleOutlined />
-                      }
-                      onClick={() =>
-                        handleOpenFundModal(
-                          goal
-                        )
-                      }
-                      disabled={
-                        saving || achieved
-                      }
-                    >
-                      Deposit
-                    </Button>
+                    {/* =====================================
+                        PROGRESS
+                    ===================================== */}
 
-                    <Popconfirm
-                      title="Delete this goal?"
-                      description="This action cannot be undone."
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{
-                        danger: true,
+                    <Text
+                      type="secondary"
+                      style={{
+                        display:
+                          "block",
+                        marginBottom:
+                          6,
                       }}
-                      onConfirm={() =>
-                        handleDeleteGoal(
-                          goal
-                        )
-                      }
                     >
-                      <Button
-                        danger
-                        icon={
-                          <DeleteOutlined />
-                        }
-                        disabled={saving}
-                      />
-                    </Popconfirm>
-                  </Space>
-                </Card>
-              </Col>
-            );
-          })}
+                      Progress
+                    </Text>
+
+                    <Progress
+                      percent={
+                        progress
+                      }
+                      status={
+                        achieved
+                          ? "success"
+                          : "active"
+                      }
+                    />
+
+                    {/* =====================================
+                        DATE
+                    ===================================== */}
+
+                    <div
+                      style={{
+                        display:
+                          "flex",
+                        justifyContent:
+                          "space-between",
+                        gap: 10,
+                        marginTop:
+                          8,
+                        marginBottom:
+                          18,
+                      }}
+                    >
+                      <Text type="secondary">
+                        {progress}%
+                      </Text>
+
+                      {deadline && (
+                        <Text type="secondary">
+                          <CalendarOutlined />{" "}
+                          Target Date:{" "}
+                          {dayjs(
+                            deadline
+                          ).isValid()
+                            ? dayjs(
+                                deadline
+                              ).format(
+                                "DD MMM YYYY"
+                              )
+                            : String(
+                                deadline
+                              )}
+                        </Text>
+                      )}
+                    </div>
+
+                    {/* =====================================
+                        ACTIONS
+                    ===================================== */}
+
+                    <Space
+                      style={{
+                        width:
+                          "100%",
+                      }}
+                      size="small"
+                    >
+                      {/* ==================================
+                          ADMIN ONLY: EDIT
+                      ================================== */}
+
+                      {isAdmin && (
+                        <Button
+                          icon={
+                            <EditOutlined />
+                          }
+                          onClick={() =>
+                            handleOpenEditModal(
+                              goal
+                            )
+                          }
+                          disabled={
+                            saving
+                          }
+                        >
+                          Edit
+                        </Button>
+                      )}
+
+                      {/* ==================================
+                          ADMIN ONLY: DEPOSIT
+                      ================================== */}
+
+                      {isAdmin && (
+                        <Button
+                          type="primary"
+                          icon={
+                            <DollarCircleOutlined />
+                          }
+                          onClick={() =>
+                            handleOpenFundModal(
+                              goal
+                            )
+                          }
+                          disabled={
+                            saving ||
+                            achieved
+                          }
+                        >
+                          Deposit
+                        </Button>
+                      )}
+
+                      {/* ==================================
+                          ADMIN ONLY: DELETE
+                      ================================== */}
+
+                      {isAdmin && (
+                        <Popconfirm
+                          title="Delete this goal?"
+                          description="This action cannot be undone."
+                          okText="Delete"
+                          cancelText="Cancel"
+                          okButtonProps={{
+                            danger:
+                              true,
+                          }}
+                          onConfirm={() =>
+                            handleDeleteGoal(
+                              goal
+                            )
+                          }
+                        >
+                          <Button
+                            danger
+                            icon={
+                              <DeleteOutlined />
+                            }
+                            disabled={
+                              saving
+                            }
+                          />
+                        </Popconfirm>
+                      )}
+                    </Space>
+                  </Card>
+                </Col>
+              );
+            }
+          )}
         </Row>
       )}
 
-      {/* MOTIVATIONAL BANNER */}
+      {/* =====================================================
+          USER MOTIVATIONAL MESSAGE
+      ===================================================== */}
+
       {!isAdmin &&
-        filteredGoals.length > 0 && (
+        filteredGoals.length >
+          0 && (
           <Card
             style={{
               marginTop: 24,
               borderRadius: 16,
-              background: "#f1faf3",
+              background:
+                "#f1faf3",
               border:
                 "1px solid #d8efdd",
             }}
@@ -1410,7 +1780,8 @@ function GoalsPage() {
                 <Text
                   strong
                   style={{
-                    display: "block",
+                    display:
+                      "block",
                     fontSize: 16,
                   }}
                 >
@@ -1418,190 +1789,247 @@ function GoalsPage() {
                 </Text>
 
                 <Text type="secondary">
-                  Every deposit brings you
-                  closer to your financial
-                  goals.
+                  Every deposit brings
+                  you closer to your
+                  financial goals.
                 </Text>
               </div>
             </Space>
           </Card>
         )}
 
-      {/* ======================================================
-          ADD / EDIT MODAL
-      ====================================================== */}
-      <Modal
-        open={goalModalOpen}
-        title={
-          editingGoal
-            ? "Edit Goal"
-            : "Add New Goal"
-        }
-        onCancel={handleCloseGoalModal}
-        onOk={handleSaveGoal}
-        okText={
-          editingGoal
-            ? "Update Goal"
-            : "Add Goal"
-        }
-        confirmLoading={saving}
-      >
-        {/* GOAL NAME */}
-        <div
-          style={{
-            marginBottom: 18,
-          }}
+      {/* =====================================================
+          ADD / EDIT GOAL MODAL
+          ADMIN ONLY
+      ===================================================== */}
+
+      {isAdmin && (
+        <Modal
+          open={
+            goalModalOpen
+          }
+          title={
+            editingGoal
+              ? "Edit Goal"
+              : "Add New Goal"
+          }
+          onCancel={
+            handleCloseGoalModal
+          }
+          onOk={
+            handleSaveGoal
+          }
+          okText={
+            editingGoal
+              ? "Update Goal"
+              : "Add Goal"
+          }
+          confirmLoading={
+            saving
+          }
         >
-          <Text
-            strong
+          {/* ===============================================
+              GOAL NAME
+          =============================================== */}
+
+          <div
             style={{
-              display: "block",
-              marginBottom: 8,
+              marginBottom: 18,
             }}
           >
-            Goal Name
-          </Text>
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 8,
+              }}
+            >
+              Goal Name
+            </Text>
 
-          <Input
-            placeholder="Example: Trip to Europe"
-            value={formData.title}
-            onChange={(event) =>
-              updateForm(
-                "title",
-                event.target.value
-              )
-            }
-          />
-        </div>
+            <Input
+              placeholder="Example: Trip to Europe"
+              value={
+                formData.title
+              }
+              onChange={(
+                event
+              ) =>
+                updateForm(
+                  "title",
+                  event.target
+                    .value
+                )
+              }
+            />
+          </div>
 
-        {/* TARGET AMOUNT */}
-        <div
-          style={{
-            marginBottom: 18,
-          }}
-        >
-          <Text
-            strong
+          {/* ===============================================
+              TARGET AMOUNT
+          =============================================== */}
+
+          <div
             style={{
-              display: "block",
-              marginBottom: 8,
+              marginBottom: 18,
             }}
           >
-            Target Amount
-          </Text>
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 8,
+              }}
+            >
+              Target Amount
+            </Text>
 
-          <InputNumber
-            style={{
-              width: "100%",
-            }}
-            min={0}
-            precision={2}
-            placeholder="Enter target amount"
-            value={formData.targetAmount}
-            onChange={(value) =>
-              updateForm(
-                "targetAmount",
+            <InputNumber
+              style={{
+                width:
+                  "100%",
+              }}
+              min={0}
+              precision={2}
+              placeholder="Enter target amount"
+              value={
+                formData.targetAmount
+              }
+              onChange={(
                 value
-              )
-            }
-            prefix={getCurrencySymbol(
-              currency
-            )}
-          />
-        </div>
+              ) =>
+                updateForm(
+                  "targetAmount",
+                  value
+                )
+              }
+              prefix={getCurrencySymbol(
+                currency
+              )}
+            />
+          </div>
 
-        {/* CURRENT AMOUNT */}
-        <div
-          style={{
-            marginBottom: 18,
-          }}
-        >
-          <Text
-            strong
+          {/* ===============================================
+              CURRENT AMOUNT
+          =============================================== */}
+
+          <div
             style={{
-              display: "block",
-              marginBottom: 8,
+              marginBottom: 18,
             }}
           >
-            Current Saved Amount
-          </Text>
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 8,
+              }}
+            >
+              Current Saved Amount
+            </Text>
 
-          <InputNumber
-            style={{
-              width: "100%",
-            }}
-            min={0}
-            precision={2}
-            placeholder="Enter current amount"
-            value={formData.currentAmount}
-            onChange={(value) =>
-              updateForm(
-                "currentAmount",
+            <InputNumber
+              style={{
+                width:
+                  "100%",
+              }}
+              min={0}
+              precision={2}
+              placeholder="Enter current amount"
+              value={
+                formData.currentAmount
+              }
+              onChange={(
                 value
-              )
-            }
-            prefix={getCurrencySymbol(
-              currency
-            )}
-          />
-        </div>
+              ) =>
+                updateForm(
+                  "currentAmount",
+                  value
+                )
+              }
+              prefix={getCurrencySymbol(
+                currency
+              )}
+            />
+          </div>
 
-        {/* TARGET DATE */}
-        <div
-          style={{
-            marginBottom: 18,
-          }}
-        >
-          <Text
-            strong
+          {/* ===============================================
+              TARGET DATE
+          =============================================== */}
+
+          <div
             style={{
-              display: "block",
-              marginBottom: 8,
+              marginBottom: 18,
             }}
           >
-            Target Date
-          </Text>
+            <Text
+              strong
+              style={{
+                display:
+                  "block",
+                marginBottom: 8,
+              }}
+            >
+              Target Date
+            </Text>
 
-          <DatePicker
-            style={{
-              width: "100%",
-            }}
-            format="DD MMM YYYY"
-            value={formData.deadline}
-            onChange={(date) =>
-              updateForm(
-                "deadline",
+            <DatePicker
+              style={{
+                width:
+                  "100%",
+              }}
+              format="DD MMM YYYY"
+              value={
+                formData.deadline
+              }
+              onChange={(
                 date
-              )
-            }
-            placeholder="Select target date"
-          />
-        </div>
+              ) =>
+                updateForm(
+                  "deadline",
+                  date
+                )
+              }
+              placeholder="Select target date"
+            />
+          </div>
 
-        {/* ADMIN USER */}
-        {isAdmin && (
+          {/* ===============================================
+              USER
+          =============================================== */}
+
           <div>
             <Text
               strong
               style={{
-                display: "block",
+                display:
+                  "block",
                 marginBottom: 8,
               }}
             >
-              User
+              Assign User
             </Text>
 
             <Select
               showSearch
               allowClear
               style={{
-                width: "100%",
+                width:
+                  "100%",
               }}
               placeholder="Select user"
               optionFilterProp="label"
-              value={formData.userId}
-              options={userOptions}
-              onChange={(value) =>
+              value={
+                formData.userId
+              }
+              options={
+                userOptions
+              }
+              onChange={(
+                value
+              ) =>
                 updateForm(
                   "userId",
                   value
@@ -1609,100 +2037,123 @@ function GoalsPage() {
               }
             />
           </div>
-        )}
-      </Modal>
+        </Modal>
+      )}
 
-      {/* ======================================================
+      {/* =====================================================
           DEPOSIT MODAL
-      ====================================================== */}
-      <Modal
-        open={fundModalOpen}
-        title="Add Funds"
-        onCancel={handleCloseFundModal}
-        onOk={handleAddFunds}
-        okText="Add Funds"
-        confirmLoading={saving}
-      >
-        {selectedGoal && (
-          <div>
-            <div
-              style={{
-                marginBottom: 18,
-              }}
-            >
-              <Text type="secondary">
-                Goal
-              </Text>
+          ADMIN ONLY
+      ===================================================== */}
+
+      {isAdmin && (
+        <Modal
+          open={
+            fundModalOpen
+          }
+          title="Add Funds"
+          onCancel={
+            handleCloseFundModal
+          }
+          onOk={
+            handleAddFunds
+          }
+          okText="Add Funds"
+          confirmLoading={
+            saving
+          }
+        >
+          {selectedGoal && (
+            <div>
+              <div
+                style={{
+                  marginBottom:
+                    18,
+                }}
+              >
+                <Text type="secondary">
+                  Goal
+                </Text>
+
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                    fontSize: 18,
+                  }}
+                >
+                  {selectedGoal?.title ||
+                    selectedGoal?.goalName ||
+                    "Goal"}
+                </Text>
+              </div>
+
+              <div
+                style={{
+                  marginBottom:
+                    18,
+                }}
+              >
+                <Text type="secondary">
+                  Current Progress
+                </Text>
+
+                <Text
+                  strong
+                  style={{
+                    display:
+                      "block",
+                  }}
+                >
+                  {formatMoney(
+                    getSavedAmount(
+                      selectedGoal
+                    )
+                  )}{" "}
+                  /{" "}
+                  {formatMoney(
+                    getTargetAmount(
+                      selectedGoal
+                    )
+                  )}
+                </Text>
+              </div>
 
               <Text
                 strong
                 style={{
-                  display: "block",
-                  fontSize: 18,
+                  display:
+                    "block",
+                  marginBottom:
+                    8,
                 }}
               >
-                {selectedGoal?.title ||
-                  selectedGoal?.goalName ||
-                  "Goal"}
-              </Text>
-            </div>
-
-            <div
-              style={{
-                marginBottom: 18,
-              }}
-            >
-              <Text type="secondary">
-                Current Progress
+                Deposit Amount
               </Text>
 
-              <Text
-                strong
+              <InputNumber
+                autoFocus
                 style={{
-                  display: "block",
+                  width:
+                    "100%",
                 }}
-              >
-                {formatMoney(
-                  getSavedAmount(
-                    selectedGoal
-                  )
-                )}{" "}
-                /{" "}
-                {formatMoney(
-                  getTargetAmount(
-                    selectedGoal
-                  )
+                min={0}
+                precision={2}
+                placeholder="Enter deposit amount"
+                value={
+                  fundAmount
+                }
+                onChange={
+                  setFundAmount
+                }
+                prefix={getCurrencySymbol(
+                  currency
                 )}
-              </Text>
+              />
             </div>
-
-            <Text
-              strong
-              style={{
-                display: "block",
-                marginBottom: 8,
-              }}
-            >
-              Deposit Amount
-            </Text>
-
-            <InputNumber
-              autoFocus
-              style={{
-                width: "100%",
-              }}
-              min={0}
-              precision={2}
-              placeholder="Enter deposit amount"
-              value={fundAmount}
-              onChange={setFundAmount}
-              prefix={getCurrencySymbol(
-                currency
-              )}
-            />
-          </div>
-        )}
-      </Modal>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
