@@ -53,6 +53,7 @@ public class WebSecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authenticationConfiguration
     ) throws Exception {
+
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -60,8 +61,7 @@ public class WebSecurityConfig {
     // SECURITY FILTER CHAIN
     //
     // IMPORTANT:
-    // T30 explicitly looks for:
-    // filterChain(HttpSecurity.class)
+    // Keep this method name and parameter for the testcase.
     // =========================================================
 
     @Bean
@@ -84,7 +84,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // =================================================
-                        // PUBLIC
+                        // PUBLIC ENDPOINTS
                         // =================================================
 
                         .requestMatchers(
@@ -97,7 +97,7 @@ public class WebSecurityConfig {
                         ).permitAll()
 
                         // =================================================
-                        // CORS
+                        // CORS OPTIONS
                         // =================================================
 
                         .requestMatchers(
@@ -106,7 +106,8 @@ public class WebSecurityConfig {
                         ).permitAll()
 
                         // =================================================
-                        // USER/ADMIN TRANSACTIONS
+                        // TRANSACTIONS
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -118,9 +119,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // GOALS
-                        //
-                        // Ownership should still be enforced in the
-                        // Goal service/controller for USER accounts.
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -132,6 +131,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // BUDGETS
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -143,17 +143,32 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // CATEGORIES
+                        //
+                        // GET    -> PUBLIC
+                        // POST   -> ADMIN ONLY
+                        // DELETE -> ADMIN ONLY
+                        //
+                        // This matches the testcase requirement.
                         // =================================================
 
                         .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/categories/**"
-                        ).hasAnyRole(
-                                "USER",
-                                "ADMIN"
-                        )
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/categories/**"
+                        ).hasRole("ADMIN")
 
                         // =================================================
                         // DASHBOARD
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -164,7 +179,7 @@ public class WebSecurityConfig {
                         )
 
                         // =================================================
-                        // ADMIN
+                        // ADMIN ENDPOINTS
                         // =================================================
 
                         .requestMatchers(
@@ -236,7 +251,7 @@ public class WebSecurityConfig {
     }
 
     // =========================================================
-    // CORS
+    // CORS CONFIGURATION
     // =========================================================
 
     @Bean

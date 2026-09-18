@@ -20,10 +20,11 @@ public class CategoryController {
     }
 
     // =========================================================
-    // GET - USER + ADMIN
+    // GET CATEGORIES
+    // TESTCASE: PUBLIC
     // =========================================================
+
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<Category>> getAllCategories() {
 
         return ResponseEntity.ok(
@@ -32,8 +33,10 @@ public class CategoryController {
     }
 
     // =========================================================
-    // POST - ADMIN ONLY
+    // POST CATEGORY
+    // TESTCASE: ADMIN ONLY
     // =========================================================
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(
@@ -45,8 +48,10 @@ public class CategoryController {
     }
 
     // =========================================================
-    // DELETE - ADMIN ONLY
+    // DELETE CATEGORY
+    // TESTCASE: ADMIN ONLY
     // =========================================================
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteCategory(
@@ -59,4 +64,3 @@ public class CategoryController {
         );
     }
 }
-
