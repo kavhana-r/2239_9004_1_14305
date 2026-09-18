@@ -1699,9 +1699,10 @@ import { useDispatch } from "react-redux";
 // If authSlice.js is inside src/redux/, keep this.
 // If it is inside src/store/, change to:
 // import { register } from "../store/authSlice";
-import { register } from "../redux/authSlice";
+import { register } from "../slices/authSlice";
 
 const { Title, Text } = Typography;
+
 
 const RegisterPage = () => {
   const navigate = useNavigate();
