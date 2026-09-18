@@ -37,29 +37,6 @@ const { Title, Text } = Typography;
 
 const API_BASE_URL = "http://localhost:8080";
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-/* -------------------------------------------------------
-   Automatically attach JWT token
-------------------------------------------------------- */
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
 /* -------------------------------------------------------
    Currency symbols
 ------------------------------------------------------- */
@@ -87,7 +64,9 @@ const getUserRole = () => {
     const value = localStorage.getItem(key);
 
     if (value) {
-      return value.replace("ROLE_", "").toUpperCase();
+      return String(value)
+        .replace("ROLE_", "")
+        .toUpperCase();
     }
   }
 
@@ -100,7 +79,9 @@ const getUserRole = () => {
   for (const key of possibleUserKeys) {
     const value = localStorage.getItem(key);
 
-    if (!value) continue;
+    if (!value) {
+      continue;
+    }
 
     try {
       const user = JSON.parse(value);
@@ -175,7 +156,25 @@ const CategoryManagement = () => {
       localStorage.getItem("currency") ||
       "INR";
 
-    return currency.toUpperCase();
+    return String(currency).toUpperCase();
+  };
+
+  /* -------------------------------------------------------
+     Common authentication headers
+  ------------------------------------------------------- */
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return {};
+    }
+
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    };
   };
 
   /* -------------------------------------------------------
@@ -185,7 +184,10 @@ const CategoryManagement = () => {
     try {
       setLoading(true);
 
-      const response = await api.get("/api/categories");
+      const response = await axios.get(
+        `${API_BASE_URL}/api/categories`,
+        getAuthConfig()
+      );
 
       const data = Array.isArray(response.data)
         ? response.data
@@ -193,7 +195,10 @@ const CategoryManagement = () => {
 
       setCategories(data);
     } catch (error) {
-      console.error("Fetch categories error:", error);
+      console.error(
+        "Fetch categories error:",
+        error
+      );
 
       if (error.response) {
         if (error.response.status === 401) {
@@ -279,7 +284,9 @@ const CategoryManagement = () => {
      Close Modal
   ------------------------------------------------------- */
   const closeModal = () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
 
     setIsModalOpen(false);
 
@@ -325,20 +332,37 @@ const CategoryManagement = () => {
 
       const token = localStorage.getItem("token");
 
-      console.log("=================================");
+      console.log(
+        "================================="
+      );
       console.log("CATEGORY SAVE");
-      console.log("URL:", API_BASE_URL);
-      console.log("Payload:", payload);
-      console.log("Token exists:", !!token);
-      console.log("Role:", userRole);
-      console.log("=================================");
+      console.log(
+        "URL:",
+        API_BASE_URL
+      );
+      console.log(
+        "Payload:",
+        payload
+      );
+      console.log(
+        "Token exists:",
+        !!token
+      );
+      console.log(
+        "Role:",
+        userRole
+      );
+      console.log(
+        "================================="
+      );
 
       let response;
 
       if (editingCategory) {
-        response = await api.put(
-          `/api/categories/${editingCategory.id}`,
-          payload
+        response = await axios.put(
+          `${API_BASE_URL}/api/categories/${editingCategory.id}`,
+          payload,
+          getAuthConfig()
         );
 
         console.log(
@@ -351,9 +375,10 @@ const CategoryManagement = () => {
           "Category updated successfully."
         );
       } else {
-        response = await api.post(
-          "/api/categories",
-          payload
+        response = await axios.post(
+          `${API_BASE_URL}/api/categories`,
+          payload,
+          getAuthConfig()
         );
 
         console.log(
@@ -439,8 +464,9 @@ const CategoryManagement = () => {
     try {
       setLoading(true);
 
-      const response = await api.delete(
-        `/api/categories/${id}`
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/categories/${id}`,
+        getAuthConfig()
       );
 
       console.log(
