@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Button,
   Card,
@@ -18,26 +24,28 @@ import {
   Typography,
   message,
 } from "antd";
+
 import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
   TrophyOutlined,
 } from "@ant-design/icons";
+
 import dayjs from "dayjs";
 import axios from "axios";
 
 const { Title, Text, Paragraph } = Typography;
 
-// ---------------------------------------------------------
-// API
-// ---------------------------------------------------------
+// =========================================================
+// API URL
+// =========================================================
 
 const API_URL = "http://localhost:8080/api/goals";
 
-// ---------------------------------------------------------
+// =========================================================
 // Currency symbols
-// ---------------------------------------------------------
+// =========================================================
 
 const CURRENCY_SYMBOLS = {
   USD: "$",
@@ -49,9 +57,9 @@ const CURRENCY_SYMBOLS = {
   AUD: "A$",
 };
 
-// ---------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------
+// =========================================================
+// Get JWT token
+// =========================================================
 
 const getToken = () => {
   return (
@@ -61,6 +69,10 @@ const getToken = () => {
   );
 };
 
+// =========================================================
+// Get preferred currency
+// =========================================================
+
 const getPreferredCurrency = () => {
   return (
     localStorage.getItem("preferredCurrency") ||
@@ -69,56 +81,66 @@ const getPreferredCurrency = () => {
   );
 };
 
+// =========================================================
+// Format currency
+// =========================================================
+
 const formatAmount = (amount, currency) => {
   const value = Number(amount || 0);
 
-  return `${CURRENCY_SYMBOLS[currency] || currency + " "} ${value.toLocaleString(
-    "en-IN",
-    {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }
-  )}`;
+  const symbol =
+    CURRENCY_SYMBOLS[currency] || `${currency} `;
+
+  return `${symbol}${value.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
 };
 
-// ---------------------------------------------------------
+// =========================================================
 // Goals Page
-// ---------------------------------------------------------
+// =========================================================
 
 const GoalsPage = () => {
   const [form] = Form.useForm();
 
   const [goals, setGoals] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [saving, setSaving] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
+
   const [editingGoal, setEditingGoal] = useState(null);
 
-  const preferredCurrency = getPreferredCurrency();
+  const [preferredCurrency, setPreferredCurrency] =
+    useState(getPreferredCurrency());
 
-  // -------------------------------------------------------
-  // Axios configuration
-  // -------------------------------------------------------
+  // =======================================================
+  // Axios headers
+  // =======================================================
 
-  const getHeaders = () => {
+  const getHeaders = useCallback(() => {
     const token = getToken();
 
-    return token
-      ? {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        }
-      : {
-          "Content-Type": "application/json",
-        };
-  };
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+    }
 
-  // -------------------------------------------------------
-  // GET - Fetch Goals
-  // -------------------------------------------------------
+    return {
+      "Content-Type": "application/json",
+    };
+  }, []);
 
-  const fetchGoals = async () => {
+  // =======================================================
+  // GET /api/goals
+  // =======================================================
+
+  const fetchGoals = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -126,31 +148,79 @@ const GoalsPage = () => {
         headers: getHeaders(),
       });
 
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data?.content || [];
+      console.log("GET /api/goals response:", response.data);
+
+      let data = [];
+
+      if (Array.isArray(response.data)) {
+        data = response.data;
+      } else if (Array.isArray(response.data?.content)) {
+        data = response.data.content;
+      } else if (Array.isArray(response.data?.data)) {
+        data = response.data.data;
+      }
 
       setGoals(data);
     } catch (error) {
       console.error("GET goals error:", error);
 
       if (error.response?.status === 401) {
-        message.error("Session expired. Please login again.");
+        message.error(
+          "Session expired. Please login again."
+        );
+      } else if (error.response?.status === 403) {
+        message.error(
+          "You do not have permission to view goals."
+        );
+      } else if (error.response?.status === 404) {
+        message.error(
+          "Goals API was not found. Check the backend."
+        );
       } else {
-        message.error("Unable to load financial goals.");
+        message.error(
+          "Unable to load financial goals."
+        );
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [getHeaders]);
+
+  // =======================================================
+  // Initial load
+  // =======================================================
 
   useEffect(() => {
     fetchGoals();
+  }, [fetchGoals]);
+
+  // =======================================================
+  // Update preferred currency if changed
+  // =======================================================
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPreferredCurrency(
+        getPreferredCurrency()
+      );
+    };
+
+    window.addEventListener(
+      "storage",
+      handleStorageChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "storage",
+        handleStorageChange
+      );
+    };
   }, []);
 
-  // -------------------------------------------------------
-  // Open Add Modal
-  // -------------------------------------------------------
+  // =======================================================
+  // Open Add Goal modal
+  // =======================================================
 
   const handleAddGoal = () => {
     setEditingGoal(null);
@@ -164,50 +234,96 @@ const GoalsPage = () => {
     setModalOpen(true);
   };
 
-  // -------------------------------------------------------
-  // Open Edit Modal
-  // -------------------------------------------------------
+  // =======================================================
+  // Open Edit Goal modal
+  // =======================================================
 
   const handleEditGoal = (goal) => {
     setEditingGoal(goal);
 
     form.setFieldsValue({
-      name: goal.name || goal.goalName || "",
-      targetAmount: Number(goal.targetAmount || 0),
-      currentAmount: Number(goal.currentAmount || 0),
+      name:
+        goal.name ||
+        goal.goalName ||
+        "",
+
+      targetAmount: Number(
+        goal.targetAmount || 0
+      ),
+
+      currentAmount: Number(
+        goal.currentAmount || 0
+      ),
+
       targetDate: goal.targetDate
         ? dayjs(goal.targetDate)
         : null,
-      description: goal.description || "",
+
+      description:
+        goal.description || "",
     });
 
     setModalOpen(true);
   };
 
-  // -------------------------------------------------------
+  // =======================================================
+  // Close modal
+  // =======================================================
+
+  const handleCancel = () => {
+    if (saving) {
+      return;
+    }
+
+    setModalOpen(false);
+
+    setEditingGoal(null);
+
+    form.resetFields();
+  };
+
+  // =======================================================
   // POST / PUT
-  // -------------------------------------------------------
+  // =======================================================
 
   const handleSubmit = async (values) => {
     try {
       setSaving(true);
 
       const payload = {
-        name: values.name,
-        targetAmount: Number(values.targetAmount),
-        currentAmount: Number(values.currentAmount || 0),
+        name: values.name.trim(),
+
+        targetAmount: Number(
+          values.targetAmount
+        ),
+
+        currentAmount: Number(
+          values.currentAmount || 0
+        ),
+
         targetDate: values.targetDate
-          ? values.targetDate.format("YYYY-MM-DD")
+          ? values.targetDate.format(
+              "YYYY-MM-DD"
+            )
           : null,
-        description: values.description || "",
+
+        description:
+          values.description?.trim() || "",
       };
 
-      console.log("Goal payload:", payload);
+      console.log(
+        "Goal request payload:",
+        payload
+      );
+
+      // =================================================
+      // UPDATE
+      // =================================================
 
       if (editingGoal) {
-        // -------------------------------------------------
-        // PUT
-        // -------------------------------------------------
+        console.log(
+          `PUT ${API_URL}/${editingGoal.id}`
+        );
 
         await axios.put(
           `${API_URL}/${editingGoal.id}`,
@@ -217,100 +333,201 @@ const GoalsPage = () => {
           }
         );
 
-        message.success("Goal updated successfully.");
-      } else {
-        // -------------------------------------------------
-        // POST
-        // -------------------------------------------------
+        message.success(
+          "Goal updated successfully."
+        );
+      }
 
-        await axios.post(API_URL, payload, {
-          headers: getHeaders(),
-        });
+      // =================================================
+      // CREATE
+      // =================================================
 
-        message.success("Goal created successfully.");
+      else {
+        console.log(
+          `POST ${API_URL}`
+        );
+
+        await axios.post(
+          API_URL,
+          payload,
+          {
+            headers: getHeaders(),
+          }
+        );
+
+        message.success(
+          "Goal created successfully."
+        );
       }
 
       setModalOpen(false);
-      form.resetFields();
+
       setEditingGoal(null);
+
+      form.resetFields();
 
       await fetchGoals();
     } catch (error) {
-      console.error("Save goal error:", error);
+      console.error(
+        "Create/Update goal error:",
+        error
+      );
 
       const backendMessage =
         error.response?.data?.message ||
-        error.response?.data?.error;
+        error.response?.data?.error ||
+        error.response?.data;
 
-      message.error(
-        backendMessage ||
-          (editingGoal
+      if (error.response?.status === 400) {
+        message.error(
+          typeof backendMessage === "string"
+            ? backendMessage
+            : "Invalid goal data."
+        );
+      } else if (
+        error.response?.status === 401
+      ) {
+        message.error(
+          "Session expired. Please login again."
+        );
+      } else if (
+        error.response?.status === 403
+      ) {
+        message.error(
+          "You do not have permission to modify goals."
+        );
+      } else if (
+        error.response?.status === 404
+      ) {
+        message.error(
+          "Goal API endpoint was not found."
+        );
+      } else {
+        message.error(
+          editingGoal
             ? "Unable to update goal."
-            : "Unable to create goal.")
-      );
+            : "Unable to create goal."
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  // -------------------------------------------------------
-  // DELETE
-  // -------------------------------------------------------
+  // =======================================================
+  // DELETE /api/goals/{id}
+  // =======================================================
 
   const handleDelete = async (goalId) => {
     try {
-      await axios.delete(`${API_URL}/${goalId}`, {
-        headers: getHeaders(),
-      });
+      console.log(
+        `DELETE ${API_URL}/${goalId}`
+      );
 
-      message.success("Goal deleted successfully.");
+      await axios.delete(
+        `${API_URL}/${goalId}`,
+        {
+          headers: getHeaders(),
+        }
+      );
+
+      message.success(
+        "Goal deleted successfully."
+      );
 
       await fetchGoals();
     } catch (error) {
-      console.error("DELETE goal error:", error);
+      console.error(
+        "DELETE goal error:",
+        error
+      );
 
       const backendMessage =
         error.response?.data?.message ||
         error.response?.data?.error;
 
-      message.error(
-        backendMessage || "Unable to delete goal."
-      );
+      if (
+        error.response?.status === 401
+      ) {
+        message.error(
+          "Session expired. Please login again."
+        );
+      } else if (
+        error.response?.status === 403
+      ) {
+        message.error(
+          "You do not have permission to delete this goal."
+        );
+      } else if (
+        error.response?.status === 404
+      ) {
+        message.error(
+          "Goal was not found."
+        );
+      } else {
+        message.error(
+          backendMessage ||
+            "Unable to delete goal."
+        );
+      }
     }
   };
 
-  // -------------------------------------------------------
-  // Progress calculation
-  // -------------------------------------------------------
+  // =======================================================
+  // Calculate progress
+  // =======================================================
 
   const calculateProgress = (goal) => {
-    const target = Number(goal.targetAmount || 0);
-    const current = Number(goal.currentAmount || 0);
+    const target = Number(
+      goal.targetAmount || 0
+    );
 
-    if (target <= 0) return 0;
+    const current = Number(
+      goal.currentAmount || 0
+    );
+
+    if (target <= 0) {
+      return 0;
+    }
 
     return Math.min(
       100,
-      Math.max(0, Math.round((current / target) * 100))
+      Math.max(
+        0,
+        Math.round(
+          (current / target) * 100
+        )
+      )
     );
   };
 
-  // -------------------------------------------------------
-  // Total statistics
-  // -------------------------------------------------------
+  // =======================================================
+  // Statistics
+  // =======================================================
 
   const statistics = useMemo(() => {
     let target = 0;
+
     let current = 0;
 
     goals.forEach((goal) => {
-      target += Number(goal.targetAmount || 0);
-      current += Number(goal.currentAmount || 0);
+      target += Number(
+        goal.targetAmount || 0
+      );
+
+      current += Number(
+        goal.currentAmount || 0
+      );
     });
 
     const progress =
       target > 0
-        ? Math.min(100, Math.round((current / target) * 100))
+        ? Math.min(
+            100,
+            Math.round(
+              (current / target) * 100
+            )
+          )
         : 0;
 
     return {
@@ -320,9 +537,9 @@ const GoalsPage = () => {
     };
   }, [goals]);
 
-  // -------------------------------------------------------
-  // Loading
-  // -------------------------------------------------------
+  // =======================================================
+  // Loading screen
+  // =======================================================
 
   if (loading) {
     return (
@@ -330,12 +547,16 @@ const GoalsPage = () => {
         style={{
           minHeight: "60vh",
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Space direction="vertical" align="center">
+        <Space
+          direction="vertical"
+          align="center"
+        >
           <Spin size="large" />
+
           <Text type="secondary">
             Loading financial goals...
           </Text>
@@ -344,9 +565,9 @@ const GoalsPage = () => {
     );
   }
 
-  // -------------------------------------------------------
-  // UI
-  // -------------------------------------------------------
+  // =======================================================
+  // MAIN UI
+  // =======================================================
 
   return (
     <div
@@ -356,14 +577,16 @@ const GoalsPage = () => {
         margin: "0 auto",
       }}
     >
-      {/* -------------------------------------------------
+      {/* =================================================
           HEADER
-      -------------------------------------------------- */}
+      ================================================= */}
 
       <Row
         justify="space-between"
         align="middle"
-        style={{ marginBottom: 24 }}
+        style={{
+          marginBottom: 24,
+        }}
       >
         <Col>
           <Title
@@ -377,16 +600,16 @@ const GoalsPage = () => {
           </Title>
 
           <Text type="secondary">
-            Track milestone savings targets and celebrate
-            your achievements
+            Track milestone savings targets
+            and celebrate your achievements
           </Text>
         </Col>
 
         <Col>
           <Button
             type="primary"
-            icon={<PlusOutlined />}
             size="large"
+            icon={<PlusOutlined />}
             onClick={handleAddGoal}
           >
             Add Goal
@@ -394,36 +617,61 @@ const GoalsPage = () => {
         </Col>
       </Row>
 
-      {/* -------------------------------------------------
-          SUMMARY
-      -------------------------------------------------- */}
+      {/* =================================================
+          SUMMARY CARDS
+      ================================================= */}
 
       {goals.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={8}>
-            <Card>
+        <Row
+          gutter={[16, 16]}
+          style={{
+            marginBottom: 24,
+          }}
+        >
+          <Col
+            xs={24}
+            sm={8}
+          >
+            <Card
+              style={{
+                borderRadius: 12,
+              }}
+            >
               <Text type="secondary">
                 Total Goals
               </Text>
 
               <Title
                 level={3}
-                style={{ marginTop: 8, marginBottom: 0 }}
+                style={{
+                  marginTop: 8,
+                  marginBottom: 0,
+                }}
               >
                 {goals.length}
               </Title>
             </Card>
           </Col>
 
-          <Col xs={24} sm={8}>
-            <Card>
+          <Col
+            xs={24}
+            sm={8}
+          >
+            <Card
+              style={{
+                borderRadius: 12,
+              }}
+            >
               <Text type="secondary">
                 Total Saved
               </Text>
 
               <Title
                 level={3}
-                style={{ marginTop: 8, marginBottom: 0 }}
+                style={{
+                  marginTop: 8,
+                  marginBottom: 0,
+                }}
               >
                 {formatAmount(
                   statistics.current,
@@ -433,15 +681,25 @@ const GoalsPage = () => {
             </Card>
           </Col>
 
-          <Col xs={24} sm={8}>
-            <Card>
+          <Col
+            xs={24}
+            sm={8}
+          >
+            <Card
+              style={{
+                borderRadius: 12,
+              }}
+            >
               <Text type="secondary">
                 Total Target
               </Text>
 
               <Title
                 level={3}
-                style={{ marginTop: 8, marginBottom: 0 }}
+                style={{
+                  marginTop: 8,
+                  marginBottom: 0,
+                }}
               >
                 {formatAmount(
                   statistics.target,
@@ -453,14 +711,14 @@ const GoalsPage = () => {
         </Row>
       )}
 
-      {/* -------------------------------------------------
-          GOALS
-      -------------------------------------------------- */}
+      {/* =================================================
+          EMPTY STATE
+      ================================================= */}
 
       {goals.length === 0 ? (
         <Card
           style={{
-            borderRadius: 12,
+            borderRadius: 14,
             textAlign: "center",
             padding: "50px 20px",
           }}
@@ -484,8 +742,8 @@ const GoalsPage = () => {
                 </Text>
 
                 <Text type="secondary">
-                  Create your first savings goal to start
-                  tracking your progress.
+                  Create your first savings goal
+                  to start tracking your progress.
                 </Text>
               </Space>
             }
@@ -500,9 +758,14 @@ const GoalsPage = () => {
           </Empty>
         </Card>
       ) : (
+        /* =================================================
+           GOAL CARDS
+        ================================================= */
+
         <Row gutter={[20, 20]}>
           {goals.map((goal) => {
-            const progress = calculateProgress(goal);
+            const progress =
+              calculateProgress(goal);
 
             const goalName =
               goal.name ||
@@ -510,10 +773,14 @@ const GoalsPage = () => {
               "Financial Goal";
 
             const targetAmount =
-              Number(goal.targetAmount || 0);
+              Number(
+                goal.targetAmount || 0
+              );
 
             const currentAmount =
-              Number(goal.currentAmount || 0);
+              Number(
+                goal.currentAmount || 0
+              );
 
             return (
               <Col
@@ -530,6 +797,7 @@ const GoalsPage = () => {
                   }}
                   actions={[
                     <Button
+                      key="edit"
                       type="text"
                       icon={<EditOutlined />}
                       onClick={() =>
@@ -540,6 +808,7 @@ const GoalsPage = () => {
                     </Button>,
 
                     <Popconfirm
+                      key="delete"
                       title="Delete this goal?"
                       description={`Are you sure you want to delete "${goalName}"?`}
                       okText="Delete"
@@ -548,20 +817,24 @@ const GoalsPage = () => {
                         danger: true,
                       }}
                       onConfirm={() =>
-                        handleDelete(goal.id)
+                        handleDelete(
+                          goal.id
+                        )
                       }
                     >
                       <Button
                         type="text"
                         danger
-                        icon={<DeleteOutlined />}
+                        icon={
+                          <DeleteOutlined />
+                        }
                       >
                         Delete
                       </Button>
                     </Popconfirm>,
                   ]}
                 >
-                  {/* Goal heading */}
+                  {/* Goal Header */}
 
                   <Space
                     align="start"
@@ -572,19 +845,21 @@ const GoalsPage = () => {
                   >
                     <div
                       style={{
-                        width: 42,
-                        height: 42,
+                        width: 44,
+                        height: 44,
                         borderRadius: "50%",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        alignItems:
+                          "center",
+                        justifyContent:
+                          "center",
                         background:
                           "rgba(82, 196, 26, 0.12)",
                       }}
                     >
                       <TrophyOutlined
                         style={{
-                          fontSize: 20,
+                          fontSize: 21,
                         }}
                       />
                     </div>
@@ -592,6 +867,7 @@ const GoalsPage = () => {
                     <div
                       style={{
                         flex: 1,
+                        minWidth: 0,
                       }}
                     >
                       <Title
@@ -687,9 +963,9 @@ const GoalsPage = () => {
         </Row>
       )}
 
-      {/* -------------------------------------------------
+      {/* =================================================
           ADD / EDIT MODAL
-      -------------------------------------------------- */}
+      ================================================= */}
 
       <Modal
         open={modalOpen}
@@ -698,13 +974,7 @@ const GoalsPage = () => {
             ? "Edit Financial Goal"
             : "Create Financial Goal"
         }
-        onCancel={() => {
-          if (!saving) {
-            setModalOpen(false);
-            setEditingGoal(null);
-            form.resetFields();
-          }
-        }}
+        onCancel={handleCancel}
         footer={null}
         destroyOnClose
       >
@@ -714,7 +984,7 @@ const GoalsPage = () => {
           onFinish={handleSubmit}
           autoComplete="off"
         >
-          {/* Goal name */}
+          {/* Goal Name */}
 
           <Form.Item
             label="Goal Name"
@@ -733,12 +1003,12 @@ const GoalsPage = () => {
             ]}
           >
             <Input
-              placeholder="e.g. Emergency Fund"
               size="large"
+              placeholder="e.g. Emergency Fund"
             />
           </Form.Item>
 
-          {/* Target amount */}
+          {/* Target Amount */}
 
           <Form.Item
             label={`Target Amount (${preferredCurrency})`}
@@ -772,20 +1042,23 @@ const GoalsPage = () => {
             ]}
           >
             <InputNumber
-              style={{ width: "100%" }}
               size="large"
+              style={{
+                width: "100%",
+              }}
               min={0}
               precision={2}
               placeholder="100000"
               prefix={
                 CURRENCY_SYMBOLS[
                   preferredCurrency
-                ] || preferredCurrency
+                ] ||
+                preferredCurrency
               }
             />
           </Form.Item>
 
-          {/* Current amount */}
+          {/* Current Amount */}
 
           <Form.Item
             label={`Current Amount (${preferredCurrency})`}
@@ -814,20 +1087,23 @@ const GoalsPage = () => {
             ]}
           >
             <InputNumber
-              style={{ width: "100%" }}
               size="large"
+              style={{
+                width: "100%",
+              }}
               min={0}
               precision={2}
               placeholder="0"
               prefix={
                 CURRENCY_SYMBOLS[
                   preferredCurrency
-                ] || preferredCurrency
+                ] ||
+                preferredCurrency
               }
             />
           </Form.Item>
 
-          {/* Target date */}
+          {/* Target Date */}
 
           <Form.Item
             label="Target Date"
@@ -841,8 +1117,10 @@ const GoalsPage = () => {
             ]}
           >
             <DatePicker
-              style={{ width: "100%" }}
               size="large"
+              style={{
+                width: "100%",
+              }}
               format="DD/MM/YYYY"
             />
           </Form.Item>
@@ -871,11 +1149,7 @@ const GoalsPage = () => {
           >
             <Space>
               <Button
-                onClick={() => {
-                  setModalOpen(false);
-                  setEditingGoal(null);
-                  form.resetFields();
-                }}
+                onClick={handleCancel}
                 disabled={saving}
               >
                 Cancel
