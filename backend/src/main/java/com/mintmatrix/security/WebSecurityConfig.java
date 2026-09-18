@@ -31,10 +31,8 @@ public class WebSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public WebSecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter
-    ) {
-        this.jwtAuthenticationFilter =
-                jwtAuthenticationFilter;
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     // =========================================================
@@ -52,11 +50,10 @@ public class WebSecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration
-    ) throws Exception {
+            AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
 
-        return authenticationConfiguration
-                .getAuthenticationManager();
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     // =========================================================
@@ -65,8 +62,7 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(
-            HttpSecurity http
-    ) throws Exception {
+            HttpSecurity http) throws Exception {
 
         http
 
@@ -113,7 +109,7 @@ public class WebSecurityConfig {
                         ).permitAll()
 
                         // =================================================
-                        // OPTIONS
+                        // CORS OPTIONS
                         // =================================================
 
                         .requestMatchers(
@@ -123,6 +119,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // TRANSACTIONS
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -134,6 +131,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // GOALS
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -145,6 +143,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // BUDGETS
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -155,8 +154,11 @@ public class WebSecurityConfig {
                         )
 
                         // =================================================
-                        // CATEGORIES - GET
-                        // USER + ADMIN
+                        // CATEGORIES
+                        // GET    -> USER + ADMIN
+                        // POST   -> ADMIN ONLY
+                        // PUT    -> ADMIN ONLY
+                        // DELETE -> ADMIN ONLY
                         // =================================================
 
                         .requestMatchers(
@@ -167,30 +169,15 @@ public class WebSecurityConfig {
                                 "ADMIN"
                         )
 
-                        // =================================================
-                        // CATEGORIES - POST
-                        // ADMIN ONLY
-                        // =================================================
-
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/categories/**"
                         ).hasRole("ADMIN")
 
-                        // =================================================
-                        // CATEGORIES - PUT
-                        // ADMIN ONLY
-                        // =================================================
-
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/categories/**"
                         ).hasRole("ADMIN")
-
-                        // =================================================
-                        // CATEGORIES - DELETE
-                        // ADMIN ONLY
-                        // =================================================
 
                         .requestMatchers(
                                 HttpMethod.DELETE,
@@ -199,6 +186,7 @@ public class WebSecurityConfig {
 
                         // =================================================
                         // DASHBOARD
+                        // USER + ADMIN
                         // =================================================
 
                         .requestMatchers(
@@ -209,7 +197,7 @@ public class WebSecurityConfig {
                         )
 
                         // =================================================
-                        // ADMIN
+                        // ADMIN ENDPOINTS
                         // =================================================
 
                         .requestMatchers(
@@ -223,26 +211,29 @@ public class WebSecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // =====================================================
+                // =========================================================
                 // JWT FILTER
-                // =====================================================
+                // =========================================================
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
 
-                // =====================================================
+                // =========================================================
                 // EXCEPTION HANDLING
-                // =====================================================
+                // =========================================================
 
                 .exceptionHandling(exception -> exception
+
+                        // -------------------------------------------------
+                        // 401 UNAUTHORIZED
+                        // -------------------------------------------------
 
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
 
                                     response.setStatus(401);
-
                                     response.setContentType(
                                             "application/json"
                                     );
@@ -258,11 +249,14 @@ public class WebSecurityConfig {
                                 }
                         )
 
+                        // -------------------------------------------------
+                        // 403 FORBIDDEN
+                        // -------------------------------------------------
+
                         .accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
 
                                     response.setStatus(403);
-
                                     response.setContentType(
                                             "application/json"
                                     );
@@ -292,15 +286,9 @@ public class WebSecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        /*
-         * IMPORTANT:
-         * Do NOT put Markdown here.
-         */
-
+        // React frontend
         configuration.setAllowedOrigins(
-                List.of(
-                        "http://localhost:3000"
-                )
+                List.of("http://localhost:3000")
         );
 
         configuration.setAllowedMethods(
