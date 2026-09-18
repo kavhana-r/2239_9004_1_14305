@@ -1,120 +1,41 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import axios from "axios";
+
 import {
   Button,
   Card,
+  Col,
+  Empty,
+  Form,
   Input,
   Modal,
-  Select,
-  Typography,
-  message,
   Popconfirm,
+  Row,
+  Select,
   Space,
   Spin,
+  Tag,
+  Typography,
+  message,
 } from "antd";
+
 import {
-  PlusOutlined,
+  AppstoreOutlined,
   DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
 
 const { Title, Text } = Typography;
 
-/*
- * =========================================================
- * BACKEND URL
- * =========================================================
- */
-
 const API_BASE_URL = "http://localhost:8080";
-
-/*
- * =========================================================
- * CATEGORY ICONS
- * =========================================================
- */
-
-const CATEGORY_ICONS = {
-  Food: "🍔",
-  Dining: "🍽️",
-  Groceries: "🛒",
-  Transport: "🚗",
-  Shopping: "🛍️",
-  Bills: "⚡",
-  Utilities: "💡",
-  Entertainment: "🎬",
-  Housing: "🏠",
-  Health: "💊",
-  Travel: "✈️",
-  Salary: "💼",
-  Freelance: "💻",
-  Investment: "📈",
-  Others: "📦",
-};
-
-/*
- * =========================================================
- * CURRENCIES
- * =========================================================
- */
-
-const CURRENCY_ITEMS = [
-  {
-    country: "AU",
-    name: "Australian Dollar",
-    code: "AUD",
-    symbol: "A$",
-    flag: "🇦🇺",
-  },
-  {
-    country: "CA",
-    name: "Canadian Dollar",
-    code: "CAD",
-    symbol: "C$",
-    flag: "🇨🇦",
-  },
-  {
-    country: "EU",
-    name: "Euro",
-    code: "EUR",
-    symbol: "€",
-    flag: "🇪🇺",
-  },
-  {
-    country: "GB",
-    name: "British Pound",
-    code: "GBP",
-    symbol: "£",
-    flag: "🇬🇧",
-  },
-  {
-    country: "IN",
-    name: "Indian Rupee",
-    code: "INR",
-    symbol: "₹",
-    flag: "🇮🇳",
-  },
-  {
-    country: "JP",
-    name: "Japanese Yen",
-    code: "JPY",
-    symbol: "¥",
-    flag: "🇯🇵",
-  },
-  {
-    country: "US",
-    name: "US Dollar",
-    code: "USD",
-    symbol: "$",
-    flag: "🇺🇸",
-  },
-];
-
-/*
- * =========================================================
- * AXIOS INSTANCE
- * =========================================================
- */
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -123,9 +44,9 @@ const api = axios.create({
   },
 });
 
-/*
- * Automatically attach JWT token
- */
+/* -------------------------------------------------------
+   Automatically attach JWT token
+------------------------------------------------------- */
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -139,536 +60,394 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/*
- * =========================================================
- * COMPONENT
- * =========================================================
- */
+/* -------------------------------------------------------
+   Currency symbols
+------------------------------------------------------- */
+const CURRENCY_SYMBOLS = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  INR: "₹",
+  JPY: "¥",
+  CAD: "C$",
+  AUD: "A$",
+};
 
-function CategoryManagement() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
+/* -------------------------------------------------------
+   Get logged-in user's role
+------------------------------------------------------- */
+const getUserRole = () => {
+  const possibleRoleKeys = [
+    "role",
+    "userRole",
+    "authority",
+  ];
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  for (const key of possibleRoleKeys) {
+    const value = localStorage.getItem(key);
 
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("ALL");
+    if (value) {
+      return value.replace("ROLE_", "").toUpperCase();
+    }
+  }
 
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "EXPENSE",
-    currency: "USD",
-    symbol: "$",
-  });
+  const possibleUserKeys = [
+    "user",
+    "currentUser",
+    "authUser",
+  ];
 
-  /*
-   * =========================================================
-   * GET ROLE
-   * =========================================================
-   */
+  for (const key of possibleUserKeys) {
+    const value = localStorage.getItem(key);
 
-  const getUserRole = () => {
-    const possibleRoleKeys = [
-      "role",
-      "userRole",
-    ];
+    if (!value) continue;
 
-    for (const key of possibleRoleKeys) {
-      const value = localStorage.getItem(key);
+    try {
+      const user = JSON.parse(value);
 
-      if (value) {
-        return String(value)
+      if (user?.role) {
+        return String(user.role)
           .replace("ROLE_", "")
           .toUpperCase();
       }
-    }
 
-    const userKeys = [
-      "user",
-      "currentUser",
-      "authUser",
-    ];
+      if (user?.authorities?.length > 0) {
+        const authority =
+          user.authorities[0]?.authority ||
+          user.authorities[0];
 
-    for (const key of userKeys) {
-      try {
-        const storedUser = localStorage.getItem(key);
-
-        if (!storedUser) {
-          continue;
-        }
-
-        const user = JSON.parse(storedUser);
-
-        if (user?.role) {
-          return String(user.role)
-            .replace("ROLE_", "")
-            .toUpperCase();
-        }
-
-        if (user?.authorities?.length > 0) {
-          const authority =
-            user.authorities[0]?.authority;
-
-          if (authority) {
-            return String(authority)
-              .replace("ROLE_", "")
-              .toUpperCase();
-          }
-        }
-      } catch (error) {
-        console.error(
-          `Unable to read ${key} from localStorage`,
-          error
-        );
+        return String(authority)
+          .replace("ROLE_", "")
+          .toUpperCase();
       }
+    } catch (error) {
+      // Ignore invalid JSON
     }
+  }
 
-    return "USER";
+  return "";
+};
+
+/* -------------------------------------------------------
+   Category icon
+------------------------------------------------------- */
+const getCategoryIcon = (type) => {
+  if (type === "INCOME") {
+    return "💰";
+  }
+
+  return "💸";
+};
+
+/* -------------------------------------------------------
+   Category Management
+------------------------------------------------------- */
+const CategoryManagement = () => {
+  const [form] = Form.useForm();
+
+  const [categories, setCategories] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+
+  const [searchText, setSearchText] = useState("");
+
+  const [typeFilter, setTypeFilter] = useState("ALL");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  const [userRole, setUserRole] = useState("");
+
+  /* -------------------------------------------------------
+     Check admin
+  ------------------------------------------------------- */
+  const isAdmin = userRole === "ADMIN";
+
+  /* -------------------------------------------------------
+     Get preferred currency
+  ------------------------------------------------------- */
+  const getPreferredCurrency = () => {
+    const currency =
+      localStorage.getItem("preferredCurrency") ||
+      localStorage.getItem("currency") ||
+      "INR";
+
+    return currency.toUpperCase();
   };
 
-  const role = getUserRole();
-
-  const isAdmin = role === "ADMIN";
-
-  /*
-   * =========================================================
-   * ERROR MESSAGE HELPER
-   * =========================================================
-   */
-
-  const getErrorMessage = (error, defaultMessage) => {
-    console.error(error);
-
-    if (error?.response) {
-      console.error(
-        "Status:",
-        error.response.status
-      );
-
-      console.error(
-        "Response:",
-        error.response.data
-      );
-
-      if (
-        typeof error.response.data === "string"
-      ) {
-        return error.response.data;
-      }
-
-      if (
-        error.response.data?.message
-      ) {
-        return error.response.data.message;
-      }
-
-      if (
-        error.response.data?.error
-      ) {
-        return error.response.data.error;
-      }
-
-      if (
-        error.response.status === 401
-      ) {
-        return "Authentication required. Please login again.";
-      }
-
-      if (
-        error.response.status === 403
-      ) {
-        return "Access denied. Admin permission is required.";
-      }
-    }
-
-    if (error?.request) {
-      return "Unable to connect to server. Make sure Spring Boot is running on port 8080.";
-    }
-
-    return defaultMessage;
-  };
-
-  /*
-   * =========================================================
-   * GET ALL CATEGORIES
-   * =========================================================
-   */
-
-  const fetchCategories = async () => {
+  /* -------------------------------------------------------
+     Fetch categories
+  ------------------------------------------------------- */
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
 
-      console.log(
-        "Loading categories from:",
-        `${API_BASE_URL}/api/categories`
-      );
+      const response = await api.get("/api/categories");
 
-      const response = await api.get(
-        "/api/categories"
-      );
+      const data = Array.isArray(response.data)
+        ? response.data
+        : [];
 
-      console.log(
-        "GET categories response:",
-        response.data
-      );
-
-      const data = response.data;
-
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else if (
-        Array.isArray(data?.content)
-      ) {
-        setCategories(data.content);
-      } else {
-        setCategories([]);
-      }
+      setCategories(data);
     } catch (error) {
-      console.error(
-        "GET /api/categories failed:",
-        error
-      );
+      console.error("Fetch categories error:", error);
 
-      setCategories([]);
-
-      message.error(
-        getErrorMessage(
-          error,
-          "Unable to load categories."
-        )
-      );
+      if (error.response) {
+        if (error.response.status === 401) {
+          message.error(
+            "Authentication required. Please login again."
+          );
+        } else if (error.response.status === 403) {
+          message.error(
+            "You do not have permission to view categories."
+          );
+        } else {
+          message.error(
+            `Unable to load categories. Server returned ${error.response.status}.`
+          );
+        }
+      } else {
+        message.error(
+          "Unable to connect to the server."
+        );
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  /*
-   * =========================================================
-   * LOAD CATEGORIES WHEN PAGE OPENS
-   * =========================================================
-   */
-
-  useEffect(() => {
-    fetchCategories();
   }, []);
 
-  /*
-   * =========================================================
-   * CURRENCY INFORMATION
-   * =========================================================
-   */
+  /* -------------------------------------------------------
+     Load page
+  ------------------------------------------------------- */
+  useEffect(() => {
+    const role = getUserRole();
 
-  const getCategoryCurrencyInfo = (
-    name,
-    fallbackCode
-  ) => {
-    try {
-      const map = JSON.parse(
-        localStorage.getItem(
-          "category_currency_map"
-        ) || "{}"
-      );
+    console.log("Logged-in role:", role);
 
-      const saved =
-        map[
-          String(name || "").toLowerCase()
-        ];
+    setUserRole(role);
 
-      if (saved?.currency) {
-        const found =
-          CURRENCY_ITEMS.find(
-            (currency) =>
-              currency.code ===
-              saved.currency
-          );
+    fetchCategories();
+  }, [fetchCategories]);
 
-        if (found) {
-          return found;
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Unable to read category currency map",
-        error
-      );
-    }
-
-    if (fallbackCode) {
-      const found =
-        CURRENCY_ITEMS.find(
-          (currency) =>
-            currency.code ===
-            String(
-              fallbackCode
-            ).toUpperCase()
-        );
-
-      if (found) {
-        return found;
-      }
-    }
-
-    return CURRENCY_ITEMS.find(
-      (currency) =>
-        currency.code === "USD"
-    );
-  };
-
-  /*
-   * =========================================================
-   * CURRENCY CHANGE
-   * =========================================================
-   */
-
-  const handleCurrencySelect = (
-    value
-  ) => {
-    const currency =
-      CURRENCY_ITEMS.find(
-        (item) =>
-          item.code === value
-      );
-
-    setFormData((previous) => ({
-      ...previous,
-      currency: value,
-      symbol:
-        currency?.symbol || "$",
-    }));
-  };
-
-  /*
-   * =========================================================
-   * OPEN ADD MODAL
-   * =========================================================
-   */
-
-  const openModal = () => {
+  /* -------------------------------------------------------
+     Open Add Modal
+  ------------------------------------------------------- */
+  const openAddModal = () => {
     if (!isAdmin) {
-      message.error(
-        "Only admin can add categories."
+      message.warning(
+        "Only Admin can add categories."
       );
       return;
     }
 
-    setFormData({
-      name: "",
-      type: "EXPENSE",
-      currency: "USD",
-      symbol: "$",
+    setEditingCategory(null);
+
+    form.resetFields();
+
+    form.setFieldsValue({
+      type: "INCOME",
     });
 
-    setModalOpen(true);
+    setIsModalOpen(true);
   };
 
-  /*
-   * =========================================================
-   * CREATE CATEGORY
-   * =========================================================
-   */
+  /* -------------------------------------------------------
+     Open Edit Modal
+  ------------------------------------------------------- */
+  const openEditModal = (category) => {
+    if (!isAdmin) {
+      message.warning(
+        "Only Admin can edit categories."
+      );
+      return;
+    }
 
-  const handleSubmit = async () => {
+    setEditingCategory(category);
+
+    form.setFieldsValue({
+      name: category.name,
+      type: category.type,
+    });
+
+    setIsModalOpen(true);
+  };
+
+  /* -------------------------------------------------------
+     Close Modal
+  ------------------------------------------------------- */
+  const closeModal = () => {
+    if (saving) return;
+
+    setIsModalOpen(false);
+
+    setEditingCategory(null);
+
+    form.resetFields();
+  };
+
+  /* -------------------------------------------------------
+     Add / Update Category
+  ------------------------------------------------------- */
+  const handleSubmit = async (values) => {
     if (!isAdmin) {
       message.error(
-        "Only admin can create categories."
+        "Only Admin can add or update categories."
       );
       return;
     }
 
-    const categoryName =
-      formData.name.trim();
+    const name = values.name?.trim();
 
-    if (!categoryName) {
+    if (!name) {
       message.error(
-        "Category name is required."
+        "Please enter a category name."
       );
       return;
     }
 
-    if (!formData.type) {
+    if (!values.type) {
       message.error(
-        "Category type is required."
+        "Please select a category type."
       );
       return;
     }
 
-    const token =
-      localStorage.getItem("token");
-
-    if (!token) {
-      message.error(
-        "Login token not found. Please login again."
-      );
-      return;
-    }
+    const payload = {
+      name: name,
+      type: values.type,
+    };
 
     try {
       setSaving(true);
 
-      /*
-       * IMPORTANT:
-       * Backend Category entity contains only:
-       * id
-       * name
-       * type
-       *
-       * Therefore send only these fields.
-       */
+      const token = localStorage.getItem("token");
 
-      const payload = {
-        name: categoryName,
-        type: formData.type,
-      };
+      console.log("=================================");
+      console.log("CATEGORY SAVE");
+      console.log("URL:", API_BASE_URL);
+      console.log("Payload:", payload);
+      console.log("Token exists:", !!token);
+      console.log("Role:", userRole);
+      console.log("=================================");
 
-      console.log(
-        "POST /api/categories payload:",
-        payload
-      );
+      let response;
 
-      const response = await api.post(
-        "/api/categories",
-        payload
-      );
-
-      console.log(
-        "POST category response:",
-        response.data
-      );
-
-      /*
-       * Save currency information locally
-       * because current Category entity does
-       * not have currency/symbol fields.
-       */
-
-      try {
-        const key =
-          "category_currency_map";
-
-        const map = JSON.parse(
-          localStorage.getItem(key) || "{}"
+      if (editingCategory) {
+        response = await api.put(
+          `/api/categories/${editingCategory.id}`,
+          payload
         );
 
-        map[
-          categoryName.toLowerCase()
-        ] = {
-          currency:
-            formData.currency,
-          symbol:
-            formData.symbol,
-        };
-
-        localStorage.setItem(
-          key,
-          JSON.stringify(map)
+        console.log(
+          "UPDATE RESPONSE:",
+          response.status,
+          response.data
         );
-      } catch (storageError) {
-        console.error(
-          "Unable to save category currency",
-          storageError
+
+        message.success(
+          "Category updated successfully."
+        );
+      } else {
+        response = await api.post(
+          "/api/categories",
+          payload
+        );
+
+        console.log(
+          "CREATE RESPONSE:",
+          response.status,
+          response.data
+        );
+
+        message.success(
+          "Category added successfully."
         );
       }
 
-      message.success(
-        "Category added successfully."
-      );
-
-      setModalOpen(false);
-
-      setFormData({
-        name: "",
-        type: "EXPENSE",
-        currency: "USD",
-        symbol: "$",
-      });
-
-      /*
-       * Reload categories
-       */
+      closeModal();
 
       await fetchCategories();
     } catch (error) {
       console.error(
-        "POST /api/categories failed:",
+        "CATEGORY SAVE ERROR:",
         error
       );
 
-      message.error(
-        getErrorMessage(
-          error,
-          "Unable to add category."
-        )
+      console.error(
+        "Response:",
+        error.response?.data
       );
+
+      console.error(
+        "Status:",
+        error.response?.status
+      );
+
+      if (error.response) {
+        const status =
+          error.response.status;
+
+        if (status === 401) {
+          message.error(
+            "401 Unauthorized: Please login again."
+          );
+        } else if (status === 403) {
+          message.error(
+            "403 Forbidden: Admin permission is required."
+          );
+        } else if (status === 400) {
+          message.error(
+            "400 Bad Request: Check category name and type."
+          );
+        } else if (status === 409) {
+          message.error(
+            "Category already exists."
+          );
+        } else if (status === 500) {
+          message.error(
+            "500 Server Error: Check the Spring Boot console."
+          );
+        } else {
+          message.error(
+            `Unable to save category. Server returned ${status}.`
+          );
+        }
+      } else {
+        message.error(
+          "Unable to connect to the backend server."
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  /*
-   * =========================================================
-   * DELETE CATEGORY
-   * =========================================================
-   */
-
-  const handleDelete = async (
-    category
-  ) => {
+  /* -------------------------------------------------------
+     Delete Category
+  ------------------------------------------------------- */
+  const handleDelete = async (id) => {
     if (!isAdmin) {
-      message.error(
-        "Only admin can delete categories."
-      );
-      return;
-    }
-
-    const token =
-      localStorage.getItem("token");
-
-    if (!token) {
-      message.error(
-        "Login token not found. Please login again."
+      message.warning(
+        "Only Admin can delete categories."
       );
       return;
     }
 
     try {
+      setLoading(true);
+
+      const response = await api.delete(
+        `/api/categories/${id}`
+      );
+
       console.log(
-        "DELETE:",
-        `${API_BASE_URL}/api/categories/${category.id}`
+        "DELETE RESPONSE:",
+        response.status,
+        response.data
       );
-
-      await api.delete(
-        `/api/categories/${category.id}`
-      );
-
-      /*
-       * Remove local currency information
-       */
-
-      try {
-        const key =
-          "category_currency_map";
-
-        const map = JSON.parse(
-          localStorage.getItem(key) || "{}"
-        );
-
-        delete map[
-          String(
-            category.name || ""
-          ).toLowerCase()
-        ];
-
-        localStorage.setItem(
-          key,
-          JSON.stringify(map)
-        );
-      } catch (storageError) {
-        console.error(
-          "Unable to update currency map",
-          storageError
-        );
-      }
 
       message.success(
         "Category deleted successfully."
@@ -677,750 +456,487 @@ function CategoryManagement() {
       await fetchCategories();
     } catch (error) {
       console.error(
-        "DELETE /api/categories failed:",
+        "DELETE CATEGORY ERROR:",
         error
       );
 
-      message.error(
-        getErrorMessage(
-          error,
-          "Unable to delete category."
-        )
+      console.error(
+        "Response:",
+        error.response?.data
       );
+
+      if (error.response) {
+        const status =
+          error.response.status;
+
+        if (status === 401) {
+          message.error(
+            "401 Unauthorized: Please login again."
+          );
+        } else if (status === 403) {
+          message.error(
+            "403 Forbidden: Admin permission is required."
+          );
+        } else if (status === 404) {
+          message.error(
+            "Category not found."
+          );
+        } else if (status === 500) {
+          message.error(
+            "Cannot delete this category. It may be used by existing transactions."
+          );
+        } else {
+          message.error(
+            `Unable to delete category. Server returned ${status}.`
+          );
+        }
+      } else {
+        message.error(
+          "Unable to connect to the backend server."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  /*
-   * =========================================================
-   * FILTER CATEGORIES
-   * =========================================================
-   */
-
-  const filteredCategories =
-    useMemo(() => {
-      let result = [
-        ...categories,
-      ];
-
-      if (
-        typeFilter !== "ALL"
-      ) {
-        result =
-          result.filter(
-            (category) =>
-              String(
-                category.type || ""
-              ).toUpperCase() ===
-              typeFilter
+  /* -------------------------------------------------------
+     Filter categories
+  ------------------------------------------------------- */
+  const filteredCategories = useMemo(() => {
+    return categories.filter((category) => {
+      const matchesSearch =
+        category.name
+          ?.toLowerCase()
+          .includes(
+            searchText.toLowerCase()
           );
-      }
 
-      if (
-        search.trim()
-      ) {
-        const term =
-          search
-            .toLowerCase()
-            .trim();
+      const matchesType =
+        typeFilter === "ALL" ||
+        category.type === typeFilter;
 
-        result =
-          result.filter(
-            (category) =>
-              String(
-                category.name || ""
-              )
-                .toLowerCase()
-                .includes(term)
-          );
-      }
+      return (
+        matchesSearch &&
+        matchesType
+      );
+    });
+  }, [
+    categories,
+    searchText,
+    typeFilter,
+  ]);
 
-      return result;
-    }, [
-      categories,
-      search,
-      typeFilter,
-    ]);
+  /* -------------------------------------------------------
+     Currency
+  ------------------------------------------------------- */
+  const preferredCurrency =
+    getPreferredCurrency();
 
-  /*
-   * =========================================================
-   * PAGE
-   * =========================================================
-   */
+  const currencySymbol =
+    CURRENCY_SYMBOLS[
+      preferredCurrency
+    ] || preferredCurrency;
 
+  /* -------------------------------------------------------
+     UI
+  ------------------------------------------------------- */
   return (
-    <div>
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+    <div
+      style={{
+        padding: "24px",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Header */}
+      <Row
+        justify="space-between"
+        align="middle"
+        style={{
+          marginBottom: 24,
+        }}
+      >
+        <Col>
+          <Space align="center">
+            <AppstoreOutlined
+              style={{
+                fontSize: 30,
+              }}
+            />
 
-      <div className="page-header">
-        <div>
-          <Title
-            level={2}
-            style={{
-              margin: 0,
-              fontSize: 26,
-              fontWeight: 800,
-            }}
-          >
-            Categories
-          </Title>
+            <div>
+              <Title
+                level={2}
+                style={{
+                  margin: 0,
+                }}
+              >
+                Categories
+              </Title>
 
-          <Text
-            style={{
-              color: "#64748b",
-              fontSize: 14,
-            }}
-          >
-            Organize transactions with
-            custom income and expense
-            categories
-          </Text>
-        </div>
+              <Text type="secondary">
+                Manage your income and expense
+                categories
+              </Text>
+            </div>
+          </Space>
+        </Col>
 
         {isAdmin && (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            onClick={openModal}
-            style={{
-              borderRadius: 8,
-              fontWeight: 700,
-              background: "#10b981",
-              borderColor: "#10b981",
-            }}
-          >
-            Add Category
-          </Button>
+          <Col>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={openAddModal}
+            >
+              Add Category
+            </Button>
+          </Col>
         )}
-      </div>
+      </Row>
 
-      {/* =====================================================
-          CATEGORY CARD
-      ====================================================== */}
-
-      <Card className="modern-card">
-        {/* FILTERS */}
-
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            marginBottom: 20,
-            flexWrap: "wrap",
-          }}
+      {/* Admin information */}
+      <Card
+        style={{
+          marginBottom: 20,
+        }}
+      >
+        <Row
+          justify="space-between"
+          align="middle"
         >
-          <Input
-            placeholder="Search categories..."
-            prefix={
-              <SearchOutlined
-                style={{
-                  color: "#94a3b8",
-                }}
-              />
-            }
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            style={{
-              maxWidth: 300,
-              height: 40,
-              borderRadius: 8,
-            }}
-          />
+          <Col>
+            <Space>
+              <Text strong>
+                Current Role:
+              </Text>
 
-          <Select
-            value={typeFilter}
-            onChange={
-              setTypeFilter
-            }
-            style={{
-              width: 150,
-              height: 40,
-            }}
-            options={[
-              {
-                value: "ALL",
-                label: "All Types",
-              },
-              {
-                value: "EXPENSE",
-                label: "Expense",
-              },
-              {
-                value: "INCOME",
-                label: "Income",
-              },
-            ]}
-          />
-        </div>
+              <Tag
+                color={
+                  isAdmin
+                    ? "gold"
+                    : "blue"
+                }
+              >
+                {userRole || "USER"}
+              </Tag>
+            </Space>
+          </Col>
 
-        {/* =================================================
-            LOADING
-        ================================================== */}
+          <Col>
+            <Text type="secondary">
+              Currency:{" "}
+              <strong>
+                {currencySymbol}{" "}
+                {preferredCurrency}
+              </strong>
+            </Text>
+          </Col>
+        </Row>
+      </Card>
 
+      {/* Filters */}
+      <Card
+        style={{
+          marginBottom: 20,
+        }}
+      >
+        <Row gutter={[16, 16]}>
+          <Col
+            xs={24}
+            sm={16}
+            md={18}
+          >
+            <Input
+              allowClear
+              prefix={
+                <SearchOutlined />
+              }
+              placeholder="Search category..."
+              value={searchText}
+              onChange={(e) =>
+                setSearchText(
+                  e.target.value
+                )
+              }
+            />
+          </Col>
+
+          <Col
+            xs={24}
+            sm={8}
+            md={6}
+          >
+            <Select
+              style={{
+                width: "100%",
+              }}
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                {
+                  label: "All Categories",
+                  value: "ALL",
+                },
+                {
+                  label: "Income",
+                  value: "INCOME",
+                },
+                {
+                  label: "Expense",
+                  value: "EXPENSE",
+                },
+              ]}
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Category List */}
+      <Card>
         {loading ? (
           <div
             style={{
               textAlign: "center",
-              padding: 40,
+              padding: 60,
             }}
           >
             <Spin size="large" />
 
             <div
               style={{
-                marginTop: 12,
-                color: "#64748b",
+                marginTop: 16,
               }}
             >
               Loading categories...
             </div>
           </div>
+        ) : filteredCategories.length ===
+          0 ? (
+          <Empty
+            description={
+              categories.length === 0
+                ? "No categories found"
+                : "No matching categories"
+            }
+          />
         ) : (
-          <div
-            className="custom-table"
-            style={{
-              overflowX: "auto",
-            }}
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th
+          <Row gutter={[16, 16]}>
+            {filteredCategories.map(
+              (category) => (
+                <Col
+                  key={category.id}
+                  xs={24}
+                  sm={12}
+                  md={8}
+                  lg={6}
+                >
+                  <Card
+                    hoverable
                     style={{
-                      width: 80,
+                      height: "100%",
                     }}
                   >
-                    ICON
-                  </th>
-
-                  <th>
-                    CATEGORY NAME
-                  </th>
-
-                  <th>
-                    TYPE
-                  </th>
-
-                  <th>
-                    CURRENCY
-                  </th>
-
-                  <th>
-                    SYMBOL
-                  </th>
-
-                  {isAdmin && (
-                    <th
+                    <div
                       style={{
-                        textAlign:
-                          "center",
-                        width: 120,
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "flex-start",
                       }}
                     >
-                      ACTIONS
-                    </th>
-                  )}
-                </tr>
-              </thead>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: 30,
+                            marginBottom: 8,
+                          }}
+                        >
+                          {getCategoryIcon(
+                            category.type
+                          )}
+                        </div>
 
-              <tbody>
-                {filteredCategories.length ===
-                0 ? (
-                  <tr>
-                    <td
-                      colSpan={
-                        isAdmin
-                          ? 6
-                          : 5
-                      }
-                      style={{
-                        textAlign:
-                          "center",
-                        padding: 40,
-                        color:
-                          "#64748b",
-                      }}
-                    >
-                      No categories found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCategories.map(
-                    (category) => {
-                      const isExpense =
-                        String(
-                          category.type ||
-                            ""
-                        ).toUpperCase() ===
-                        "EXPENSE";
+                        <Title
+                          level={4}
+                          style={{
+                            margin:
+                              "0 0 8px 0",
+                          }}
+                        >
+                          {category.name}
+                        </Title>
 
-                      const icon =
-                        category.icon ||
-                        CATEGORY_ICONS[
-                          category.name
-                        ] ||
-                        (isExpense
-                          ? "🛍️"
-                          : "💰");
-
-                      const currency =
-                        getCategoryCurrencyInfo(
-                          category.name,
-                          category.currency
-                        );
-
-                      return (
-                        <tr
-                          key={
-                            category.id
+                        <Tag
+                          color={
+                            category.type ===
+                            "INCOME"
+                              ? "green"
+                              : "red"
                           }
                         >
-                          {/* ICON */}
+                          {category.type ===
+                          "INCOME"
+                            ? "Income"
+                            : "Expense"}
+                        </Tag>
+                      </div>
 
-                          <td>
-                            <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 10,
-                                background:
-                                  isExpense
-                                    ? "#fef2f2"
-                                    : "#ecfdf5",
-                                display:
-                                  "flex",
-                                alignItems:
-                                  "center",
-                                justifyContent:
-                                  "center",
-                                fontSize: 18,
-                              }}
-                            >
-                              {icon}
-                            </div>
-                          </td>
-
-                          {/* NAME */}
-
-                          <td
-                            style={{
-                              fontWeight: 600,
-                              color:
-                                "#0f172a",
-                            }}
-                          >
-                            {
-                              category.name
+                      {isAdmin && (
+                        <Space>
+                          <Button
+                            type="text"
+                            icon={
+                              <EditOutlined />
                             }
-                          </td>
-
-                          {/* TYPE */}
-
-                          <td>
-                            <span
-                              className={`pill-badge ${
-                                isExpense
-                                  ? "expense"
-                                  : "income"
-                              }`}
-                            >
-                              {isExpense
-                                ? "Expense"
-                                : "Income"}
-                            </span>
-                          </td>
-
-                          {/* CURRENCY */}
-
-                          <td
-                            style={{
-                              fontWeight: 600,
-                              color:
-                                "#0f172a",
-                            }}
-                          >
-                            <Space size="middle">
-                              <span
-                                style={{
-                                  fontSize: 18,
-                                }}
-                              >
-                                {
-                                  currency.flag
-                                }
-                              </span>
-
-                              <span>
-                                {
-                                  currency.country
-                                }{" "}
-                                {
-                                  currency.name
-                                }
-                              </span>
-                            </Space>
-                          </td>
-
-                          {/* SYMBOL */}
-
-                          <td
-                            style={{
-                              fontWeight: 700,
-                              color:
-                                "#0f766e",
-                            }}
-                          >
-                            {
-                              currency.symbol
+                            onClick={() =>
+                              openEditModal(
+                                category
+                              )
                             }
-                          </td>
+                          />
 
-                          {/* DELETE */}
-
-                          {isAdmin && (
-                            <td
-                              style={{
-                                textAlign:
-                                  "center",
-                              }}
-                            >
-                              <Popconfirm
-                                title="Delete category"
-                                description="Are you sure you want to delete this category?"
-                                onConfirm={() =>
-                                  handleDelete(
-                                    category
-                                  )
-                                }
-                                okText="Delete"
-                                cancelText="Cancel"
-                                okButtonProps={{
-                                  danger: true,
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  className="action-btn-circle danger"
-                                  title="Delete"
-                                >
-                                  <DeleteOutlined />
-                                </button>
-                              </Popconfirm>
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    }
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <Popconfirm
+                            title="Delete this category?"
+                            description="This action cannot be undone."
+                            okText="Delete"
+                            cancelText="Cancel"
+                            onConfirm={() =>
+                              handleDelete(
+                                category.id
+                              )
+                            }
+                          >
+                            <Button
+                              type="text"
+                              danger
+                              icon={
+                                <DeleteOutlined />
+                              }
+                            />
+                          </Popconfirm>
+                        </Space>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              )
+            )}
+          </Row>
         )}
       </Card>
 
-      {/* =====================================================
-          ADD CATEGORY MODAL
-      ====================================================== */}
-
-      {isAdmin && (
-        <Modal
-          title={
-            <div>
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: "#0f172a",
-                }}
-              >
-                Add Category
-              </h3>
-
-              <span
-                style={{
-                  fontSize: 13,
-                  color: "#64748b",
-                }}
-              >
-                Define a category for
-                budgeting and analytics
-              </span>
-            </div>
-          }
-          open={modalOpen}
-          onCancel={() =>
-            setModalOpen(false)
-          }
-          footer={null}
-          destroyOnClose
+      {/* Add / Edit Modal */}
+      <Modal
+        title={
+          editingCategory
+            ? "Edit Category"
+            : "Add Category"
+        }
+        open={isModalOpen}
+        onCancel={closeModal}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
         >
-          <div
+          {/* Category name */}
+          <Form.Item
+            label="Category Name"
+            name="name"
+            rules={[
+              {
+                required: true,
+                message:
+                  "Please enter category name.",
+              },
+              {
+                min: 2,
+                message:
+                  "Category name must contain at least 2 characters.",
+              },
+            ]}
+          >
+            <Input
+              placeholder="Example: Salary"
+              maxLength={50}
+            />
+          </Form.Item>
+
+          {/* Type */}
+          <Form.Item
+            label="Category Type"
+            name="type"
+            rules={[
+              {
+                required: true,
+                message:
+                  "Please select category type.",
+              },
+            ]}
+          >
+            <Select
+              options={[
+                {
+                  label: "Income Category",
+                  value: "INCOME",
+                },
+                {
+                  label: "Expense Category",
+                  value: "EXPENSE",
+                },
+              ]}
+            />
+          </Form.Item>
+
+          {/* Currency */}
+          <Form.Item label="Currency">
+            <Select
+              value={preferredCurrency}
+              disabled
+              options={[
+                {
+                  label: `${currencySymbol} ${preferredCurrency}`,
+                  value: preferredCurrency,
+                },
+              ]}
+            />
+          </Form.Item>
+
+          {/* Buttons */}
+          <Form.Item
             style={{
-              padding: "16px 0",
+              marginBottom: 0,
+              textAlign: "right",
             }}
           >
-            {/* CATEGORY NAME */}
-
-            <div
-              style={{
-                marginBottom: 16,
-              }}
-            >
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#334155",
-                  marginBottom: 6,
-                }}
-              >
-                Category Name{" "}
-                <span
-                  style={{
-                    color: "#ef4444",
-                  }}
-                >
-                  *
-                </span>
-              </label>
-
-              <Input
-                size="large"
-                placeholder="e.g. Food, Salary, Transport"
-                value={
-                  formData.name
-                }
-                onChange={(event) =>
-                  setFormData(
-                    (previous) => ({
-                      ...previous,
-                      name:
-                        event.target
-                          .value,
-                    })
-                  )
-                }
-                style={{
-                  borderRadius: 8,
-                  height: 42,
-                }}
-              />
-            </div>
-
-            {/* CATEGORY TYPE */}
-
-            <div
-              style={{
-                marginBottom: 16,
-              }}
-            >
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#334155",
-                  marginBottom: 6,
-                }}
-              >
-                Category Type{" "}
-                <span
-                  style={{
-                    color: "#ef4444",
-                  }}
-                >
-                  *
-                </span>
-              </label>
-
-              <Select
-                size="large"
-                style={{
-                  width: "100%",
-                }}
-                value={
-                  formData.type
-                }
-                onChange={(value) =>
-                  setFormData(
-                    (previous) => ({
-                      ...previous,
-                      type: value,
-                    })
-                  )
-                }
-                options={[
-                  {
-                    value:
-                      "EXPENSE",
-                    label:
-                      "Expense Category",
-                  },
-                  {
-                    value:
-                      "INCOME",
-                    label:
-                      "Income Category",
-                  },
-                ]}
-              />
-            </div>
-
-            {/* CURRENCY */}
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "1.4fr 1fr",
-                gap: 14,
-                marginBottom: 24,
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display:
-                      "block",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color:
-                      "#334155",
-                    marginBottom: 6,
-                  }}
-                >
-                  CURRENCY{" "}
-                  <span
-                    style={{
-                      color:
-                        "#ef4444",
-                    }}
-                  >
-                    *
-                  </span>
-                </label>
-
-                <Select
-                  size="large"
-                  style={{
-                    width: "100%",
-                  }}
-                  value={
-                    formData.currency
-                  }
-                  onChange={
-                    handleCurrencySelect
-                  }
-                  options={CURRENCY_ITEMS.map(
-                    (currency) => ({
-                      value:
-                        currency.code,
-                      label: `${currency.flag} ${currency.country} ${currency.name}`,
-                    })
-                  )}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display:
-                      "block",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color:
-                      "#334155",
-                    marginBottom: 6,
-                  }}
-                >
-                  SYMBOL{" "}
-                  <span
-                    style={{
-                      color:
-                        "#ef4444",
-                    }}
-                  >
-                    *
-                  </span>
-                </label>
-
-                <Input
-                  size="large"
-                  readOnly
-                  value={
-                    formData.symbol
-                  }
-                  style={{
-                    borderRadius: 8,
-                    height: 42,
-                    fontWeight: 700,
-                    background:
-                      "#f8fafc",
-                    color:
-                      "#0f766e",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* BUTTONS */}
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "flex-end",
-                gap: 12,
-              }}
-            >
+            <Space>
               <Button
-                size="large"
-                onClick={() =>
-                  setModalOpen(
-                    false
-                  )
-                }
-                style={{
-                  borderRadius: 8,
-                }}
+                onClick={closeModal}
+                disabled={saving}
               >
                 Cancel
               </Button>
 
               <Button
                 type="primary"
-                size="large"
+                htmlType="submit"
                 loading={saving}
-                onClick={
-                  handleSubmit
-                }
-                style={{
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  background:
-                    "#10b981",
-                  borderColor:
-                    "#10b981",
-                  minWidth: 110,
-                }}
               >
-                Save Category
+                {editingCategory
+                  ? "Update Category"
+                  : "Save Category"}
               </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
-}
+};
 
 export default CategoryManagement;
