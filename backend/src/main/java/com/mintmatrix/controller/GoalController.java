@@ -20,9 +20,7 @@ public class GoalController {
     private final GoalRepository goalRepository;
     private final UserRepository userRepository;
 
-    /*
-     * Required for reflection-based tests
-     */
+    // Required for reflection-based tests
     public GoalController() {
         this.goalRepository = null;
         this.userRepository = null;
@@ -38,9 +36,9 @@ public class GoalController {
     }
 
     // ============================================================
-    // GET ALL GOALS
-    // USER  -> gets only their own goals
-    // ADMIN -> gets all goals
+    // GET GOALS
+    // USER -> own goals
+    // ADMIN -> all goals
     // ============================================================
 
     @GetMapping
@@ -54,9 +52,9 @@ public class GoalController {
 
         boolean isAdmin = authentication.getAuthorities()
                 .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                                || authority.getAuthority().equals("ADMIN"));
+                .anyMatch(a ->
+                        a.getAuthority().equals("ROLE_ADMIN")
+                                || a.getAuthority().equals("ADMIN"));
 
         if (isAdmin) {
             return ResponseEntity.ok(goalRepository.findAll());
@@ -75,46 +73,52 @@ public class GoalController {
 
     // ============================================================
     // CREATE GOAL
-    // USER + ADMIN allowed
+    // USER + ADMIN
     // ============================================================
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Goal> createGoal(
+    public ResponseEntity<?> createGoal(
             @RequestBody Goal goal,
             Authentication authentication) {
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(401)
+                    .body("Authentication required");
         }
 
-        /*
-         * Get the currently logged-in user.
-         * We do NOT trust the user object sent from React.
-         */
         User user = userRepository
                 .findByUsername(authentication.getName())
                 .orElse(null);
 
         if (user == null) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body("Logged-in user not found");
         }
 
-        /*
-         * Attach the goal to the logged-in user.
-         */
-        goal.setUser(user);
+        if (goal.getTitle() == null || goal.getTitle().trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body("Goal title is required");
+        }
 
-        /*
-         * If current amount is empty, start from zero.
-         */
+        if (goal.getTargetAmount() == null
+                || goal.getTargetAmount() <= 0) {
+            return ResponseEntity.badRequest()
+                    .body("Target amount must be greater than zero");
+        }
+
+        if (goal.getDeadline() == null) {
+            return ResponseEntity.badRequest()
+                    .body("Target date is required");
+        }
+
         if (goal.getCurrentAmount() == null) {
             goal.setCurrentAmount(0.0);
         }
 
-        /*
-         * Save goal to database.
-         */
+        // Always associate goal with logged-in user
+        goal.setUser(user);
+
         Goal savedGoal = goalRepository.save(goal);
 
         return ResponseEntity.ok(savedGoal);
@@ -122,7 +126,7 @@ public class GoalController {
 
     // ============================================================
     // UPDATE GOAL
-    // USER + ADMIN allowed
+    // USER + ADMIN
     // ============================================================
 
     @PutMapping("/{id}")
@@ -133,7 +137,8 @@ public class GoalController {
             Authentication authentication) {
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).body("Authentication required");
+            return ResponseEntity.status(401)
+                    .body("Authentication required");
         }
 
         Goal goal = goalRepository.findById(id).orElse(null);
@@ -142,18 +147,13 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        /*
-         * Check whether the logged-in user is ADMIN.
-         */
         boolean isAdmin = authentication.getAuthorities()
                 .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                                || authority.getAuthority().equals("ADMIN"));
+                .anyMatch(a ->
+                        a.getAuthority().equals("ROLE_ADMIN")
+                                || a.getAuthority().equals("ADMIN"));
 
-        /*
-         * USER can modify only their own goal.
-         */
+        // USER can modify only their own goal
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -167,47 +167,33 @@ public class GoalController {
 
             if (goal.getUser() == null
                     || goal.getUser().getId() == null
-                    || !goal.getUser().getId().equals(loggedInUser.getId())) {
+                    || !goal.getUser().getId()
+                    .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can modify only your own goals.");
             }
         }
 
-        /*
-         * Update title.
-         */
-        if (goalRequest.getTitle() != null) {
-            goal.setTitle(goalRequest.getTitle());
+        if (goalRequest.getTitle() != null
+                && !goalRequest.getTitle().trim().isEmpty()) {
+
+            goal.setTitle(goalRequest.getTitle().trim());
         }
 
-        /*
-         * Update target amount.
-         */
         if (goalRequest.getTargetAmount() != null) {
             goal.setTargetAmount(goalRequest.getTargetAmount());
         }
 
-        /*
-         * Update current amount.
-         */
         if (goalRequest.getCurrentAmount() != null) {
             goal.setCurrentAmount(goalRequest.getCurrentAmount());
         }
 
-        /*
-         * Update deadline.
-         */
         if (goalRequest.getDeadline() != null) {
             goal.setDeadline(goalRequest.getDeadline());
         }
 
-        /*
-         * Do NOT allow a normal USER to transfer
-         * the goal to another user.
-         *
-         * ADMIN can change the owner if required.
-         */
+        // Only ADMIN can change goal ownership
         if (isAdmin && goalRequest.getUser() != null) {
 
             if (goalRequest.getUser().getId() != null) {
@@ -219,7 +205,8 @@ public class GoalController {
             } else if (goalRequest.getUser().getUsername() != null) {
 
                 userRepository
-                        .findByUsername(goalRequest.getUser().getUsername())
+                        .findByUsername(
+                                goalRequest.getUser().getUsername())
                         .ifPresent(goal::setUser);
             }
         }
@@ -231,7 +218,7 @@ public class GoalController {
 
     // ============================================================
     // ADD FUNDS
-    // USER + ADMIN allowed
+    // USER + ADMIN
     // ============================================================
 
     @PutMapping("/{id}/add-funds")
@@ -248,7 +235,7 @@ public class GoalController {
 
         if (amount == null || amount <= 0) {
             return ResponseEntity.badRequest()
-                    .body("Amount must be greater than zero.");
+                    .body("Amount must be greater than zero");
         }
 
         Goal goal = goalRepository.findById(id).orElse(null);
@@ -257,18 +244,12 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        /*
-         * Check whether logged-in user is ADMIN.
-         */
         boolean isAdmin = authentication.getAuthorities()
                 .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                                || authority.getAuthority().equals("ADMIN"));
+                .anyMatch(a ->
+                        a.getAuthority().equals("ROLE_ADMIN")
+                                || a.getAuthority().equals("ADMIN"));
 
-        /*
-         * USER can add funds only to their own goal.
-         */
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -282,7 +263,8 @@ public class GoalController {
 
             if (goal.getUser() == null
                     || goal.getUser().getId() == null
-                    || !goal.getUser().getId().equals(loggedInUser.getId())) {
+                    || !goal.getUser().getId()
+                    .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can modify only your own goals.");
@@ -297,14 +279,12 @@ public class GoalController {
 
         goal.setCurrentAmount(currentAmount + amount);
 
-        Goal updatedGoal = goalRepository.save(goal);
-
-        return ResponseEntity.ok(updatedGoal);
+        return ResponseEntity.ok(goalRepository.save(goal));
     }
 
     // ============================================================
     // DELETE GOAL
-    // USER + ADMIN allowed
+    // USER + ADMIN
     // ============================================================
 
     @DeleteMapping("/{id}")
@@ -324,18 +304,12 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        /*
-         * Check whether logged-in user is ADMIN.
-         */
         boolean isAdmin = authentication.getAuthorities()
                 .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                                || authority.getAuthority().equals("ADMIN"));
+                .anyMatch(a ->
+                        a.getAuthority().equals("ROLE_ADMIN")
+                                || a.getAuthority().equals("ADMIN"));
 
-        /*
-         * USER can delete only their own goal.
-         */
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -349,7 +323,8 @@ public class GoalController {
 
             if (goal.getUser() == null
                     || goal.getUser().getId() == null
-                    || !goal.getUser().getId().equals(loggedInUser.getId())) {
+                    || !goal.getUser().getId()
+                    .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can delete only your own goals.");
