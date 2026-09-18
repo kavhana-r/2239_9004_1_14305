@@ -37,8 +37,6 @@ public class GoalController {
 
     // ============================================================
     // GET GOALS
-    // USER -> own goals
-    // ADMIN -> all goals
     // ============================================================
 
     @GetMapping
@@ -56,10 +54,12 @@ public class GoalController {
                         a.getAuthority().equals("ROLE_ADMIN")
                                 || a.getAuthority().equals("ADMIN"));
 
+        // ADMIN can see all goals
         if (isAdmin) {
             return ResponseEntity.ok(goalRepository.findAll());
         }
 
+        // USER can see only their own goals
         User user = userRepository
                 .findByUsername(authentication.getName())
                 .orElse(null);
@@ -87,6 +87,7 @@ public class GoalController {
                     .body("Authentication required");
         }
 
+        // Find the currently logged-in user
         User user = userRepository
                 .findByUsername(authentication.getName())
                 .orElse(null);
@@ -96,29 +97,38 @@ public class GoalController {
                     .body("Logged-in user not found");
         }
 
-        if (goal.getTitle() == null || goal.getTitle().trim().isEmpty()) {
+        // Validate title
+        if (goal.getTitle() == null ||
+                goal.getTitle().trim().isEmpty()) {
+
             return ResponseEntity.badRequest()
-                    .body("Goal title is required");
+                    .body("Goal name is required");
         }
 
-        if (goal.getTargetAmount() == null
-                || goal.getTargetAmount() <= 0) {
+        // Validate target amount
+        if (goal.getTargetAmount() == null ||
+                goal.getTargetAmount() <= 0) {
+
             return ResponseEntity.badRequest()
                     .body("Target amount must be greater than zero");
         }
 
+        // Validate deadline
         if (goal.getDeadline() == null) {
+
             return ResponseEntity.badRequest()
                     .body("Target date is required");
         }
 
+        // Default current amount
         if (goal.getCurrentAmount() == null) {
             goal.setCurrentAmount(0.0);
         }
 
-        // Always associate goal with logged-in user
+        // Always assign goal to logged-in user
         goal.setUser(user);
 
+        // Save
         Goal savedGoal = goalRepository.save(goal);
 
         return ResponseEntity.ok(savedGoal);
@@ -153,7 +163,7 @@ public class GoalController {
                         a.getAuthority().equals("ROLE_ADMIN")
                                 || a.getAuthority().equals("ADMIN"));
 
-        // USER can modify only their own goal
+        // USER can update only their own goal
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -165,18 +175,18 @@ public class GoalController {
                         .body("User not found");
             }
 
-            if (goal.getUser() == null
-                    || goal.getUser().getId() == null
-                    || !goal.getUser().getId()
-                    .equals(loggedInUser.getId())) {
+            if (goal.getUser() == null ||
+                    goal.getUser().getId() == null ||
+                    !goal.getUser().getId()
+                            .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can modify only your own goals.");
             }
         }
 
-        if (goalRequest.getTitle() != null
-                && !goalRequest.getTitle().trim().isEmpty()) {
+        if (goalRequest.getTitle() != null &&
+                !goalRequest.getTitle().trim().isEmpty()) {
 
             goal.setTitle(goalRequest.getTitle().trim());
         }
@@ -193,7 +203,7 @@ public class GoalController {
             goal.setDeadline(goalRequest.getDeadline());
         }
 
-        // Only ADMIN can change goal ownership
+        // Only ADMIN can change ownership
         if (isAdmin && goalRequest.getUser() != null) {
 
             if (goalRequest.getUser().getId() != null) {
@@ -211,9 +221,9 @@ public class GoalController {
             }
         }
 
-        Goal updatedGoal = goalRepository.save(goal);
-
-        return ResponseEntity.ok(updatedGoal);
+        return ResponseEntity.ok(
+                goalRepository.save(goal)
+        );
     }
 
     // ============================================================
@@ -250,6 +260,7 @@ public class GoalController {
                         a.getAuthority().equals("ROLE_ADMIN")
                                 || a.getAuthority().equals("ADMIN"));
 
+        // USER can add funds only to their own goal
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -261,10 +272,10 @@ public class GoalController {
                         .body("User not found");
             }
 
-            if (goal.getUser() == null
-                    || goal.getUser().getId() == null
-                    || !goal.getUser().getId()
-                    .equals(loggedInUser.getId())) {
+            if (goal.getUser() == null ||
+                    goal.getUser().getId() == null ||
+                    !goal.getUser().getId()
+                            .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can modify only your own goals.");
@@ -279,7 +290,9 @@ public class GoalController {
 
         goal.setCurrentAmount(currentAmount + amount);
 
-        return ResponseEntity.ok(goalRepository.save(goal));
+        return ResponseEntity.ok(
+                goalRepository.save(goal)
+        );
     }
 
     // ============================================================
@@ -310,6 +323,7 @@ public class GoalController {
                         a.getAuthority().equals("ROLE_ADMIN")
                                 || a.getAuthority().equals("ADMIN"));
 
+        // USER can delete only their own goal
         if (!isAdmin) {
 
             User loggedInUser = userRepository
@@ -321,10 +335,10 @@ public class GoalController {
                         .body("User not found");
             }
 
-            if (goal.getUser() == null
-                    || goal.getUser().getId() == null
-                    || !goal.getUser().getId()
-                    .equals(loggedInUser.getId())) {
+            if (goal.getUser() == null ||
+                    goal.getUser().getId() == null ||
+                    !goal.getUser().getId()
+                            .equals(loggedInUser.getId())) {
 
                 return ResponseEntity.status(403)
                         .body("You can delete only your own goals.");
