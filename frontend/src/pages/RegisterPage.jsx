@@ -1690,24 +1690,29 @@
 //   );
 // }
 import React, { useState } from "react";
-import { Form, Input, Button, Select, Card, Typography, Alert, Switch } from "antd";
-import { UserOutlined, LockOutlined } from "@ant-design/icons";
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  Card,
+  Typography,
+  Alert,
+  Switch,
+} from "antd";
+import {
+  UserOutlined,
+  LockOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-
-// IMPORTANT:
-// If authSlice.js is inside src/redux/, keep this.
-// If it is inside src/store/, change to:
-// import { register } from "../store/authSlice";
-import { register } from "../slices/authSlice";
+import { register } from "../store/slices/authSlice";
 
 const { Title, Text } = Typography;
-
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const [form] = Form.useForm();
 
   const [loading, setLoading] = useState(false);
@@ -1725,7 +1730,7 @@ const RegisterPage = () => {
   });
 
   // =========================
-  // PASSWORD VALIDATION
+  // PASSWORD CHECK
   // =========================
 
   const checkPassword = (password) => {
@@ -1737,6 +1742,22 @@ const RegisterPage = () => {
       special: /[^A-Za-z0-9]/.test(password),
     });
   };
+
+  // =========================
+  // PASSWORD CRITERIA
+  // =========================
+
+  const criteriaItem = (valid, text) => (
+    <div
+      style={{
+        fontSize: "13px",
+        marginBottom: "4px",
+        color: valid ? "#389e0d" : "#8c8c8c",
+      }}
+    >
+      {valid ? "✓" : "○"} {text}
+    </div>
+  );
 
   // =========================
   // REGISTER
@@ -1753,18 +1774,25 @@ const RegisterPage = () => {
           username: values.username.trim(),
           password: values.password,
           preferredCurrency: values.preferredCurrency || "USD",
-
-          role: isAdminRegister
-            ? "ROLE_ADMIN"
-            : "ROLE_USER",
+          role: isAdminRegister ? "ROLE_ADMIN" : "ROLE_USER",
         })
       ).unwrap();
 
       console.log("Registration successful:", result);
 
-      setSuccess("Registration successful! Redirecting to login...");
+      setSuccess(
+        "Registration successful! Redirecting to login..."
+      );
 
       form.resetFields();
+
+      setPasswordCriteria({
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        special: false,
+      });
 
       setTimeout(() => {
         navigate("/login");
@@ -1791,23 +1819,7 @@ const RegisterPage = () => {
   };
 
   // =========================
-  // PASSWORD CRITERIA UI
-  // =========================
-
-  const criteriaItem = (valid, text) => (
-    <div
-      style={{
-        fontSize: "13px",
-        marginBottom: "4px",
-        color: valid ? "#389e0d" : "#8c8c8c",
-      }}
-    >
-      {valid ? "✓" : "○"} {text}
-    </div>
-  );
-
-  // =========================
-  // PAGE
+  // UI
   // =========================
 
   return (
@@ -1826,10 +1838,12 @@ const RegisterPage = () => {
           width: "100%",
           maxWidth: "500px",
           borderRadius: "16px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08)",
         }}
-        bodyStyle={{
-          padding: "35px",
+        styles={{
+          body: {
+            padding: "35px",
+          },
         }}
       >
         {/* =========================
@@ -1858,7 +1872,7 @@ const RegisterPage = () => {
         </div>
 
         {/* =========================
-            SUCCESS
+            SUCCESS MESSAGE
         ========================= */}
 
         {success && (
@@ -1873,7 +1887,7 @@ const RegisterPage = () => {
         )}
 
         {/* =========================
-            ERROR
+            ERROR MESSAGE
         ========================= */}
 
         {error && (
@@ -1914,7 +1928,9 @@ const RegisterPage = () => {
 
             <Text
               type="secondary"
-              style={{ fontSize: "12px" }}
+              style={{
+                fontSize: "12px",
+              }}
             >
               {isAdminRegister
                 ? "Administrator account"
@@ -1952,7 +1968,8 @@ const RegisterPage = () => {
               },
               {
                 min: 3,
-                message: "Username must contain at least 3 characters",
+                message:
+                  "Username must contain at least 3 characters",
               },
             ]}
           >
@@ -1975,7 +1992,8 @@ const RegisterPage = () => {
               },
               {
                 min: 8,
-                message: "Password must contain at least 8 characters",
+                message:
+                  "Password must contain at least 8 characters",
               },
               {
                 validator: (_, value) => {
@@ -2007,7 +2025,9 @@ const RegisterPage = () => {
               prefix={<LockOutlined />}
               placeholder="Enter password"
               size="large"
-              onChange={(e) => checkPassword(e.target.value)}
+              onChange={(e) =>
+                checkPassword(e.target.value)
+              }
             />
           </Form.Item>
 
@@ -2067,7 +2087,8 @@ const RegisterPage = () => {
             rules={[
               {
                 required: true,
-                message: "Please select your preferred currency",
+                message:
+                  "Please select your preferred currency",
               },
             ]}
           >
@@ -2107,7 +2128,7 @@ const RegisterPage = () => {
             />
           </Form.Item>
 
-          {/* ROLE DISPLAY */}
+          {/* ACCOUNT TYPE */}
 
           <div
             style={{
@@ -2130,7 +2151,11 @@ const RegisterPage = () => {
 
           {/* REGISTER BUTTON */}
 
-          <Form.Item style={{ marginBottom: "15px" }}>
+          <Form.Item
+            style={{
+              marginBottom: "15px",
+            }}
+          >
             <Button
               type="primary"
               htmlType="submit"
@@ -2150,7 +2175,7 @@ const RegisterPage = () => {
             </Button>
           </Form.Item>
 
-          {/* LOGIN */}
+          {/* LOGIN LINK */}
 
           <div
             style={{
