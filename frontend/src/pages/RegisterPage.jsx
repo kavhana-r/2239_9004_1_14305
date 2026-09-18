@@ -1690,6 +1690,7 @@
 //   );
 // }
 import React, { useEffect, useState } from "react";
+
 import {
   Button,
   Form,
@@ -1698,6 +1699,7 @@ import {
   App as AntdApp,
   message as staticMessage,
 } from "antd";
+
 import {
   UserOutlined,
   LockOutlined,
@@ -1710,8 +1712,23 @@ import {
   GlobalOutlined,
   SafetyOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import axios from "axios";
+
+import {
+  useNavigate,
+  useLocation,
+  Link,
+} from "react-router-dom";
+
+import { useDispatch } from "react-redux";
+
+// IMPORTANT:
+// Change this path only if your authSlice.js is in a different folder.
+import { register } from "../store/authSlice";
+
+
+// ============================================================
+// PASSWORD CRITERIA
+// ============================================================
 
 const checkPasswordCriteria = (pwd = "") => {
   return {
@@ -1723,6 +1740,11 @@ const checkPasswordCriteria = (pwd = "") => {
   };
 };
 
+
+// ============================================================
+// GENERATE STRONG PASSWORD
+// ============================================================
+
 const generateStrongPassword = () => {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnopqrstuvwxyz";
@@ -1732,436 +1754,1011 @@ const generateStrongPassword = () => {
   let pwd = [
     upper[Math.floor(Math.random() * upper.length)],
     upper[Math.floor(Math.random() * upper.length)],
+
     lower[Math.floor(Math.random() * lower.length)],
     lower[Math.floor(Math.random() * lower.length)],
+
     numbers[Math.floor(Math.random() * numbers.length)],
     numbers[Math.floor(Math.random() * numbers.length)],
+
     specials[Math.floor(Math.random() * specials.length)],
     specials[Math.floor(Math.random() * specials.length)],
   ];
 
-  const allChars = upper + lower + numbers + specials;
+  const allChars =
+    upper +
+    lower +
+    numbers +
+    specials;
+
   for (let i = 0; i < 6; i++) {
-    pwd.push(allChars[Math.floor(Math.random() * allChars.length)]);
+    pwd.push(
+      allChars[
+        Math.floor(Math.random() * allChars.length)
+      ]
+    );
   }
 
+  // Shuffle password
   for (let i = pwd.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+
     [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
   }
 
   return pwd.join("");
 };
 
+
+// ============================================================
+// PASSWORD STRENGTH
+// ============================================================
+
 const getPasswordStrength = (pwd = "") => {
   if (!pwd) {
-    return { score: 0, label: "Required", classSuffix: "none" };
+    return {
+      score: 0,
+      label: "Required",
+      classSuffix: "none",
+    };
   }
+
   const criteria = checkPasswordCriteria(pwd);
-  const metCount = Object.values(criteria).filter(Boolean).length;
+
+  const metCount =
+    Object.values(criteria).filter(Boolean).length;
 
   if (metCount <= 2 || pwd.length < 6) {
-    return { score: 1, label: "Weak", classSuffix: "weak" };
-  } else if (metCount === 3 || (metCount === 4 && pwd.length < 8)) {
-    return { score: 2, label: "Fair", classSuffix: "fair" };
-  } else if (metCount === 4) {
-    return { score: 3, label: "Good", classSuffix: "good" };
-  } else {
-    return { score: 4, label: "Strong", classSuffix: "strong" };
+    return {
+      score: 1,
+      label: "Weak",
+      classSuffix: "weak",
+    };
   }
+
+  if (
+    metCount === 3 ||
+    (metCount === 4 && pwd.length < 8)
+  ) {
+    return {
+      score: 2,
+      label: "Fair",
+      classSuffix: "fair",
+    };
+  }
+
+  if (metCount === 4) {
+    return {
+      score: 3,
+      label: "Good",
+      classSuffix: "good",
+    };
+  }
+
+  return {
+    score: 4,
+    label: "Strong",
+    classSuffix: "strong",
+  };
 };
 
+
+// ============================================================
+// REGISTER PAGE
+// ============================================================
+
 function RegisterPage() {
+  const dispatch = useDispatch();
+
+  const navigate = useNavigate();
+
+  const location = useLocation();
+
+
+  // ==========================================================
+  // ANT DESIGN MESSAGE
+  // ==========================================================
+
   let appMessage = staticMessage;
+
   try {
     const antdContext = AntdApp.useApp();
+
     if (antdContext?.message) {
       appMessage = antdContext.message;
     }
   } catch (e) {
     // Fallback to static message
+    appMessage = staticMessage;
   }
 
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const searchParams = new URLSearchParams(location?.search || "");
-  const isInitialAdmin = searchParams.get("admin") === "true";
+  // ==========================================================
+  // ADMIN REGISTER CHECK
+  // ==========================================================
+
+  const searchParams = new URLSearchParams(
+    location?.search || ""
+  );
+
+  const isInitialAdmin =
+    searchParams.get("admin") === "true";
+
+
+  // ==========================================================
+  // STATE
+  // ==========================================================
 
   const [loading, setLoading] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [localError, setLocalError] = useState(null);
-  const [localSuccess, setLocalSuccess] = useState(false);
 
-  const [isAdminRegister, setIsAdminRegister] = useState(isInitialAdmin);
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
+  const [localError, setLocalError] =
+    useState(null);
+
+  const [localSuccess, setLocalSuccess] =
+    useState(false);
+
+  const [isAdminRegister, setIsAdminRegister] =
+    useState(isInitialAdmin);
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
     preferredCurrency: "USD",
-    role: isInitialAdmin ? "ROLE_ADMIN" : "ROLE_USER",
+    role: isInitialAdmin
+      ? "ROLE_ADMIN"
+      : "ROLE_USER",
   });
 
+
+  // ==========================================================
+  // UPDATE ADMIN MODE FROM URL
+  // ==========================================================
+
   useEffect(() => {
-    const params = new URLSearchParams(location?.search || "");
+    const params = new URLSearchParams(
+      location?.search || ""
+    );
+
     if (params.get("admin") === "true") {
       setIsAdminRegister(true);
-      setFormData((prev) => ({ ...prev, role: "ROLE_ADMIN" }));
+
+      setFormData((prev) => ({
+        ...prev,
+        role: "ROLE_ADMIN",
+      }));
+    } else {
+      setIsAdminRegister(false);
+
+      setFormData((prev) => ({
+        ...prev,
+        role: "ROLE_USER",
+      }));
     }
   }, [location?.search]);
 
+
+  // ==========================================================
+  // GENERATE STRONG PASSWORD
+  // ==========================================================
+
   const handleGenerateStrong = () => {
-    const generated = generateStrongPassword();
-    setFormData((prev) => ({ ...prev, password: generated }));
+    const generated =
+      generateStrongPassword();
+
+    setFormData((prev) => ({
+      ...prev,
+      password: generated,
+    }));
+
     setConfirmPassword(generated);
-    if (localError) setLocalError(null);
+
+    if (localError) {
+      setLocalError(null);
+    }
+
     if (appMessage?.info) {
-      appMessage.info("Generated a strong password and matched confirmation!");
+      appMessage.info(
+        "Generated a strong password and matched confirmation!"
+      );
     }
   };
 
+
+  // ==========================================================
+  // ROLE SWITCH
+  // ==========================================================
+
   const handleRoleSwitch = (isAdmin) => {
     setIsAdminRegister(isAdmin);
+
     setFormData((previous) => ({
       ...previous,
-      role: isAdmin ? "ROLE_ADMIN" : "ROLE_USER",
+
+      role: isAdmin
+        ? "ROLE_ADMIN"
+        : "ROLE_USER",
     }));
-    if (localError) setLocalError(null);
+
+    if (localError) {
+      setLocalError(null);
+    }
   };
+
+
+  // ==========================================================
+  // FORM FIELD CHANGE
+  // ==========================================================
 
   const handleChange = (field, value) => {
     setFormData((previous) => ({
       ...previous,
       [field]: value,
     }));
-    if (localError) setLocalError(null);
+
+    if (localError) {
+      setLocalError(null);
+    }
   };
 
-  const passwordCriteria = checkPasswordCriteria(formData.password);
-  const passwordStrength = getPasswordStrength(formData.password);
+
+  // ==========================================================
+  // PASSWORD INFORMATION
+  // ==========================================================
+
+  const passwordCriteria =
+    checkPasswordCriteria(
+      formData.password
+    );
+
+  const passwordStrength =
+    getPasswordStrength(
+      formData.password
+    );
+
+
+  // ==========================================================
+  // FORM VALIDATION
+  // ==========================================================
 
   const validateForm = () => {
-    const trimmedUser = formData.username.trim();
+    const trimmedUser =
+      formData.username.trim();
+
+
+    // Username
     if (!trimmedUser) {
       return "Username or email is required.";
     }
 
+
+    // Minimum username length
     if (trimmedUser.length < 3) {
       return "Username must be at least 3 characters long.";
     }
 
-    // If looks like an email, validate email structure
+
+    // Email validation
     if (trimmedUser.includes("@")) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
       if (!emailRegex.test(trimmedUser)) {
         return "Please enter a valid email address.";
       }
     }
 
+
+    // Password
     if (!formData.password) {
       return "Password is required.";
     }
 
+
+    // Minimum length
     if (!passwordCriteria.minLength) {
       return "Password must be at least 8 characters long.";
     }
 
+
+    // Uppercase
     if (!passwordCriteria.hasUpper) {
       return "Password must contain at least one uppercase letter (A-Z).";
     }
 
+
+    // Lowercase
     if (!passwordCriteria.hasLower) {
       return "Password must contain at least one lowercase letter (a-z).";
     }
 
+
+    // Number
     if (!passwordCriteria.hasNumber) {
       return "Password must contain at least one number (0-9).";
     }
 
+
+    // Special character
     if (!passwordCriteria.hasSpecial) {
       return "Password must contain at least one special character (!@#$%^&*).";
     }
 
+
+    // Confirm password
     if (!confirmPassword) {
       return "Please confirm your password.";
     }
 
-    if (formData.password !== confirmPassword) {
+
+    // Password match
+    if (
+      formData.password !==
+      confirmPassword
+    ) {
       return "Passwords do not match.";
     }
+
 
     return null;
   };
 
+
+  // ==========================================================
+  // SUBMIT
+  // ==========================================================
+
   const handleSubmit = async () => {
-    if (loading) return; // Prevent double submission
+    if (loading) {
+      return;
+    }
 
     setLocalError(null);
     setLocalSuccess(false);
 
-    const validationError = validateForm();
+
+    // Validate
+    const validationError =
+      validateForm();
+
     if (validationError) {
       setLocalError(validationError);
-      if (appMessage?.error) appMessage.error(validationError);
+
+      if (appMessage?.error) {
+        appMessage.error(
+          validationError
+        );
+      }
+
       return;
     }
+
 
     try {
       setLoading(true);
 
-      await axios.post("/api/auth/register", {
-        username: formData.username.trim(),
-        password: formData.password,
-        preferredCurrency: formData.preferredCurrency,
-        role: formData.role || (isAdminRegister ? "ROLE_ADMIN" : "ROLE_USER"),
-      });
+
+      // ======================================================
+      // IMPORTANT FIX
+      //
+      // We are NOT using:
+      //
+      // axios.post("/api/auth/register")
+      //
+      // anymore.
+      //
+      // We use the Redux register thunk from authSlice.js.
+      //
+      // authSlice.js contains:
+      //
+      // http://localhost:8080/api/auth
+      //
+      // ======================================================
+
+      const result = await dispatch(
+        register({
+          username:
+            formData.username.trim(),
+
+          password:
+            formData.password,
+
+          preferredCurrency:
+            formData.preferredCurrency,
+
+          role:
+            formData.role ||
+            (
+              isAdminRegister
+                ? "ROLE_ADMIN"
+                : "ROLE_USER"
+            ),
+        })
+      ).unwrap();
+
+
+      // ======================================================
+      // SUCCESS
+      // ======================================================
+
+      console.log(
+        "Registration successful:",
+        result
+      );
 
       setLocalSuccess(true);
-      const successMsg = isAdminRegister
-        ? "Admin account created successfully! Redirecting to Admin Login..."
-        : "Registration successful! Please sign in.";
+
+
+      const successMsg =
+        isAdminRegister
+          ? "Admin account created successfully! Redirecting to Admin Login..."
+          : "Registration successful! Please sign in.";
+
+
       if (appMessage?.success) {
-        appMessage.success(successMsg);
+        appMessage.success(
+          successMsg
+        );
       }
 
+
+      // Redirect
       setTimeout(() => {
-        navigate(isAdminRegister ? "/login?admin=true" : "/login");
+        navigate(
+          isAdminRegister
+            ? "/login?admin=true"
+            : "/login"
+        );
       }, 1200);
-    } catch (error) {
-      let errorMessage = "Registration failed. Please try again.";
 
-      if (!error?.response && error?.request) {
-        errorMessage = "Unable to connect to the server. Please try again.";
-      } else if (error?.response?.data) {
-        const data = error.response.data;
-        if (typeof data === "string") {
-          if (data.toLowerCase().includes("already taken") || data.toLowerCase().includes("exist")) {
-            errorMessage = "An account with this email or username already exists.";
-          } else {
-            errorMessage = data;
-          }
-        } else if (data.message || data.error) {
-          const raw = data.message || data.error;
-          if (raw.toLowerCase().includes("already taken") || raw.toLowerCase().includes("exist")) {
-            errorMessage = "An account with this email or username already exists.";
-          } else {
-            errorMessage = raw;
-          }
-        }
+
+    } catch (error) {
+
+      // ======================================================
+      // ERROR
+      // ======================================================
+
+      console.error(
+        "Registration error:",
+        error
+      );
+
+
+      let errorMessage =
+        "Registration failed. Please try again.";
+
+
+      // Redux rejectWithValue normally returns
+      // the string created inside authSlice.js
+      if (typeof error === "string") {
+        errorMessage = error;
       }
 
-      setLocalError(errorMessage);
-      if (appMessage?.error) appMessage.error(errorMessage);
+      else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      else if (error?.error) {
+        errorMessage = error.error;
+      }
+
+
+      // Existing username
+      if (
+        errorMessage
+          .toLowerCase()
+          .includes("already taken") ||
+
+        errorMessage
+          .toLowerCase()
+          .includes("already exists") ||
+
+        errorMessage
+          .toLowerCase()
+          .includes("exist")
+      ) {
+        errorMessage =
+          "An account with this username already exists.";
+      }
+
+
+      setLocalError(
+        errorMessage
+      );
+
+
+      if (appMessage?.error) {
+        appMessage.error(
+          errorMessage
+        );
+      }
+
     } finally {
       setLoading(false);
     }
   };
 
+
+  // ==========================================================
+  // PASSWORD MATCH
+  // ==========================================================
+
   const passwordsMatch =
-    confirmPassword && formData.password === confirmPassword;
+    confirmPassword &&
+    formData.password ===
+      confirmPassword;
+
+
   const passwordsMismatch =
-    confirmPassword && formData.password !== confirmPassword;
+    confirmPassword &&
+    formData.password !==
+      confirmPassword;
+
+
+  // ==========================================================
+  // UI
+  // ==========================================================
 
   return (
-    <div className={`auth-split-wrapper ${isAdminRegister ? "admin-portal" : ""}`}>
-      {/* Left Showcase Side */}
+    <div
+      className={`auth-split-wrapper ${
+        isAdminRegister
+          ? "admin-portal"
+          : ""
+      }`}
+    >
+
+      {/* =====================================================
+          LEFT SHOWCASE SIDE
+          ===================================================== */}
+
       <div className="auth-split-left">
+
         <div>
+
           {/* Brand Header */}
+
           <div className="auth-brand-lockup">
+
             <div className="auth-brand-logo-badge">
               <ThunderboltFilled />
             </div>
+
             <div>
+
               <div className="auth-brand-name">
                 Mint<span>Matrix</span>
               </div>
+
               <div className="auth-brand-subline">
                 MULTI-CURRENCY BUDGET ANALYTICS
               </div>
+
             </div>
+
           </div>
 
+
+          {/* Hero */}
+
           <div className="auth-hero-content">
-            <div className={`auth-portal-badge ${isAdminRegister ? "admin-badge" : "user-badge"}`}>
+
+            {/* Portal Badge */}
+
+            <div
+              className={`auth-portal-badge ${
+                isAdminRegister
+                  ? "admin-badge"
+                  : "user-badge"
+              }`}
+            >
+
               {isAdminRegister ? (
                 <>
-                  <SafetyOutlined /> ADMIN CONSOLE REGISTRATION
+                  <SafetyOutlined />
+                  {" ADMIN CONSOLE REGISTRATION"}
                 </>
               ) : (
                 <>
-                  <CrownOutlined /> USER FINANCIAL PORTAL
+                  <CrownOutlined />
+                  {" USER FINANCIAL PORTAL"}
                 </>
               )}
+
             </div>
 
+
+            {/* Heading */}
+
             <h1 className="auth-hero-heading">
+
               {isAdminRegister ? (
                 <>
-                  System. Control. <span>Security.</span>
+                  System. Control.{" "}
+                  <span>Security.</span>
                 </>
               ) : (
                 <>
-                  Smart Financial <span>Freedom.</span>
+                  Smart Financial{" "}
+                  <span>Freedom.</span>
                 </>
               )}
+
             </h1>
 
+
+            {/* Description */}
+
             <p className="auth-hero-desc">
+
               {isAdminRegister
                 ? "Register a system administrator account to manage exchange rates, user privileges, category mappings, and system analytics."
                 : "Join thousands of users managing transactions across borders. Monitor spending caps, track savings targets, and visualize cash flow effortlessly."}
+
             </p>
 
-            {/* Checklist of benefits */}
+
+            {/* Checklist */}
+
             <div className="auth-checklist">
-              <div className="auth-check-item">
-                <div className="auth-check-bullet">
-                  <CheckOutlined />
-                </div>
-                <span>Multi-currency tracking with live exchange conversions</span>
-              </div>
 
               <div className="auth-check-item">
+
                 <div className="auth-check-bullet">
                   <CheckOutlined />
                 </div>
-                <span>Automated category-wise budget caps & warnings</span>
+
+                <span>
+                  Multi-currency tracking with live exchange conversions
+                </span>
+
               </div>
 
-              <div className="auth-check-item">
-                <div className="auth-check-bullet">
-                  <CheckOutlined />
-                </div>
-                <span>Interactive savings goals with milestone progress</span>
-              </div>
 
               <div className="auth-check-item">
+
                 <div className="auth-check-bullet">
                   <CheckOutlined />
                 </div>
-                <span>Real-time multi-currency budget synchronization & smart alerts</span>
+
+                <span>
+                  Automated category-wise budget caps & warnings
+                </span>
+
               </div>
+
+
+              <div className="auth-check-item">
+
+                <div className="auth-check-bullet">
+                  <CheckOutlined />
+                </div>
+
+                <span>
+                  Interactive savings goals with milestone progress
+                </span>
+
+              </div>
+
+
+              <div className="auth-check-item">
+
+                <div className="auth-check-bullet">
+                  <CheckOutlined />
+                </div>
+
+                <span>
+                  Real-time multi-currency budget synchronization & smart alerts
+                </span>
+
+              </div>
+
             </div>
+
           </div>
+
         </div>
 
+
         {/* Bottom Banner */}
+
         <div className="auth-bottom-banner">
+
           <div className="auth-bottom-icon">
-            <GlobalOutlined style={{ fontSize: 22 }} />
+
+            <GlobalOutlined
+              style={{
+                fontSize: 22,
+              }}
+            />
+
           </div>
+
           <div>
-            <div className="auth-bottom-tagline">Intelligent Financial Architecture</div>
+
+            <div className="auth-bottom-tagline">
+              Intelligent Financial Architecture
+            </div>
+
             <div className="auth-bottom-sub">
               Real-time multi-currency exchange conversions across USD, EUR, GBP, and INR.
             </div>
+
           </div>
+
         </div>
+
       </div>
 
-      {/* Right Registration Form */}
+
+      {/* =====================================================
+          RIGHT REGISTRATION FORM
+          ===================================================== */}
+
       <div className="auth-split-right">
+
         <div className="auth-form-card">
-          {/* Interactive Role Switcher */}
-          <div className="auth-role-switch-container" role="tablist">
+
+
+          {/* =================================================
+              ROLE SWITCHER
+              ================================================= */}
+
+          <div
+            className="auth-role-switch-container"
+            role="tablist"
+          >
+
             <button
               type="button"
               id="user-register-tab"
               role="tab"
               aria-selected={!isAdminRegister}
-              className={`auth-role-btn ${!isAdminRegister ? "active-user" : ""}`}
-              onClick={() => handleRoleSwitch(false)}
+              className={`auth-role-btn ${
+                !isAdminRegister
+                  ? "active-user"
+                  : ""
+              }`}
+              onClick={() =>
+                handleRoleSwitch(false)
+              }
             >
-              <UserOutlined /> User Register
+              <UserOutlined />
+              {" User Register"}
             </button>
+
+
             <button
               type="button"
               id="admin-register-tab"
               role="tab"
               aria-selected={isAdminRegister}
-              className={`auth-role-btn ${isAdminRegister ? "active-admin" : ""}`}
-              onClick={() => handleRoleSwitch(true)}
+              className={`auth-role-btn ${
+                isAdminRegister
+                  ? "active-admin"
+                  : ""
+              }`}
+              onClick={() =>
+                handleRoleSwitch(true)
+              }
             >
-              <SafetyOutlined /> Admin Register
+              <SafetyOutlined />
+              {" Admin Register"}
             </button>
+
           </div>
 
-          <div style={{ marginBottom: 20 }}>
+
+          {/* =================================================
+              FORM HEADER
+              ================================================= */}
+
+          <div
+            style={{
+              marginBottom: 20,
+            }}
+          >
+
             <h2 className="auth-form-title">
-              {isAdminRegister ? "Create Admin Account" : "Create Your Account"}
+
+              {isAdminRegister
+                ? "Create Admin Account"
+                : "Create Your Account"}
+
             </h2>
+
+
             <div className="auth-form-subtitle">
+
               {isAdminRegister
                 ? "Register with administrator privileges and access"
                 : "Get started in seconds with your free personal account"}
+
             </div>
+
           </div>
 
-          {/* Error Banner */}
+
+          {/* =================================================
+              ERROR
+              ================================================= */}
+
           {localError && (
-            <div className="auth-alert-box error" role="alert">
-              <CloseCircleFilled className="auth-alert-icon" />
-              <div className="auth-alert-text">{localError}</div>
+
+            <div
+              className="auth-alert-box error"
+              role="alert"
+            >
+
+              <CloseCircleFilled
+                className="auth-alert-icon"
+              />
+
+              <div className="auth-alert-text">
+                {localError}
+              </div>
+
             </div>
+
           )}
 
-          {/* Success Banner */}
+
+          {/* =================================================
+              SUCCESS
+              ================================================= */}
+
           {localSuccess && (
-            <div className="auth-alert-box success" role="status">
-              <CheckCircleFilled className="auth-alert-icon" />
+
+            <div
+              className="auth-alert-box success"
+              role="status"
+            >
+
+              <CheckCircleFilled
+                className="auth-alert-icon"
+              />
+
               <div className="auth-alert-text">
                 Account created successfully! Redirecting to login...
               </div>
+
             </div>
+
           )}
 
-          <Form layout="vertical" onFinish={handleSubmit}>
+
+          {/* =================================================
+              FORM
+              ================================================= */}
+
+          <Form
+            layout="vertical"
+            onFinish={handleSubmit}
+          >
+
+
+            {/* =================================================
+                USERNAME
+                ================================================= */}
+
             <Form.Item
-              label={<span className="auth-input-label">Username or Email</span>}
+              label={
+                <span className="auth-input-label">
+                  Username or Email
+                </span>
+              }
               required
-              style={{ marginBottom: 18 }}
+              style={{
+                marginBottom: 18,
+              }}
             >
+
               <div className="auth-input-wrapper">
+
                 <Input
                   id="username"
-                  prefix={<UserOutlined style={{ color: "#94a3b8", marginRight: 10, fontSize: 18 }} />}
+                  prefix={
+                    <UserOutlined
+                      style={{
+                        color: "#94a3b8",
+                        marginRight: 10,
+                        fontSize: 18,
+                      }}
+                    />
+                  }
                   placeholder="Username"
                   value={formData.username}
-                  onChange={(e) => handleChange("username", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(
+                      "username",
+                      e.target.value
+                    )
+                  }
                   size="large"
                   disabled={loading}
                   autoComplete="username"
                 />
+
               </div>
+
             </Form.Item>
 
+
+            {/* =================================================
+                PASSWORD
+                ================================================= */}
+
             <Form.Item
-              label={<span className="auth-input-label">Password (Must be strong)</span>}
+              label={
+                <span className="auth-input-label">
+                  Password (Must be strong)
+                </span>
+              }
               required
-              style={{ marginBottom: 18 }}
+              style={{
+                marginBottom: 18,
+              }}
             >
+
               <div className="auth-input-wrapper">
+
                 <Input.Password
                   id="password"
-                  prefix={<LockOutlined style={{ color: "#94a3b8", marginRight: 10, fontSize: 18 }} />}
+                  prefix={
+                    <LockOutlined
+                      style={{
+                        color: "#94a3b8",
+                        marginRight: 10,
+                        fontSize: 18,
+                      }}
+                    />
+                  }
                   placeholder="Create a strong password"
                   value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(
+                      "password",
+                      e.target.value
+                    )
+                  }
                   size="large"
                   disabled={loading}
                   autoComplete="new-password"
                 />
+
               </div>
 
-              {/* Real-time Password Strength Meter & Criteria Checklist */}
-              <div className="auth-password-strength-container" data-testid="password-strength-container">
+
+              {/* Password Strength */}
+
+              <div
+                className="auth-password-strength-container"
+                data-testid="password-strength-container"
+              >
+
                 <div className="auth-password-meter-header">
-                  <span className="auth-password-meter-title">Password Strength</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+                  <span className="auth-password-meter-title">
+                    Password Strength
+                  </span>
+
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+
                     <button
                       type="button"
                       id="suggest-strong-btn"
-                      onClick={handleGenerateStrong}
+                      onClick={
+                        handleGenerateStrong
+                      }
                       style={{
                         background: "none",
                         border: "none",
@@ -2169,132 +2766,369 @@ function RegisterPage() {
                         fontSize: 12,
                         fontWeight: 600,
                         cursor: "pointer",
-                        textDecoration: "underline",
+                        textDecoration:
+                          "underline",
                         padding: 0,
                       }}
                     >
                       Suggest Strong
                     </button>
-                    <span className={`auth-password-strength-badge ${passwordStrength.classSuffix}`}>
+
+
+                    <span
+                      className={`auth-password-strength-badge ${passwordStrength.classSuffix}`}
+                    >
                       {passwordStrength.label}
                     </span>
+
                   </div>
+
                 </div>
+
+
+                {/* Meter */}
 
                 <div className="auth-password-meter-bar-track">
+
                   <div
                     className={`auth-password-meter-segment ${
-                      passwordStrength.score >= 1 ? `active-${passwordStrength.classSuffix}` : ""
+                      passwordStrength.score >= 1
+                        ? `active-${passwordStrength.classSuffix}`
+                        : ""
                     }`}
                   />
+
                   <div
                     className={`auth-password-meter-segment ${
-                      passwordStrength.score >= 2 ? `active-${passwordStrength.classSuffix}` : ""
+                      passwordStrength.score >= 2
+                        ? `active-${passwordStrength.classSuffix}`
+                        : ""
                     }`}
                   />
+
                   <div
                     className={`auth-password-meter-segment ${
-                      passwordStrength.score >= 3 ? `active-${passwordStrength.classSuffix}` : ""
+                      passwordStrength.score >= 3
+                        ? `active-${passwordStrength.classSuffix}`
+                        : ""
                     }`}
                   />
+
                   <div
                     className={`auth-password-meter-segment ${
-                      passwordStrength.score >= 4 ? `active-${passwordStrength.classSuffix}` : ""
+                      passwordStrength.score >= 4
+                        ? `active-${passwordStrength.classSuffix}`
+                        : ""
                     }`}
                   />
+
                 </div>
+
+
+                {/* Criteria */}
 
                 <div className="auth-password-criteria-list">
-                  <div className={`auth-password-criterion ${passwordCriteria.minLength ? "valid" : ""}`}>
+
+
+                  {/* Minimum */}
+
+                  <div
+                    className={`auth-password-criterion ${
+                      passwordCriteria.minLength
+                        ? "valid"
+                        : ""
+                    }`}
+                  >
+
                     <span className="auth-password-criterion-icon">
-                      {passwordCriteria.minLength ? <CheckCircleFilled /> : "•"}
+
+                      {passwordCriteria.minLength ? (
+                        <CheckCircleFilled />
+                      ) : (
+                        "•"
+                      )}
+
                     </span>
-                    <span>Min 8 characters</span>
+
+                    <span>
+                      Min 8 characters
+                    </span>
+
                   </div>
-                  <div className={`auth-password-criterion ${passwordCriteria.hasUpper ? "valid" : ""}`}>
+
+
+                  {/* Uppercase */}
+
+                  <div
+                    className={`auth-password-criterion ${
+                      passwordCriteria.hasUpper
+                        ? "valid"
+                        : ""
+                    }`}
+                  >
+
                     <span className="auth-password-criterion-icon">
-                      {passwordCriteria.hasUpper ? <CheckCircleFilled /> : "•"}
+
+                      {passwordCriteria.hasUpper ? (
+                        <CheckCircleFilled />
+                      ) : (
+                        "•"
+                      )}
+
                     </span>
-                    <span>Uppercase (A-Z)</span>
+
+                    <span>
+                      Uppercase (A-Z)
+                    </span>
+
                   </div>
-                  <div className={`auth-password-criterion ${passwordCriteria.hasLower ? "valid" : ""}`}>
+
+
+                  {/* Lowercase */}
+
+                  <div
+                    className={`auth-password-criterion ${
+                      passwordCriteria.hasLower
+                        ? "valid"
+                        : ""
+                    }`}
+                  >
+
                     <span className="auth-password-criterion-icon">
-                      {passwordCriteria.hasLower ? <CheckCircleFilled /> : "•"}
+
+                      {passwordCriteria.hasLower ? (
+                        <CheckCircleFilled />
+                      ) : (
+                        "•"
+                      )}
+
                     </span>
-                    <span>Lowercase (a-z)</span>
+
+                    <span>
+                      Lowercase (a-z)
+                    </span>
+
                   </div>
-                  <div className={`auth-password-criterion ${passwordCriteria.hasNumber ? "valid" : ""}`}>
+
+
+                  {/* Number */}
+
+                  <div
+                    className={`auth-password-criterion ${
+                      passwordCriteria.hasNumber
+                        ? "valid"
+                        : ""
+                    }`}
+                  >
+
                     <span className="auth-password-criterion-icon">
-                      {passwordCriteria.hasNumber ? <CheckCircleFilled /> : "•"}
+
+                      {passwordCriteria.hasNumber ? (
+                        <CheckCircleFilled />
+                      ) : (
+                        "•"
+                      )}
+
                     </span>
-                    <span>Number (0-9)</span>
+
+                    <span>
+                      Number (0-9)
+                    </span>
+
                   </div>
-                  <div className={`auth-password-criterion ${passwordCriteria.hasSpecial ? "valid" : ""}`}>
+
+
+                  {/* Special */}
+
+                  <div
+                    className={`auth-password-criterion ${
+                      passwordCriteria.hasSpecial
+                        ? "valid"
+                        : ""
+                    }`}
+                  >
+
                     <span className="auth-password-criterion-icon">
-                      {passwordCriteria.hasSpecial ? <CheckCircleFilled /> : "•"}
+
+                      {passwordCriteria.hasSpecial ? (
+                        <CheckCircleFilled />
+                      ) : (
+                        "•"
+                      )}
+
                     </span>
-                    <span>Special symbol (!@#$...)</span>
+
+                    <span>
+                      Special symbol (!@#$...)
+                    </span>
+
                   </div>
+
                 </div>
+
               </div>
+
             </Form.Item>
 
+
+            {/* =================================================
+                CONFIRM PASSWORD
+                ================================================= */}
+
             <Form.Item
-              label={<span className="auth-input-label">Confirm Password</span>}
+              label={
+                <span className="auth-input-label">
+                  Confirm Password
+                </span>
+              }
               required
-              style={{ marginBottom: 18 }}
+              style={{
+                marginBottom: 18,
+              }}
             >
+
               <div className="auth-input-wrapper">
+
                 <Input.Password
                   id="confirmPassword"
-                  prefix={<LockOutlined style={{ color: "#94a3b8", marginRight: 10, fontSize: 18 }} />}
+                  prefix={
+                    <LockOutlined
+                      style={{
+                        color: "#94a3b8",
+                        marginRight: 10,
+                        fontSize: 18,
+                      }}
+                    />
+                  }
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (localError) setLocalError(null);
+                    setConfirmPassword(
+                      e.target.value
+                    );
+
+                    if (localError) {
+                      setLocalError(null);
+                    }
                   }}
                   size="large"
                   disabled={loading}
                   autoComplete="new-password"
                 />
+
               </div>
+
+
+              {/* Match */}
+
               {passwordsMatch && (
+
                 <div className="auth-password-match-tag match">
-                  <CheckCircleFilled /> Passwords match
+
+                  <CheckCircleFilled />
+
+                  {" Passwords match"}
+
                 </div>
+
               )}
+
+
+              {/* Mismatch */}
+
               {passwordsMismatch && (
+
                 <div className="auth-password-match-tag mismatch">
-                  <CloseCircleFilled /> Passwords do not match
+
+                  <CloseCircleFilled />
+
+                  {" Passwords do not match"}
+
                 </div>
+
               )}
+
             </Form.Item>
 
+
+            {/* =================================================
+                CURRENCY
+                ================================================= */}
+
             <Form.Item
-              label={<span className="auth-input-label">Preferred Currency</span>}
-              style={{ marginBottom: 24 }}
+              label={
+                <span className="auth-input-label">
+                  Preferred Currency
+                </span>
+              }
+              style={{
+                marginBottom: 24,
+              }}
             >
+
               <Select
                 id="preferredCurrency"
                 aria-label="Preferred Currency"
                 data-testid="preferred-currency"
-                value={formData.preferredCurrency}
-                onChange={(value) => handleChange("preferredCurrency", value)}
+                value={
+                  formData.preferredCurrency
+                }
+                onChange={(value) =>
+                  handleChange(
+                    "preferredCurrency",
+                    value
+                  )
+                }
                 size="large"
                 disabled={loading}
-                style={{ width: "100%" }}
+                style={{
+                  width: "100%",
+                }}
                 options={[
-                  { value: "AUD", label: "Australian Dollar (AUD)" },
-                  { value: "CAD", label: "Canadian Dollar (CAD)" },
-                  { value: "EUR", label: "Euro (EUR)" },
-                  { value: "GBP", label: "British Pound (GBP)" },
-                  { value: "INR", label: "Indian Rupee (INR)" },
-                  { value: "JPY", label: "Japanese Yen (JPY)" },
-                  { value: "USD", label: "US Dollar (USD)" },
+                  {
+                    value: "AUD",
+                    label:
+                      "Australian Dollar (AUD)",
+                  },
+                  {
+                    value: "CAD",
+                    label:
+                      "Canadian Dollar (CAD)",
+                  },
+                  {
+                    value: "EUR",
+                    label:
+                      "Euro (EUR)",
+                  },
+                  {
+                    value: "GBP",
+                    label:
+                      "British Pound (GBP)",
+                  },
+                  {
+                    value: "INR",
+                    label:
+                      "Indian Rupee (INR)",
+                  },
+                  {
+                    value: "JPY",
+                    label:
+                      "Japanese Yen (JPY)",
+                  },
+                  {
+                    value: "USD",
+                    label:
+                      "US Dollar (USD)",
+                  },
                 ]}
               />
+
             </Form.Item>
+
+
+            {/* =================================================
+                REGISTER BUTTON
+                ================================================= */}
 
             <Button
               type="primary"
@@ -2303,19 +3137,39 @@ function RegisterPage() {
               size="large"
               loading={loading}
               disabled={loading}
-              icon={!loading && <ArrowRightOutlined style={{ fontSize: 18, marginLeft: 6 }} />}
+              icon={
+                !loading && (
+                  <ArrowRightOutlined
+                    style={{
+                      fontSize: 18,
+                      marginLeft: 6,
+                    }}
+                  />
+                )
+              }
               iconPosition="end"
-              className={`auth-submit-btn ${isAdminRegister ? "admin-btn" : ""}`}
+              className={`auth-submit-btn ${
+                isAdminRegister
+                  ? "admin-btn"
+                  : ""
+              }`}
             >
+
               {loading
                 ? "Creating Account..."
                 : isAdminRegister
                 ? "Register as Administrator"
                 : "Create Free Account"}
+
             </Button>
+
           </Form>
 
-          {/* Footer Switching / Login Link */}
+
+          {/* =================================================
+              LOGIN LINK
+              ================================================= */}
+
           <div
             style={{
               textAlign: "center",
@@ -2324,26 +3178,44 @@ function RegisterPage() {
               color: "#64748b",
             }}
           >
+
             Already have an account?{" "}
+
             <Link
-              to={isAdminRegister ? "/login?admin=true" : "/login"}
+              to={
+                isAdminRegister
+                  ? "/login?admin=true"
+                  : "/login"
+              }
               style={{
-                color: isAdminRegister ? "#0f766e" : "#10b981",
+                color: isAdminRegister
+                  ? "#0f766e"
+                  : "#10b981",
                 fontWeight: 700,
                 textDecoration: "none",
               }}
             >
               Log in here
             </Link>
+
           </div>
+
+
+          {/* =================================================
+              COPYRIGHT
+              ================================================= */}
 
           <div className="auth-footer-copyright">
             © 2026 MintMatrix. Secure Financial Analytics
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
+
 
 export default RegisterPage;
