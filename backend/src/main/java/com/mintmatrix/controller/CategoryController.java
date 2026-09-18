@@ -15,34 +15,124 @@ public class CategoryController {
 
     private final CategoryRepository categoryRepository;
 
-    public CategoryController(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    public CategoryController(
+            CategoryRepository categoryRepository
+    ) {
+        this.categoryRepository =
+                categoryRepository;
     }
 
+    // =========================================================
+    // GET ALL
     // USER + ADMIN
+    // =========================================================
+
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<Category>>
+    getAllCategories() {
+
         return ResponseEntity.ok(
                 categoryRepository.findAll()
         );
     }
 
+    // =========================================================
+    // GET BY ID
+    // USER + ADMIN
+    // =========================================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Category>
+    getCategoryById(
+            @PathVariable Long id
+    ) {
+
+        return categoryRepository
+                .findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(
+                        ResponseEntity
+                                .notFound()
+                                .build()
+                );
+    }
+
+    // =========================================================
+    // POST
     // ADMIN ONLY
+    // =========================================================
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Category> createCategory(
-            @RequestBody Category category) {
+    public ResponseEntity<Category>
+    createCategory(
+            @RequestBody Category category
+    ) {
 
         return ResponseEntity.ok(
-                categoryRepository.save(category)
+                categoryRepository.save(
+                        category
+                )
         );
     }
 
+    // =========================================================
+    // PUT
     // ADMIN ONLY
+    // =========================================================
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Category>
+    updateCategory(
+            @PathVariable Long id,
+            @RequestBody Category updatedCategory
+    ) {
+
+        return categoryRepository
+                .findById(id)
+                .map(existingCategory -> {
+
+                    existingCategory.setName(
+                            updatedCategory.getName()
+                    );
+
+                    existingCategory.setType(
+                            updatedCategory.getType()
+                    );
+
+                    return ResponseEntity.ok(
+                            categoryRepository.save(
+                                    existingCategory
+                            )
+                    );
+                })
+                .orElse(
+                        ResponseEntity
+                                .notFound()
+                                .build()
+                );
+    }
+
+    // =========================================================
+    // DELETE
+    // ADMIN ONLY
+    // =========================================================
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteCategory(
-            @PathVariable Long id) {
+    public ResponseEntity<String>
+    deleteCategory(
+            @PathVariable Long id
+    ) {
+
+        if (!categoryRepository
+                .existsById(id)) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+        }
 
         categoryRepository.deleteById(id);
 
