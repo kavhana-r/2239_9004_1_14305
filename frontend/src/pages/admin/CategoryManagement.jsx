@@ -38,9 +38,62 @@ const CATEGORY_ICONS = {
   Others: "📦",
 };
 
+const CURRENCY_ITEMS = [
+  {
+    country: "AU",
+    name: "Australian Dollar",
+    code: "AUD",
+    symbol: "A$",
+    flag: "🇦🇺",
+  },
+  {
+    country: "CA",
+    name: "Canadian Dollar",
+    code: "CAD",
+    symbol: "C$",
+    flag: "🇨🇦",
+  },
+  {
+    country: "EU",
+    name: "Euro",
+    code: "EUR",
+    symbol: "€",
+    flag: "🇪🇺",
+  },
+  {
+    country: "GB",
+    name: "British Pound",
+    code: "GBP",
+    symbol: "£",
+    flag: "🇬🇧",
+  },
+  {
+    country: "IN",
+    name: "Indian Rupee",
+    code: "INR",
+    symbol: "₹",
+    flag: "🇮🇳",
+  },
+  {
+    country: "JP",
+    name: "Japanese Yen",
+    code: "JPY",
+    symbol: "¥",
+    flag: "🇯🇵",
+  },
+  {
+    country: "US",
+    name: "US Dollar",
+    code: "USD",
+    symbol: "$",
+    flag: "🇺🇸",
+  },
+];
+
 function CategoryManagement() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -51,89 +104,29 @@ function CategoryManagement() {
     name: "",
     type: "EXPENSE",
     currency: "USD",
-    symbol: "USD",
+    symbol: "$",
   });
-
-  // =====================================================
-  // CURRENCIES
-  // =====================================================
-
-  const CURRENCY_ITEMS = [
-    {
-      country: "AU",
-      name: "Australian Dollar",
-      code: "AUD",
-      symbol: "AUD",
-      flag: "🇦🇺",
-    },
-    {
-      country: "CA",
-      name: "Canadian Dollar",
-      code: "CAD",
-      symbol: "CAD",
-      flag: "🇨🇦",
-    },
-    {
-      country: "EU",
-      name: "Euro",
-      code: "EUR",
-      symbol: "EUR",
-      flag: "🇪🇺",
-    },
-    {
-      country: "GB",
-      name: "British Pound",
-      code: "GBP",
-      symbol: "GBP",
-      flag: "🇬🇧",
-    },
-    {
-      country: "IN",
-      name: "Indian Rupee",
-      code: "INR",
-      symbol: "INR",
-      flag: "🇮🇳",
-    },
-    {
-      country: "JP",
-      name: "Japanese Yen",
-      code: "JPY",
-      symbol: "JPY",
-      flag: "🇯🇵",
-    },
-    {
-      country: "US",
-      name: "US Dollar",
-      code: "USD",
-      symbol: "USD",
-      flag: "🇺🇸",
-    },
-  ];
 
   // =====================================================
   // ROLE
   // =====================================================
 
   const getUserRole = () => {
-    const possibleRoles = [
-      localStorage.getItem("role"),
-      localStorage.getItem("userRole"),
-    ];
+    const role =
+      localStorage.getItem("role") ||
+      localStorage.getItem("userRole");
 
-    for (const role of possibleRoles) {
-      if (role) {
-        return role.toUpperCase();
-      }
+    if (role) {
+      return String(role).toUpperCase();
     }
 
-    // Check user object if role is stored inside it
-    const possibleUserKeys = [
+    const userKeys = [
       "user",
       "currentUser",
       "authUser",
     ];
 
-    for (const key of possibleUserKeys) {
+    for (const key of userKeys) {
       try {
         const user = JSON.parse(
           localStorage.getItem(key) || "null"
@@ -143,7 +136,7 @@ function CategoryManagement() {
           return String(user.role).toUpperCase();
         }
       } catch (error) {
-        // Ignore invalid localStorage JSON
+        // Ignore invalid localStorage data
       }
     }
 
@@ -157,86 +150,8 @@ function CategoryManagement() {
     role === "ROLE_ADMIN";
 
   // =====================================================
-  // CATEGORY CURRENCY INFORMATION
-  // =====================================================
-
-  const getCategoryCurrencyInfo = (
-    name,
-    fallbackCode
-  ) => {
-    try {
-      const map = JSON.parse(
-        localStorage.getItem(
-          "category_currency_map"
-        ) || "{}"
-      );
-
-      const saved =
-        map[String(name || "").toLowerCase()];
-
-      if (saved?.currency) {
-        const match = CURRENCY_ITEMS.find(
-          (c) => c.code === saved.currency
-        );
-
-        if (match) {
-          return match;
-        }
-      }
-    } catch (error) {
-      // Ignore invalid stored data
-    }
-
-    if (fallbackCode) {
-      const match = CURRENCY_ITEMS.find(
-        (c) => c.code === fallbackCode
-      );
-
-      if (match) {
-        return match;
-      }
-    }
-
-    const presetMap = {
-      Food: "USD",
-      Transport: "AUD",
-      Shopping: "CAD",
-      Bills: "EUR",
-      Salary: "INR",
-      Others: "GBP",
-      Entertainment: "JPY",
-    };
-
-    const code =
-      presetMap[name] || "USD";
-
-    return (
-      CURRENCY_ITEMS.find(
-        (c) => c.code === code
-      ) || CURRENCY_ITEMS[6]
-    );
-  };
-
-  // =====================================================
-  // CURRENCY SELECT
-  // =====================================================
-
-  const handleCurrencySelect = (value) => {
-    const item = CURRENCY_ITEMS.find(
-      (c) => c.code === value
-    );
-
-    setFormData((previous) => ({
-      ...previous,
-      currency: value,
-      symbol: item
-        ? item.symbol
-        : value,
-    }));
-  };
-
-  // =====================================================
   // GET CATEGORIES
+  // USER + ADMIN
   // =====================================================
 
   const fetchCategories = async () => {
@@ -259,16 +174,18 @@ function CategoryManagement() {
 
       const data = response?.data;
 
-      setCategories(
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data?.content)
-          ? data.content
-          : []
-      );
+      if (Array.isArray(data)) {
+        setCategories(data);
+      } else if (
+        Array.isArray(data?.content)
+      ) {
+        setCategories(data.content);
+      } else {
+        setCategories([]);
+      }
     } catch (error) {
       console.error(
-        "GET categories error:",
+        "GET /api/categories error:",
         error
       );
 
@@ -288,7 +205,81 @@ function CategoryManagement() {
   }, []);
 
   // =====================================================
-  // OPEN ADD CATEGORY MODAL
+  // CURRENCY INFORMATION
+  // =====================================================
+
+  const getCategoryCurrencyInfo = (
+    name,
+    fallbackCode
+  ) => {
+    try {
+      const map = JSON.parse(
+        localStorage.getItem(
+          "category_currency_map"
+        ) || "{}"
+      );
+
+      const saved =
+        map[
+          String(name || "").toLowerCase()
+        ];
+
+      if (saved?.currency) {
+        const found =
+          CURRENCY_ITEMS.find(
+            (currency) =>
+              currency.code ===
+              saved.currency
+          );
+
+        if (found) {
+          return found;
+        }
+      }
+    } catch (error) {
+      // Ignore invalid currency map
+    }
+
+    if (fallbackCode) {
+      const found =
+        CURRENCY_ITEMS.find(
+          (currency) =>
+            currency.code ===
+            fallbackCode
+        );
+
+      if (found) {
+        return found;
+      }
+    }
+
+    return CURRENCY_ITEMS.find(
+      (currency) =>
+        currency.code === "USD"
+    );
+  };
+
+  // =====================================================
+  // CURRENCY SELECT
+  // =====================================================
+
+  const handleCurrencySelect = (value) => {
+    const currency =
+      CURRENCY_ITEMS.find(
+        (item) => item.code === value
+      );
+
+    setFormData((previous) => ({
+      ...previous,
+      currency: value,
+      symbol:
+        currency?.symbol || "$",
+    }));
+  };
+
+  // =====================================================
+  // OPEN ADD MODAL
+  // ADMIN ONLY
   // =====================================================
 
   const openModal = () => {
@@ -303,14 +294,15 @@ function CategoryManagement() {
       name: "",
       type: "EXPENSE",
       currency: "USD",
-      symbol: "USD",
+      symbol: "$",
     });
 
     setModalOpen(true);
   };
 
   // =====================================================
-  // CREATE CATEGORY - POST
+  // POST CATEGORY
+  // ADMIN ONLY
   // =====================================================
 
   const handleSubmit = async () => {
@@ -343,12 +335,13 @@ function CategoryManagement() {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
         }
       );
 
-      // Save currency information locally
+      // Save currency information
       try {
         const key =
           "category_currency_map";
@@ -384,13 +377,13 @@ function CategoryManagement() {
         name: "",
         type: "EXPENSE",
         currency: "USD",
-        symbol: "USD",
+        symbol: "$",
       });
 
       await fetchCategories();
     } catch (error) {
       console.error(
-        "POST category error:",
+        "POST /api/categories error:",
         error
       );
 
@@ -405,6 +398,7 @@ function CategoryManagement() {
 
   // =====================================================
   // DELETE CATEGORY
+  // ADMIN ONLY
   // =====================================================
 
   const handleDelete = async (category) => {
@@ -435,7 +429,7 @@ function CategoryManagement() {
       await fetchCategories();
     } catch (error) {
       console.error(
-        "DELETE category error:",
+        "DELETE /api/categories error:",
         error
       );
 
@@ -447,74 +441,15 @@ function CategoryManagement() {
   };
 
   // =====================================================
-  // FALLBACK DATA
-  // =====================================================
-
-  const defaultCategories = [
-    {
-      id: 101,
-      name: "Food",
-      type: "EXPENSE",
-      icon: "🍔",
-      currency: "USD",
-    },
-    {
-      id: 102,
-      name: "Transport",
-      type: "EXPENSE",
-      icon: "🚗",
-      currency: "AUD",
-    },
-    {
-      id: 103,
-      name: "Shopping",
-      type: "EXPENSE",
-      icon: "🛍️",
-      currency: "CAD",
-    },
-    {
-      id: 104,
-      name: "Bills",
-      type: "EXPENSE",
-      icon: "⚡",
-      currency: "EUR",
-    },
-    {
-      id: 105,
-      name: "Salary",
-      type: "INCOME",
-      icon: "💼",
-      currency: "INR",
-    },
-    {
-      id: 106,
-      name: "Others",
-      type: "EXPENSE",
-      icon: "📦",
-      currency: "GBP",
-    },
-  ];
-
-  /*
-   * IMPORTANT:
-   * Don't show demo categories when the backend
-   * successfully returns an empty list.
-   *
-   * Otherwise deleted categories can appear again.
-   */
-  const displayList =
-    categories;
-
-  // =====================================================
   // FILTER
   // =====================================================
 
   const filteredCategories =
     useMemo(() => {
-      let list = displayList;
+      let result = [...categories];
 
       if (typeFilter !== "ALL") {
-        list = list.filter(
+        result = result.filter(
           (category) =>
             String(category.type)
               .toUpperCase() ===
@@ -528,7 +463,7 @@ function CategoryManagement() {
             .toLowerCase()
             .trim();
 
-        list = list.filter(
+        result = result.filter(
           (category) =>
             String(
               category.name || ""
@@ -538,20 +473,20 @@ function CategoryManagement() {
         );
       }
 
-      return list;
+      return result;
     }, [
-      displayList,
+      categories,
       search,
       typeFilter,
     ]);
 
   // =====================================================
-  // UI
+  // PAGE
   // =====================================================
 
   return (
     <div>
-      {/* PAGE HEADER */}
+      {/* HEADER */}
 
       <div className="page-header">
         <div>
@@ -598,10 +533,10 @@ function CategoryManagement() {
         )}
       </div>
 
-      {/* MAIN CARD */}
+      {/* CARD */}
 
       <Card className="modern-card">
-        {/* FILTER BAR */}
+        {/* FILTER */}
 
         <div
           style={{
@@ -633,9 +568,7 @@ function CategoryManagement() {
 
           <Select
             value={typeFilter}
-            onChange={(value) =>
-              setTypeFilter(value)
-            }
+            onChange={setTypeFilter}
             style={{
               width: 150,
               height: 40,
@@ -657,7 +590,7 @@ function CategoryManagement() {
           />
         </div>
 
-        {/* TABLE */}
+        {/* LOADING */}
 
         {loading ? (
           <div
@@ -679,18 +612,24 @@ function CategoryManagement() {
               <thead>
                 <tr>
                   <th style={{ width: 80 }}>
-                    Icon
+                    ICON
                   </th>
 
                   <th>
-                    Category Name
+                    CATEGORY NAME
                   </th>
 
-                  <th>Type</th>
+                  <th>
+                    TYPE
+                  </th>
 
-                  <th>Currency</th>
+                  <th>
+                    CURRENCY
+                  </th>
 
-                  <th>Symbol</th>
+                  <th>
+                    SYMBOL
+                  </th>
 
                   {/* ADMIN ONLY */}
 
@@ -702,7 +641,7 @@ function CategoryManagement() {
                         width: 120,
                       }}
                     >
-                      Actions
+                      ACTIONS
                     </th>
                   )}
                 </tr>
@@ -714,15 +653,14 @@ function CategoryManagement() {
                   <tr>
                     <td
                       colSpan={
-                        isAdmin
-                          ? 6
-                          : 5
+                        isAdmin ? 6 : 5
                       }
                       style={{
                         textAlign:
                           "center",
                         padding: 40,
-                        color: "#64748b",
+                        color:
+                          "#64748b",
                       }}
                     >
                       No categories found
@@ -746,7 +684,7 @@ function CategoryManagement() {
                           ? "🛍️"
                           : "💰");
 
-                      const currInfo =
+                      const currency =
                         getCategoryCurrencyInfo(
                           category.name,
                           category.currency
@@ -792,7 +730,9 @@ function CategoryManagement() {
                                 "#0f172a",
                             }}
                           >
-                            {category.name}
+                            {
+                              category.name
+                            }
                           </td>
 
                           {/* TYPE */}
@@ -827,16 +767,16 @@ function CategoryManagement() {
                                 }}
                               >
                                 {
-                                  currInfo.flag
+                                  currency.flag
                                 }
                               </span>
 
                               <span>
                                 {
-                                  currInfo.country
+                                  currency.country
                                 }{" "}
                                 {
-                                  currInfo.name
+                                  currency.name
                                 }
                               </span>
                             </Space>
@@ -852,7 +792,7 @@ function CategoryManagement() {
                             }}
                           >
                             {
-                              currInfo.symbol
+                              currency.symbol
                             }
                           </td>
 
@@ -900,7 +840,9 @@ function CategoryManagement() {
         )}
       </Card>
 
-      {/* ADD CATEGORY MODAL - ADMIN ONLY */}
+      {/* =========================================
+          ADMIN ADD CATEGORY MODAL
+      ========================================== */}
 
       {isAdmin && (
         <Modal
@@ -940,7 +882,7 @@ function CategoryManagement() {
               padding: "16px 0",
             }}
           >
-            {/* CATEGORY NAME */}
+            {/* NAME */}
 
             <div
               style={{
@@ -968,7 +910,7 @@ function CategoryManagement() {
 
               <Input
                 size="large"
-                placeholder="e.g., Groceries, Utilities, Freelance"
+                placeholder="e.g. Food, Salary, Transport"
                 value={
                   formData.name
                 }
@@ -1018,7 +960,6 @@ function CategoryManagement() {
                 size="large"
                 style={{
                   width: "100%",
-                  height: 42,
                 }}
                 value={
                   formData.type
@@ -1085,9 +1026,7 @@ function CategoryManagement() {
                 <Select
                   size="large"
                   style={{
-                    width:
-                      "100%",
-                    height: 42,
+                    width: "100%",
                   }}
                   value={
                     formData.currency
@@ -1099,13 +1038,11 @@ function CategoryManagement() {
                     (currency) => ({
                       value:
                         currency.code,
-                      label: `${currency.country} ${currency.name}`,
+                      label: `${currency.flag} ${currency.country} ${currency.name}`,
                     })
                   )}
                 />
               </div>
-
-              {/* SYMBOL */}
 
               <div>
                 <label

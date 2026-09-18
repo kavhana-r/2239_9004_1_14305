@@ -19,24 +19,15 @@ public class CategoryController {
         this.categoryRepository = categoryRepository;
     }
 
-    // =========================================================
-    // GET CATEGORIES
-    // TESTCASE: PUBLIC
-    // =========================================================
-
+    // USER + ADMIN
     @GetMapping
     public ResponseEntity<List<Category>> getAllCategories() {
-
         return ResponseEntity.ok(
                 categoryRepository.findAll()
         );
     }
 
-    // =========================================================
-    // POST CATEGORY
-    // TESTCASE: ADMIN ONLY
-    // =========================================================
-
+    // ADMIN ONLY
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(
@@ -47,11 +38,7 @@ public class CategoryController {
         );
     }
 
-    // =========================================================
-    // DELETE CATEGORY
-    // TESTCASE: ADMIN ONLY
-    // =========================================================
-
+    // ADMIN ONLY
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteCategory(
