@@ -37,9 +37,10 @@ const { Title, Text } = Typography;
 
 const API_BASE_URL = "http://localhost:8080";
 
-/* -------------------------------------------------------
+/* =========================================================
    Currency symbols
-------------------------------------------------------- */
+========================================================= */
+
 const CURRENCY_SYMBOLS = {
   USD: "$",
   EUR: "€",
@@ -50,9 +51,31 @@ const CURRENCY_SYMBOLS = {
   AUD: "A$",
 };
 
-/* -------------------------------------------------------
+/* =========================================================
+   Get authentication configuration
+   No axios.create()
+   No axios interceptor
+========================================================= */
+
+const getAuthConfig = () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return {};
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  };
+};
+
+/* =========================================================
    Get logged-in user's role
-------------------------------------------------------- */
+========================================================= */
+
 const getUserRole = () => {
   const possibleRoleKeys = [
     "role",
@@ -92,7 +115,10 @@ const getUserRole = () => {
           .toUpperCase();
       }
 
-      if (user?.authorities?.length > 0) {
+      if (
+        Array.isArray(user?.authorities) &&
+        user.authorities.length > 0
+      ) {
         const authority =
           user.authorities[0]?.authority ||
           user.authorities[0];
@@ -109,20 +135,18 @@ const getUserRole = () => {
   return "";
 };
 
-/* -------------------------------------------------------
+/* =========================================================
    Category icon
-------------------------------------------------------- */
-const getCategoryIcon = (type) => {
-  if (type === "INCOME") {
-    return "💰";
-  }
+========================================================= */
 
-  return "💸";
+const getCategoryIcon = (type) => {
+  return type === "INCOME" ? "💰" : "💸";
 };
 
-/* -------------------------------------------------------
-   Category Management
-------------------------------------------------------- */
+/* =========================================================
+   Category Management Component
+========================================================= */
+
 const CategoryManagement = () => {
   const [form] = Form.useForm();
 
@@ -138,52 +162,39 @@ const CategoryManagement = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingCategory, setEditingCategory] =
+    useState(null);
 
   const [userRole, setUserRole] = useState("");
 
-  /* -------------------------------------------------------
-     Check admin
-  ------------------------------------------------------- */
+  /* =======================================================
+     Admin check
+  ======================================================= */
+
   const isAdmin = userRole === "ADMIN";
 
-  /* -------------------------------------------------------
-     Get preferred currency
-  ------------------------------------------------------- */
-  const getPreferredCurrency = () => {
-    const currency =
-      localStorage.getItem("preferredCurrency") ||
+  /* =======================================================
+     Preferred currency
+  ======================================================= */
+
+  const preferredCurrency = String(
+    localStorage.getItem("preferredCurrency") ||
       localStorage.getItem("currency") ||
-      "INR";
+      "INR"
+  ).toUpperCase();
 
-    return String(currency).toUpperCase();
-  };
+  const currencySymbol =
+    CURRENCY_SYMBOLS[preferredCurrency] ||
+    preferredCurrency;
 
-  /* -------------------------------------------------------
-     Common authentication headers
-  ------------------------------------------------------- */
-  const getAuthConfig = () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      return {};
-    }
-
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    };
-  };
-
-  /* -------------------------------------------------------
+  /* =======================================================
      Fetch categories
-  ------------------------------------------------------- */
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
+  ======================================================= */
 
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+
+    try {
       const response = await axios.get(
         `${API_BASE_URL}/api/categories`,
         getAuthConfig()
@@ -200,46 +211,48 @@ const CategoryManagement = () => {
         error
       );
 
-      if (error.response) {
-        if (error.response.status === 401) {
-          message.error(
-            "Authentication required. Please login again."
-          );
-        } else if (error.response.status === 403) {
-          message.error(
-            "You do not have permission to view categories."
-          );
-        } else {
-          message.error(
-            `Unable to load categories. Server returned ${error.response.status}.`
-          );
-        }
+      const status = error?.response?.status;
+
+      if (status === 401) {
+        message.error(
+          "Authentication required. Please login again."
+        );
+      } else if (status === 403) {
+        message.error(
+          "You do not have permission to view categories."
+        );
+      } else if (status) {
+        message.error(
+          `Unable to load categories. Server returned ${status}.`
+        );
       } else {
         message.error(
           "Unable to connect to the server."
         );
       }
+
+      setCategories([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  /* -------------------------------------------------------
-     Load page
-  ------------------------------------------------------- */
+  /* =======================================================
+     Initial load
+  ======================================================= */
+
   useEffect(() => {
     const role = getUserRole();
-
-    console.log("Logged-in role:", role);
 
     setUserRole(role);
 
     fetchCategories();
   }, [fetchCategories]);
 
-  /* -------------------------------------------------------
+  /* =======================================================
      Open Add Modal
-  ------------------------------------------------------- */
+  ======================================================= */
+
   const openAddModal = () => {
     if (!isAdmin) {
       message.warning(
@@ -253,15 +266,16 @@ const CategoryManagement = () => {
     form.resetFields();
 
     form.setFieldsValue({
-      type: "INCOME",
+      type: "EXPENSE",
     });
 
     setIsModalOpen(true);
   };
 
-  /* -------------------------------------------------------
+  /* =======================================================
      Open Edit Modal
-  ------------------------------------------------------- */
+  ======================================================= */
+
   const openEditModal = (category) => {
     if (!isAdmin) {
       message.warning(
@@ -273,31 +287,31 @@ const CategoryManagement = () => {
     setEditingCategory(category);
 
     form.setFieldsValue({
-      name: category.name,
-      type: category.type,
+      name: category.name || "",
+      type: category.type || "EXPENSE",
     });
 
     setIsModalOpen(true);
   };
 
-  /* -------------------------------------------------------
+  /* =======================================================
      Close Modal
-  ------------------------------------------------------- */
+  ======================================================= */
+
   const closeModal = () => {
     if (saving) {
       return;
     }
 
     setIsModalOpen(false);
-
     setEditingCategory(null);
-
     form.resetFields();
   };
 
-  /* -------------------------------------------------------
+  /* =======================================================
      Add / Update Category
-  ------------------------------------------------------- */
+  ======================================================= */
+
   const handleSubmit = async (values) => {
     if (!isAdmin) {
       message.error(
@@ -306,7 +320,9 @@ const CategoryManagement = () => {
       return;
     }
 
-    const name = values.name?.trim();
+    const name = String(values.name || "").trim();
+
+    const type = values.type;
 
     if (!name) {
       message.error(
@@ -315,7 +331,14 @@ const CategoryManagement = () => {
       return;
     }
 
-    if (!values.type) {
+    if (name.length < 2) {
+      message.error(
+        "Category name must contain at least 2 characters."
+      );
+      return;
+    }
+
+    if (!type) {
       message.error(
         "Please select a category type."
       );
@@ -323,68 +346,28 @@ const CategoryManagement = () => {
     }
 
     const payload = {
-      name: name,
-      type: values.type,
+      name,
+      type,
     };
 
+    setSaving(true);
+
     try {
-      setSaving(true);
-
-      const token = localStorage.getItem("token");
-
-      console.log(
-        "================================="
-      );
-      console.log("CATEGORY SAVE");
-      console.log(
-        "URL:",
-        API_BASE_URL
-      );
-      console.log(
-        "Payload:",
-        payload
-      );
-      console.log(
-        "Token exists:",
-        !!token
-      );
-      console.log(
-        "Role:",
-        userRole
-      );
-      console.log(
-        "================================="
-      );
-
-      let response;
-
       if (editingCategory) {
-        response = await axios.put(
+        await axios.put(
           `${API_BASE_URL}/api/categories/${editingCategory.id}`,
           payload,
           getAuthConfig()
-        );
-
-        console.log(
-          "UPDATE RESPONSE:",
-          response.status,
-          response.data
         );
 
         message.success(
           "Category updated successfully."
         );
       } else {
-        response = await axios.post(
+        await axios.post(
           `${API_BASE_URL}/api/categories`,
           payload,
           getAuthConfig()
-        );
-
-        console.log(
-          "CREATE RESPONSE:",
-          response.status,
-          response.data
         );
 
         message.success(
@@ -392,57 +375,46 @@ const CategoryManagement = () => {
         );
       }
 
-      closeModal();
+      setIsModalOpen(false);
+      setEditingCategory(null);
+      form.resetFields();
 
       await fetchCategories();
     } catch (error) {
       console.error(
-        "CATEGORY SAVE ERROR:",
+        "Category save error:",
         error
       );
 
-      console.error(
-        "Response:",
-        error.response?.data
-      );
+      const status = error?.response?.status;
 
-      console.error(
-        "Status:",
-        error.response?.status
-      );
-
-      if (error.response) {
-        const status =
-          error.response.status;
-
-        if (status === 401) {
-          message.error(
-            "401 Unauthorized: Please login again."
-          );
-        } else if (status === 403) {
-          message.error(
-            "403 Forbidden: Admin permission is required."
-          );
-        } else if (status === 400) {
-          message.error(
-            "400 Bad Request: Check category name and type."
-          );
-        } else if (status === 409) {
-          message.error(
-            "Category already exists."
-          );
-        } else if (status === 500) {
-          message.error(
-            "500 Server Error: Check the Spring Boot console."
-          );
-        } else {
-          message.error(
-            `Unable to save category. Server returned ${status}.`
-          );
-        }
+      if (status === 400) {
+        message.error(
+          "400 Bad Request: Check category name and type."
+        );
+      } else if (status === 401) {
+        message.error(
+          "401 Unauthorized: Please login again."
+        );
+      } else if (status === 403) {
+        message.error(
+          "403 Forbidden: Admin permission is required."
+        );
+      } else if (status === 404) {
+        message.error(
+          "Category endpoint was not found."
+        );
+      } else if (status === 409) {
+        message.error(
+          "Category already exists."
+        );
+      } else if (status === 500) {
+        message.error(
+          "500 Server Error: Check the Spring Boot console."
+        );
       } else {
         message.error(
-          "Unable to connect to the backend server."
+          "Unable to save category."
         );
       }
     } finally {
@@ -450,9 +422,10 @@ const CategoryManagement = () => {
     }
   };
 
-  /* -------------------------------------------------------
+  /* =======================================================
      Delete Category
-  ------------------------------------------------------- */
+  ======================================================= */
+
   const handleDelete = async (id) => {
     if (!isAdmin) {
       message.warning(
@@ -461,18 +434,12 @@ const CategoryManagement = () => {
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      const response = await axios.delete(
+    try {
+      await axios.delete(
         `${API_BASE_URL}/api/categories/${id}`,
         getAuthConfig()
-      );
-
-      console.log(
-        "DELETE RESPONSE:",
-        response.status,
-        response.data
       );
 
       message.success(
@@ -482,43 +449,31 @@ const CategoryManagement = () => {
       await fetchCategories();
     } catch (error) {
       console.error(
-        "DELETE CATEGORY ERROR:",
+        "Delete category error:",
         error
       );
 
-      console.error(
-        "Response:",
-        error.response?.data
-      );
+      const status = error?.response?.status;
 
-      if (error.response) {
-        const status =
-          error.response.status;
-
-        if (status === 401) {
-          message.error(
-            "401 Unauthorized: Please login again."
-          );
-        } else if (status === 403) {
-          message.error(
-            "403 Forbidden: Admin permission is required."
-          );
-        } else if (status === 404) {
-          message.error(
-            "Category not found."
-          );
-        } else if (status === 500) {
-          message.error(
-            "Cannot delete this category. It may be used by existing transactions."
-          );
-        } else {
-          message.error(
-            `Unable to delete category. Server returned ${status}.`
-          );
-        }
+      if (status === 401) {
+        message.error(
+          "401 Unauthorized: Please login again."
+        );
+      } else if (status === 403) {
+        message.error(
+          "403 Forbidden: Admin permission is required."
+        );
+      } else if (status === 404) {
+        message.error(
+          "Category not found."
+        );
+      } else if (status === 500) {
+        message.error(
+          "Cannot delete this category. It may be used by existing transactions."
+        );
       } else {
         message.error(
-          "Unable to connect to the backend server."
+          "Unable to delete category."
         );
       }
     } finally {
@@ -526,21 +481,26 @@ const CategoryManagement = () => {
     }
   };
 
-  /* -------------------------------------------------------
-     Filter categories
-  ------------------------------------------------------- */
+  /* =======================================================
+     Search + filter
+  ======================================================= */
+
   const filteredCategories = useMemo(() => {
+    const search = searchText
+      .trim()
+      .toLowerCase();
+
     return categories.filter((category) => {
+      const categoryName =
+        String(category?.name || "").toLowerCase();
+
       const matchesSearch =
-        category.name
-          ?.toLowerCase()
-          .includes(
-            searchText.toLowerCase()
-          );
+        !search ||
+        categoryName.includes(search);
 
       const matchesType =
         typeFilter === "ALL" ||
-        category.type === typeFilter;
+        category?.type === typeFilter;
 
       return (
         matchesSearch &&
@@ -553,28 +513,21 @@ const CategoryManagement = () => {
     typeFilter,
   ]);
 
-  /* -------------------------------------------------------
-     Currency
-  ------------------------------------------------------- */
-  const preferredCurrency =
-    getPreferredCurrency();
-
-  const currencySymbol =
-    CURRENCY_SYMBOLS[
-      preferredCurrency
-    ] || preferredCurrency;
-
-  /* -------------------------------------------------------
+  /* =======================================================
      UI
-  ------------------------------------------------------- */
+  ======================================================= */
+
   return (
     <div
       style={{
-        padding: "24px",
+        padding: 24,
         minHeight: "100vh",
       }}
     >
-      {/* Header */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <Row
         justify="space-between"
         align="middle"
@@ -621,7 +574,10 @@ const CategoryManagement = () => {
         )}
       </Row>
 
-      {/* Admin information */}
+      {/* =================================================
+          ROLE / CURRENCY
+      ================================================= */}
+
       <Card
         style={{
           marginBottom: 20,
@@ -639,9 +595,7 @@ const CategoryManagement = () => {
 
               <Tag
                 color={
-                  isAdmin
-                    ? "gold"
-                    : "blue"
+                  isAdmin ? "gold" : "blue"
                 }
               >
                 {userRole || "USER"}
@@ -661,7 +615,10 @@ const CategoryManagement = () => {
         </Row>
       </Card>
 
-      {/* Filters */}
+      {/* =================================================
+          SEARCH / FILTER
+      ================================================= */}
+
       <Card
         style={{
           marginBottom: 20,
@@ -675,14 +632,12 @@ const CategoryManagement = () => {
           >
             <Input
               allowClear
-              prefix={
-                <SearchOutlined />
-              }
+              prefix={<SearchOutlined />}
               placeholder="Search category..."
               value={searchText}
-              onChange={(e) =>
+              onChange={(event) =>
                 setSearchText(
-                  e.target.value
+                  event.target.value
                 )
               }
             />
@@ -718,7 +673,10 @@ const CategoryManagement = () => {
         </Row>
       </Card>
 
-      {/* Category List */}
+      {/* =================================================
+          CATEGORY LIST
+      ================================================= */}
+
       <Card>
         {loading ? (
           <div
@@ -737,8 +695,7 @@ const CategoryManagement = () => {
               Loading categories...
             </div>
           </div>
-        ) : filteredCategories.length ===
-          0 ? (
+        ) : filteredCategories.length === 0 ? (
           <Empty
             description={
               categories.length === 0
@@ -813,6 +770,7 @@ const CategoryManagement = () => {
                         <Space>
                           <Button
                             type="text"
+                            aria-label={`Edit ${category.name}`}
                             icon={
                               <EditOutlined />
                             }
@@ -837,6 +795,7 @@ const CategoryManagement = () => {
                             <Button
                               type="text"
                               danger
+                              aria-label={`Delete ${category.name}`}
                               icon={
                                 <DeleteOutlined />
                               }
@@ -853,7 +812,10 @@ const CategoryManagement = () => {
         )}
       </Card>
 
-      {/* Add / Edit Modal */}
+      {/* =================================================
+          ADD / EDIT MODAL
+      ================================================= */}
+
       <Modal
         title={
           editingCategory
@@ -870,7 +832,8 @@ const CategoryManagement = () => {
           layout="vertical"
           onFinish={handleSubmit}
         >
-          {/* Category name */}
+          {/* Category Name */}
+
           <Form.Item
             label="Category Name"
             name="name"
@@ -893,7 +856,8 @@ const CategoryManagement = () => {
             />
           </Form.Item>
 
-          {/* Type */}
+          {/* Category Type */}
+
           <Form.Item
             label="Category Type"
             name="type"
@@ -920,6 +884,7 @@ const CategoryManagement = () => {
           </Form.Item>
 
           {/* Currency */}
+
           <Form.Item label="Currency">
             <Select
               value={preferredCurrency}
@@ -934,6 +899,7 @@ const CategoryManagement = () => {
           </Form.Item>
 
           {/* Buttons */}
+
           <Form.Item
             style={{
               marginBottom: 0,
