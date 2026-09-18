@@ -1,100 +1,29 @@
-// package com.mintmatrix.controller;
-
-// import com.mintmatrix.model.Category;
-// import com.mintmatrix.repository.CategoryRepository;
-
-// import org.springframework.http.ResponseEntity;
-
-// import org.springframework.security.access.prepost.PreAuthorize;
-
-// import org.springframework.web.bind.annotation.*;
-
-// import java.util.List;
-
-
-// @RestController
-// @RequestMapping("/api/categories")
-// public class CategoryController {
-
-
-//     private final CategoryRepository categoryRepository;
-
-
-//     public CategoryController(CategoryRepository categoryRepository) {
-//         this.categoryRepository = categoryRepository;
-//     }
-
-
-
-//     @GetMapping
-//     public ResponseEntity<List<Category>> getAllCategories() {
-
-//         return ResponseEntity.ok(
-//                 categoryRepository.findAll()
-//         );
-//     }
-
-
-
-
-//     @PostMapping
-//     @PreAuthorize("hasRole('ADMIN')")
-//     public ResponseEntity<Category> createCategory(
-//             @RequestBody Category category) {
-
-
-//         return ResponseEntity.ok(
-//                 categoryRepository.save(category)
-//         );
-//     }
-
-
-
-
-
-//     @DeleteMapping("/{id}")
-//     @PreAuthorize("hasRole('ADMIN')")
-//     public ResponseEntity<String> deleteCategory(
-//             @PathVariable Long id) {
-
-
-//         categoryRepository.deleteById(id);
-
-
-//         return ResponseEntity.ok(
-//                 "Category deleted successfully"
-//         );
-//     }
-// }
 package com.mintmatrix.controller;
 
 import com.mintmatrix.model.Category;
 import com.mintmatrix.repository.CategoryRepository;
 
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
 
-
     private final CategoryRepository categoryRepository;
-
 
     public CategoryController(CategoryRepository categoryRepository) {
         this.categoryRepository = categoryRepository;
     }
 
-
-
+    // =========================================================
+    // GET - USER + ADMIN
+    // =========================================================
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<Category>> getAllCategories() {
 
         return ResponseEntity.ok(
@@ -102,35 +31,32 @@ public class CategoryController {
         );
     }
 
-
-
-
+    // =========================================================
+    // POST - ADMIN ONLY
+    // =========================================================
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(
             @RequestBody Category category) {
-
 
         return ResponseEntity.ok(
                 categoryRepository.save(category)
         );
     }
 
-
-
-
-
+    // =========================================================
+    // DELETE - ADMIN ONLY
+    // =========================================================
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteCategory(
             @PathVariable Long id) {
 
-
         categoryRepository.deleteById(id);
-
 
         return ResponseEntity.ok(
                 "Category deleted successfully"
         );
     }
 }
+
