@@ -237,11 +237,11 @@ import {
   Table,
   Tag,
   Typography,
-  message,
   Avatar,
   Row,
   Col,
   Input,
+  App,
 } from "antd";
 import {
   DeleteOutlined,
@@ -250,21 +250,29 @@ import {
 import { useSelector } from "react-redux";
 import axios from "axios";
 
+// Automatically configures the client to connect directly to your backend server during development
+const API = axios.create({
+  baseURL: window.location.hostname === "localhost" ? "http://localhost:8080" : "",
+  withCredentials: true,
+});
+
 const { Title, Text } = Typography;
 
-function UserManagement() {
+function UserManagementContent() {
   const authUser = useSelector((state) => state.auth?.user);
 
   // Admin User Management State
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  
+  // Cleanly context-bound notification interface
+  const { message: msgApi } = App.useApp();
 
-  // Wrapped in useCallback so it doesn't change on every render
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/admin/users");
+      const response = await API.get("/api/admin/users");
       const data = response?.data;
 
       setUsers(
@@ -272,32 +280,36 @@ function UserManagement() {
           ? data
           : Array.isArray(data?.content)
           ? data.content
+          : Array.isArray(data?.users)
+          ? data.users
           : []
       );
     } catch (error) {
-      message.error(error?.response?.data?.message || "Failed to load users.");
+      console.error("Backend connection failed:", error);
+      msgApi.error(
+        `Failed to reach backend server: ${error?.response?.data?.message || error.message}`
+      );
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [msgApi]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Fixed: Wrapped in useCallback to preserve function reference stability
   const deleteUser = useCallback(async (user) => {
     try {
-      await axios.delete(`/api/admin/users/${user.id}`);
-      message.success("User deleted successfully");
+      await API.delete(`/api/admin/users/${user.id}`);
+      msgApi.success("User deleted successfully");
       await fetchUsers();
     } catch (error) {
-      message.error(
+      msgApi.error(
         error?.response?.data?.message || "Unable to delete user."
       );
     }
-  }, [fetchUsers]);
+  }, [fetchUsers, msgApi]);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
@@ -325,7 +337,6 @@ function UserManagement() {
     return { total: users.length, admins, standard };
   }, [users]);
 
-  // Perfectly tracked layout boundaries
   const columns = useMemo(() => [
     {
       title: "User Profile",
@@ -453,13 +464,22 @@ function UserManagement() {
           <Table
             dataSource={filteredUsers}
             columns={columns}
-            rowKey={(r) => r?.id || r?.username || Math.random().toString()}
+            rowKey={(r) => r?.id || r?.username || String(Math.random())}
             loading={loading}
             pagination={{ pageSize: 10 }}
           />
         </div>
       </Card>
     </div>
+  );
+}
+
+// Fixed: Wrap component inside <App> to consume dynamic theme contexts cleanly
+function UserManagement() {
+  return (
+    <App>
+      <UserManagementContent />
+    </App>
   );
 }
 
