@@ -230,7 +230,7 @@
 // }
 
 // export default UserManagement;
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Card,
   Popconfirm,
@@ -260,11 +260,8 @@ function UserManagement() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  // Wrapped in useCallback so it doesn't change on every render
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get("/api/admin/users");
@@ -283,9 +280,14 @@ function UserManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const deleteUser = async (user) => {
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Fixed: Wrapped in useCallback to preserve function reference stability
+  const deleteUser = useCallback(async (user) => {
     try {
       await axios.delete(`/api/admin/users/${user.id}`);
       message.success("User deleted successfully");
@@ -295,9 +297,8 @@ function UserManagement() {
         error?.response?.data?.message || "Unable to delete user."
       );
     }
-  };
+  }, [fetchUsers]);
 
-  // Fixed: Added safe checks (?.) to guard against malformed API items
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
     const term = search.toLowerCase().trim();
@@ -309,7 +310,6 @@ function UserManagement() {
     });
   }, [users, search]);
 
-  // Fixed: Guarded metric generation loop from null references
   const userMetrics = useMemo(() => {
     let admins = 0;
     let standard = 0;
@@ -325,7 +325,7 @@ function UserManagement() {
     return { total: users.length, admins, standard };
   }, [users]);
 
-  // Fixed: Wrapped columns array in useMemo to prevent unnecessary table re-renders
+  // Perfectly tracked layout boundaries
   const columns = useMemo(() => [
     {
       title: "User Profile",
@@ -378,7 +378,6 @@ function UserManagement() {
       title: "Actions",
       key: "actions",
       render: (_, record) => {
-        // Fixed: Use safe checking for current logged in user mapping
         const isCurrentAuthUser = record?.username && authUser?.username && record.username === authUser.username;
         return (
           <Popconfirm
@@ -403,7 +402,7 @@ function UserManagement() {
         );
       },
     },
-  ], [authUser]);
+  ], [authUser, deleteUser]);
 
   return (
     <div>
